@@ -1,779 +1,169 @@
-# taylor_function.py
-"""
-This module defines the core class MultivariateTaylorFunction (MTF) for representing and
-manipulating multivariate Taylor expansions.
-
-It also includes functions for managing the global maximum order of Taylor expansions
-and for converting various input types to MTF objects.
-
-Classes:
-    MultivariateTaylorFunction: Represents a multivariate Taylor function and supports
-                                arithmetic operations, differentiation, integration, composition,
-                                inversion, and evaluation.
-
-Functions:
-    set_global_max_order(order): Sets the global maximum order for Taylor expansions.
-    get_global_max_order(): Gets the current global maximum order.
-    convert_to_mtf(input_value): Converts a scalar, Var, or MTF to a MultivariateTaylorFunction.
-
-Global Variables:
-    _GLOBAL_MAX_ORDER:  Private variable storing the global maximum order for Taylor series truncation.
-"""
 import numpy as np
+from collections import defaultdict
 
-# Global variable to store the maximum order for Taylor expansions.
-# This is used to truncate results of operations to control the size of expansions.
-_GLOBAL_MAX_ORDER = 10  # Default global max order
-
+# Global setting for maximum order of Taylor expansion - v9.9
+_GLOBAL_MAX_ORDER = 10  # Or some other default value
 
 def set_global_max_order(order):
     """
-    Sets the global maximum order for Taylor expansions.
-
-    This function allows users to change the global setting for the maximum order of
-    Taylor expansions.  Operations on MultivariateTaylorFunction objects, such as
-    multiplication and composition, will truncate the resulting Taylor series to this order
-    to manage the complexity and size of the expansions.
-
-    Parameters:
-        order (int): The desired maximum order for Taylor expansions.
-                     Must be a non-negative integer.
-    Raises:
-        ValueError: If the input order is not a non-negative integer.
+    Set the global maximum order for Taylor expansions.
     """
-    global _GLOBAL_MAX_ORDER  # Declare that we are using the global variable
+    global _GLOBAL_MAX_ORDER
     if not isinstance(order, int) or order < 0:
         raise ValueError("Global max order must be a non-negative integer.")
     _GLOBAL_MAX_ORDER = order
 
-
 def get_global_max_order():
     """
-    Gets the current global maximum order for Taylor expansions.
-
-    Returns:
-        int: The current global maximum order.
+    Get the current global maximum order for Taylor expansions.
     """
     return _GLOBAL_MAX_ORDER
 
-
-def convert_to_mtf(input_value):
+class Var:
     """
-    Converts a scalar, Var, or MultivariateTaylorFunction to a MultivariateTaylorFunction.
-
-    This function ensures that input values are consistently represented as
-    MultivariateTaylorFunction objects. If the input is already an MTF, it's returned as is.
-    If it's a Var object, an MTF representing that variable is created. If it's a scalar,
-    an MTF representing a constant function is created.
-
-    Parameters:
-        input_value (scalar | Var | MultivariateTaylorFunction): The value to convert.
-            Can be a scalar (int or float), a Var object (representing a variable),
-            or an already existing MultivariateTaylorFunction object.
-
-    Returns:
-        MultivariateTaylorFunction: The MultivariateTaylorFunction representation
-            of the input value.
-
-    Raises:
-        TypeError: If the input value is not of a supported type (scalar, Var, or MTF).
+    Represents an independent variable in a Multivariate Taylor Function.
+    Each variable is uniquely identified by an id.
     """
-    if isinstance(input_value, MultivariateTaylorFunction):
-        return input_value  # Already an MTF, return as is
-    elif hasattr(input_value, 'is_Var') and input_value.is_Var: # Check if it's a Var object using duck typing
-        # Create MTF for Var object. Assume Var objects have 'dimension' attribute.
-        coefficients = {
-            # For a variable, the coefficient for the first order term in the direction of the variable is 1.0
-            tuple([0] * (input_value.dimension - 1) + [1] if input_value.dimension > 0 else [1]): np.array([1.0])
-        }
-        return MultivariateTaylorFunction(
-            coefficients=coefficients,
-            dimension=input_value.dimension,
-            expansion_point=np.zeros(input_value.dimension),
-            order=1  # Taylor expansion of a single variable 'x' up to order 1 is just 'x' itself.
-        )
-    elif isinstance(input_value, (int, float)):
-        # Create MTF for scalar constant. Default dimension is 1, can be adjusted if needed based on context.
-        dimension = 1
-        coefficients = {tuple([0] * dimension): np.array([float(input_value)])} # Constant term coefficient
-        return MultivariateTaylorFunction(
-            coefficients=coefficients,
-            dimension=dimension,
-            expansion_point=np.zeros(dimension),
-            order=0  # Taylor expansion of a constant is just the constant itself (order 0).
-        )
-    else:
-        raise TypeError(f"Input value of type {type(input_value)} cannot be converted to MultivariateTaylorFunction.")
+    _instance_counter = 0
+
+    def __init__(self, var_id=None, dimension=1):
+        if var_id is None:
+            Var._instance_counter += 1
+            self.var_id = Var._instance_counter
+        else:
+            self.var_id = var_id
+        self.dimension = dimension # Dimension of the variable - v9.9
+
+    def __eq__(self, other):
+        return isinstance(other, Var) and self.var_id == other.var_id and self.dimension == other.dimension
+
+    def __hash__(self):
+        return hash((self.var_id, self.dimension))
+
+    def __str__(self):
+        return f"Var(id={self.var_id}, dimension={self.dimension})"
+
+    def __repr__(self):
+        return str(self)
+
+    def __add__(self, other):
+        """Define addition for Var + other (scalar or Var/MTF)."""
+        return convert_to_mtf(self) + other
+
+    def __radd__(self, other):
+        """Define addition for other (scalar or Var/MTF) + Var."""
+        return other + convert_to_mtf(self)
+
+    def __sub__(self, other):
+        """Define subtraction for Var - other (scalar or Var/MTF)."""
+        return convert_to_mtf(self) - other
+
+    def __rsub__(self, other):
+        """Define subtraction for other (scalar or Var/MTF) - Var."""
+        return other - convert_to_mtf(self)
+
+    def __mul__(self, other):
+        """Define multiplication for Var * other (scalar or Var/MTF)."""
+        return convert_to_mtf(self) * other
+
+    def __rmul__(self, other):
+        """Define multiplication for other (scalar or Var/MTF) * Var."""
+        return other * convert_to_mtf(self)
+
+    # Division operations - only with scalars allowed for Var directly
+    def __truediv__(self, other):
+        """Define division for Var / scalar."""
+        if isinstance(other, (int, float, np.number)):
+            return convert_to_mtf(self) / other
+        else:
+            raise TypeError("Division of Var by non-scalar or MTF is not supported.")
+
+    def __rtruediv__(self, other):
+        """Define division for scalar / Var."""
+        raise TypeError("Scalar division by Var is not directly supported for Taylor expansion around origin. Inverse of Var at origin is undefined.")    
+
+    def __neg__(self):
+        """Define negation of a Var object."""
+        return -1 * convert_to_mtf(self) # -1 * MTF
+    
+    
+    def __pow__(self, exponent):
+        """Define exponentiation for MTF ** integer exponent."""
+        if not isinstance(exponent, int):
+            raise TypeError("Exponent must be an integer for MTF**exponent.")
+        if exponent < 0:
+            raise ValueError("Negative exponents are not supported for MTF**exponent in this simplified version.")
+        if exponent == 0:
+            return MultivariateTaylorFunction.from_constant(1.0, dimension=self.dimension) # MTF**0 = 1 (constant MTF)
+        if exponent == 1:
+            return self # MTF**1 = self
+
+        result_mtf = self # Start with base MTF
+        for _ in range(exponent - 1): # Multiply 'exponent - 1' times
+            result_mtf = result_mtf * self # Use MTF multiplication
+
+        return result_mtf
 
 
 class MultivariateTaylorFunction:
     """
-    Represents a multivariate Taylor function.
-
-    This class allows for the creation and manipulation of Taylor series expansions
-    for functions of multiple variables. It supports arithmetic operations (+, -, *, /, **, -),
-    differentiation, integration, composition, and evaluation. Taylor series are represented
-    by their coefficients, expansion point, dimension of the input space, and truncation order.
-
-    Attributes:
-        coefficients (dict): A dictionary storing the coefficients of the Taylor series.
-            Keys are multi-indices (tuples of non-negative integers) representing the order
-            of differentiation with respect to each variable. Values are numpy arrays of coefficients.
-        dimension (int): The dimension of the input space of the function. Must be a positive integer.
-        expansion_point (np.array): The point in the input space around which the Taylor expansion is centered.
-            Defaults to a zero vector of the given dimension if not provided.
-        order (int, optional): The maximum order to which the Taylor expansion is considered accurate.
-            Used for truncation after operations to manage the size of the expansion. If None, no truncation
-            is automatically performed, but truncation can be explicitly called.
+    Represents a Multivariate Taylor Function.
+    coefficients: defaultdict of coefficients, keys are tuples of exponents.
+    dimension: number of variables, determined by the length of exponent tuples.
+    expansion_point: the point around which the Taylor expansion is defined. Default is origin. - v9.9
     """
-
-    def __init__(self, coefficients=None, dimension=1, expansion_point=None, order=None):
-        """
-        Initialize a MultivariateTaylorFunction.
-
-        Parameters:
-            coefficients (dict, optional): Dictionary of coefficients for the Taylor expansion.
-                Keys are multi-indices (tuples) and values are numpy arrays of coefficients.
-                If None, initializes with an empty coefficient dictionary.
-            dimension (int): The dimension of the function's input space. Must be a positive integer.
-            expansion_point (np.array, optional): The point around which the Taylor expansion is defined.
-                Defaults to a zero vector of size 'dimension' if None.
-            order (int, optional): Maximum order of Taylor expansion to keep.
-                If None, no truncation is initially set. Truncation is applied during operations.
-
-        Raises:
-            ValueError: If dimension is not a positive integer.
-        """
-        if coefficients is None:
-            self.coefficients = {}  # Initialize with empty coefficients if none provided
-        else:
-            self.coefficients = coefficients.copy()  # Use a copy to avoid unintended modifications of input dict
-        if not isinstance(dimension, int) or dimension <= 0:
-            raise ValueError("Dimension must be a positive integer.")
+    def __init__(self, coefficients, dimension, var_list=None, expansion_point=None):
+        self.coefficients = coefficients # defaultdict
         self.dimension = dimension
-        self.expansion_point = expansion_point if expansion_point is not None else np.zeros(dimension) # Default expansion point at origin
-        self.order = order  # Store the order of the Taylor expansion, used for truncation
+        self.var_list = var_list if var_list is not None else [Var(i+1, dimension=dimension) for i in range(dimension)] # List of Var objects - v9.9
+        self.expansion_point = expansion_point if expansion_point is not None else np.zeros(dimension) # Expansion point, default origin - v9.9
+
 
     @classmethod
     def from_constant(cls, constant_value, dimension):
         """
-        Class method to create a MultivariateTaylorFunction representing a constant value.
+        Create a MultivariateTaylorFunction from a constant value.
+        """
+        coeffs = defaultdict(lambda: np.array([0.0])) # Defaultdict for coefficients - v9.9
+        coeffs[(0,) * dimension] = np.array([float(constant_value)]) # Corrected for multi-dimension - v9.9
+        return cls(coefficients=coeffs, dimension=dimension)
 
-        This is a factory method that constructs an MTF for a function that is constant
-        across its input space. The Taylor expansion of a constant function is simply the constant itself.
 
-        Parameters:
-            constant_value (float): The constant value that the MTF should represent.
-            dimension (int): The dimension of the function's input space.
+    def __call__(self, evaluation_points):
+        """
+        Evaluate the MTF at given evaluation points.
+
+        Args:
+            evaluation_points (np.ndarray): Points to evaluate at.
+                                            Shape (dimension,) for single point, or (n_points, dimension) for multiple points.
 
         Returns:
-            MultivariateTaylorFunction: A MTF object representing the constant function.
+            np.ndarray: Evaluated values. Shape () for single point, or (n_points,) for multiple points.
         """
-        # For a constant function, only the zero-order term (constant term) has a non-zero coefficient.
-        coefficients = {(0,) * dimension: np.array([float(constant_value)])}  # Coefficient for the constant term
-        return cls(coefficients=coefficients, dimension=dimension)
+        evaluation_points = np.asarray(evaluation_points)
 
-    @classmethod
-    def identity_function(cls, dimension, var_ids):
-        """
-        Class method to create a MultivariateTaylorFunction representing identity functions for specified variables.
-
-        Creates an MTF that represents the identity function f(x) = x_i for each variable x_i
-        specified in var_ids. This is useful for variable substitution in composition operations.
-
-        Parameters:
-            dimension (int): The dimension of the function's input space.
-            var_ids (list of int): A list of variable IDs (1-indexed) for which to create identity functions.
-                For each var_id in this list, an identity function MTF will be created where the output
-                is equal to the input variable corresponding to var_id.
-
-        Returns:
-            MultivariateTaylorFunction: A MTF representing the identity function(s). For each variable ID
-                                        in var_ids, the MTF will have a first-order term with coefficient 1
-                                        corresponding to that variable, and zero for all other terms.
-        """
-        coefficients = {}
-        for var_id in var_ids:
-            index = [0] * dimension
-            index[var_id - 1] = 1  # Set the exponent for the specified variable to 1 (1-indexed to 0-indexed)
-            coefficients[tuple(index)] = np.array([1.0]) # Coefficient of 1 for the first-order term of the identity variable
-        return cls(coefficients=coefficients, dimension=dimension)
-
-    def evaluate(self, point):
-        """
-        Evaluate the MultivariateTaylorFunction at a given point in the input space.
-
-        This method computes the numerical value of the Taylor expansion at a specified point
-        by summing up the contributions of all terms in the expansion.
-
-        Parameters:
-            point (list or np.array): The point at which to evaluate the MTF.
-                Must be a list or numpy array of the same dimension as the MTF.
-
-        Returns:
-            float: The evaluated value of the MultivariateTaylorFunction at the given point.
-
-        Raises:
-            ValueError: If the dimension of the input point does not match the dimension of the MTF.
-        """
-        if len(point) != self.dimension:
-            raise ValueError(f"Input point dimension {len(point)} does not match MTF dimension {self.dimension}.")
-        point_np = np.array(point) - self.expansion_point # Shift point by expansion point to evaluate around expansion_point correctly.
-        value = np.array([0.0])  # Initialize the evaluated value as a numpy array to handle array operations
-        for index, coeff in self.coefficients.items():
-            term_value = coeff # Start with the coefficient value for the current term
-            for i, exp in enumerate(index):
-                term_value = term_value * (point_np[i] ** exp) # Multiply by (x_i - expansion_point_i)^exp for each variable
-            value = value + term_value # Accumulate the value of each term
-        return float(value[0]) # Convert the final numpy array value to a standard Python float
-
-
-    def truncate(self, order=None):
-        """
-        Truncate the Taylor expansion to a specified order.
-
-        This method creates a new MultivariateTaylorFunction object that contains only the terms
-        of the Taylor expansion up to the given 'order'. Terms with a total order (sum of indices)
-        greater than 'order' are discarded. If no order is specified, the global maximum order
-        set by `set_global_max_order` is used for truncation.
-
-        Parameters:
-            order (int, optional): The maximum order to truncate the Taylor expansion to.
-                If None, the global maximum order (`get_global_max_order()`) will be used.
-
-        Returns:
-            MultivariateTaylorFunction: A new MultivariateTaylorFunction object that is a truncated version
-                of the original MTF, containing only terms up to the specified order.
-        """
-        if order is None:
-            order = get_global_max_order()  # Use global max order if order is not provided
-
-        truncated_coeffs = {} # Dictionary to hold coefficients of the truncated MTF
-        for index, coeff in self.coefficients.items():
-            if sum(index) <= order: # Check if the total order of the term is within the truncation limit
-                truncated_coeffs[index] = coeff # Include coefficient if term order is within limit
-
-        # Determine the effective order of the truncated MTF.
-        # It's the minimum of the requested 'order' and the original MTF's order (if set).
-        calculated_order = min(order, self.order) if self.order is not None else order
-
-        return MultivariateTaylorFunction(
-            coefficients=truncated_coeffs,
-            dimension=self.dimension,
-            expansion_point=self.expansion_point,
-            order=calculated_order # Set the order of the truncated MTF
-        )
-
-    def __add__(self, other):
-        """
-        Override the addition operator (+) for MultivariateTaylorFunction objects and scalar addition.
-
-        Supports addition between two MTF objects and addition of a scalar (int or float) to an MTF.
-        For MTF + MTF, it adds corresponding coefficients of terms with the same multi-indices.
-        For MTF + scalar, it adds the scalar to the constant term (zero-order term) of the MTF.
-
-        Parameters:
-            other (MultivariateTaylorFunction | int | float): The object to add to this MTF.
-
-        Returns:
-            MultivariateTaylorFunction: A new MTF object representing the sum of the two operands.
-
-        Raises:
-            ValueError: If adding two MTFs of different dimensions.
-            TypeError: If 'other' is not a MultivariateTaylorFunction, int, or float.
-        """
-        if isinstance(other, MultivariateTaylorFunction):
-            if self.dimension != other.dimension:
-                raise ValueError("Dimensions of MTFs must match for addition.")
-            new_coefficients = self.coefficients.copy() # Start with coefficients of the first MTF
-            for index, coeff in other.coefficients.items():
-                # Add coefficients for common indices, initialize to 0 if index not in self.coefficients
-                new_coefficients[index] = new_coefficients.get(index, np.array([0.0])) + coeff
-            # Truncate the result to the maximum of the orders of the operands, or global max order if order is None.
-            result_order = max(self.order, other.order) if self.order is not None and other.order is not None else get_global_max_order()
-            return MultivariateTaylorFunction(
-                coefficients=new_coefficients,
-                expansion_point=self.expansion_point, # Expansion point is unchanged by addition
-                dimension=self.dimension,
-                order=result_order
-            ).truncate()
-        elif isinstance(other, (int, float)):
-            new_coefficients = self.coefficients.copy()
-            constant_index = (0,) * self.dimension # Index for the constant term
-            # Add scalar to the constant term, initialize to 0 if constant term not present.
-            new_coefficients[constant_index] = new_coefficients.get(constant_index, np.array([0.0])) + np.array([float(other)])
-            return MultivariateTaylorFunction(
-                coefficients=new_coefficients,
-                expansion_point=self.expansion_point,
-                dimension=self.dimension,
-                order=self.order # Order remains the same as only constant term is affected by scalar addition
-            ).truncate()
+        if evaluation_points.ndim == 1:
+            if evaluation_points.shape != (self.dimension,):
+                raise ValueError(f"Evaluation point must be of dimension {self.dimension}, but got {evaluation_points.shape}")
+            return self._evaluate_single_point(evaluation_points)
+        elif evaluation_points.ndim == 2:
+            if evaluation_points.shape[1] != self.dimension:
+                raise ValueError(f"Evaluation points must have dimension {self.dimension}, but got {evaluation_points.shape[1]}")
+            return np.array([self._evaluate_single_point(point) for point in evaluation_points])
         else:
-            return NotImplemented # Indicate that addition with this type is not supported
+            raise ValueError("Evaluation points must be either 1D or 2D numpy array.")
+
+
+    def _evaluate_single_point(self, point):
+        """Evaluate at a single point (1D numpy array)."""
+        value = 0.0
+        for exponents, coefficient in self.coefficients.items():
+            term_value = coefficient[0] # Get scalar coefficient value - v9.9
+            for i in range(self.dimension):
+                term_value *= (point[i] - self.expansion_point[i]) ** exponents[i] # Use expansion point - v9.9
+            value += term_value
+        return value
 
-    def __radd__(self, other):
-        """
-        Override reverse addition to handle cases like scalar + MTF.
-        For addition, a + b = b + a, so reverse addition is the same as regular addition.
-        """
-        return self.__add__(other) # Re-use the __add__ method as addition is commutative
-
-    def __sub__(self, other):
-        """
-        Override the subtraction operator (-) for MTF subtraction and scalar subtraction.
-
-        Supports subtraction between two MTF objects and subtraction of a scalar (int or float) from an MTF.
-        For MTF - MTF, it subtracts corresponding coefficients. For MTF - scalar, it subtracts the scalar
-        from the constant term of the MTF.
-
-        Parameters:
-            other (MultivariateTaylorFunction | int | float): The object to subtract from this MTF.
-
-        Returns:
-            MultivariateTaylorFunction: A new MTF object representing the difference.
-
-        Raises:
-            ValueError: If subtracting two MTFs of different dimensions.
-            TypeError: If 'other' is not a MultivariateTaylorFunction, int, or float.
-        """
-        if isinstance(other, MultivariateTaylorFunction):
-            if self.dimension != other.dimension:
-                raise ValueError("Dimensions of MTFs must match for subtraction.")
-            new_coefficients = self.coefficients.copy()
-            for index, coeff in other.coefficients.items():
-                # Subtract coefficients of 'other' from 'self' for common indices
-                new_coefficients[index] = new_coefficients.get(index, np.array([0.0])) - coeff
-            # Truncate result to the maximum of the orders, or global max order if order is None.
-            result_order = max(self.order, other.order) if self.order is not None and other.order is not None else get_global_max_order()
-            return MultivariateTaylorFunction(
-                coefficients=new_coefficients,
-                expansion_point=self.expansion_point,
-                dimension=self.dimension,
-                order=result_order
-            ).truncate()
-        elif isinstance(other, (int, float)):
-            new_coefficients = self.coefficients.copy()
-            constant_index = (0,) * self.dimension
-            # Subtract scalar from the constant term
-            new_coefficients[constant_index] = new_coefficients.get(constant_index, np.array([0.0])) - np.array([float(other)])
-            return MultivariateTaylorFunction(
-                coefficients=new_coefficients,
-                expansion_point=self.expansion_point,
-                dimension=self.dimension,
-                order=self.order # Order remains the same as only constant term is affected by scalar subtraction
-            ).truncate()
-        else:
-            return NotImplemented # Indicate subtraction is not implemented for this type
-
-    def __rsub__(self, other):
-        """
-        Override reverse subtraction for scalar - MTF.
-        Computes scalar - MTF by negating the MTF and adding the scalar.
-
-        Parameters:
-            other (int | float): The scalar value to subtract the MTF from.
-
-        Returns:
-            MultivariateTaylorFunction: A new MTF representing the result of scalar - MTF.
-
-        Raises:
-            TypeError: If 'other' is not an int or float.
-        """
-        if isinstance(other, (int, float)):
-            neg_self = -self # Negate the current MTF using the __neg__ operator
-            return other + neg_self # Use addition (__add__) with the negated MTF and scalar
-        else:
-            return NotImplemented # Reverse subtraction not implemented for this type
-
-    def _multiply_mtf(self, other):
-        """
-        Internal method to handle multiplication between two MTF objects (MTF * MTF).
-
-        This method calculates the coefficients of the product of two MTFs. The multiplication
-        is done term-by-term, and the indices of the resulting terms are the sum of the indices
-        of the terms being multiplied.
-
-        Parameters:
-            other (MultivariateTaylorFunction): The MTF to multiply with.
-
-        Returns:
-            dict: A dictionary of coefficients for the product MTF.
-        """
-        new_coefficients = {} # Initialize dictionary for coefficients of the product
-        for index1, coeff1 in self.coefficients.items(): # Iterate through terms of the first MTF
-            for index2, coeff2 in other.coefficients.items(): # Iterate through terms of the second MTF
-                result_index = tuple(i + j for i, j in zip(index1, index2)) # Sum of indices to get index of product term
-                # Multiply coefficients and accumulate in new_coefficients. Initialize to 0 if index not already present.
-                new_coefficients[result_index] = new_coefficients.get(result_index, np.array([0.0])) + coeff1 * coeff2
-        return new_coefficients
-
-    def _multiply_scalar(self, scalar):
-        """
-        Internal method to handle multiplication of an MTF by a scalar (MTF * scalar).
-
-        This method scales each coefficient of the MTF by the given scalar.
-
-        Parameters:
-            scalar (int | float): The scalar value to multiply with.
-
-        Returns:
-            dict: A dictionary of coefficients for the scaled MTF.
-        """
-        new_coefficients = {} # Initialize dictionary for scaled coefficients
-        for index, coeff in self.coefficients.items():
-            new_coefficients[index] = coeff * np.array([float(scalar)]) # Scale each coefficient by the scalar
-        return new_coefficients
-
-    def __mul__(self, other):
-        """
-        Override the multiplication operator (*) for MTF multiplication and scalar multiplication.
-
-        Supports multiplication between two MTF objects (MTF * MTF) and multiplication of an MTF by a scalar (MTF * scalar).
-        For MTF * MTF, it performs polynomial multiplication and truncates the result.
-        For MTF * scalar, it scales all coefficients of the MTF by the scalar.
-
-        Parameters:
-            other (MultivariateTaylorFunction | int | float): The object to multiply with this MTF.
-
-        Returns:
-            MultivariateTaylorFunction: A new MTF object representing the product.
-
-        Raises:
-            ValueError: If multiplying two MTFs of different dimensions.
-            TypeError: If 'other' is not a MultivariateTaylorFunction, int, or float.
-        """
-        if isinstance(other, MultivariateTaylorFunction):
-            if self.dimension != other.dimension:
-                raise ValueError("Dimensions of MTFs must match for multiplication.")
-            new_coefficients = self._multiply_mtf(other) # Use internal method for MTF * MTF multiplication
-            # Truncate the result to the minimum of the orders, or global max order if order is None.
-            result_order = min(self.order, other.order) if self.order is not None and other.order is not None else get_global_max_order()
-            return MultivariateTaylorFunction(
-                coefficients=new_coefficients,
-                expansion_point=self.expansion_point,
-                dimension=self.dimension,
-                order=result_order
-            ).truncate() # Truncate after multiplication
-        elif isinstance(other, (int, float)):
-            return MultivariateTaylorFunction(
-                coefficients=self._multiply_scalar(other), # Use internal method for MTF * scalar multiplication
-                expansion_point=self.expansion_point,
-                dimension=self.dimension,
-                order=self.order # Order remains the same as only coefficients are scaled by scalar multiplication
-            ).truncate()
-        else:
-            return NotImplemented # Indicate multiplication is not implemented for this type
-
-    def __rmul__(self, other):
-        """
-        Override reverse multiplication to handle cases like scalar * MTF.
-        Multiplication is commutative, so reverse multiplication is the same as regular multiplication.
-        """
-        return self.__mul__(other) # Re-use the __mul__ method as multiplication is commutative
-
-    def __truediv__(self, other):
-        """
-        Override division operator (/) for MTF / scalar. MTF / MTF division is not implemented.
-
-        Supports division of an MTF by a scalar (int or float). Division by another MTF is not directly
-        implemented and will raise a NotImplementedError. To divide by an MTF, use the `inverse()` method
-        to find the inverse MTF and then multiply.
-
-        Parameters:
-            other (int | float): The scalar value to divide the MTF by.
-
-        Returns:
-            MultivariateTaylorFunction: A new MTF object representing the quotient (MTF / scalar).
-
-        Raises:
-            ZeroDivisionError: If attempting to divide by zero.
-            NotImplementedError: If attempting to divide by another MultivariateTaylorFunction.
-            TypeError: If 'other' is not an int, float, or MultivariateTaylorFunction (for MTF/MTF case).
-        """
-        if isinstance(other, (int, float)):
-            if other == 0:
-                raise ZeroDivisionError("Cannot divide MTF by zero.")
-            scalar_inverse = 1.0 / other # Calculate the inverse of the scalar
-            return self * scalar_inverse # Use multiplication with the scalar inverse to perform division
-        elif isinstance(other, MultivariateTaylorFunction):
-            raise NotImplementedError("Division of MTF by another MTF is not implemented. Use inverse() and multiplication instead.")
-        else:
-            return NotImplemented # Indicate division is not implemented for this type
-
-    def __rtruediv__(self, other):
-        """
-        Override reverse division for scalar / MTF. Not implemented as it's less common and more complex.
-
-        Raises:
-            NotImplementedError: Always, as right division of scalar by MTF is not implemented.
-        """
-        raise NotImplementedError("Right division of scalar by MTF is not implemented.")
-
-    def __pow__(self, exponent):
-        """
-        Override power operator (**) for MTF to an integer power.
-
-        Supports raising an MTF to a non-negative integer power. Negative powers are not supported directly;
-        for negative powers, first find the inverse using `inverse()` and then raise to the positive power.
-
-        Parameters:
-            exponent (int): The integer exponent to raise the MTF to. Must be a non-negative integer.
-
-        Returns:
-            MultivariateTaylorFunction: A new MTF object representing MTF raised to the power of 'exponent'.
-
-        Raises:
-            ValueError: If the exponent is not an integer or is a negative integer.
-        """
-        if not isinstance(exponent, int):
-            raise ValueError("MTF power exponent must be an integer.")
-        if exponent < 0:
-            raise ValueError("Negative power exponents are not supported for MTF power. Use inverse() for negative powers.")
-        if exponent == 0:
-            return MultivariateTaylorFunction.from_constant(1.0, dimension=self.dimension) # MTF to the power of 0 is a constant 1 MTF.
-        if exponent == 1:
-            return self # MTF to the power of 1 is itself.
-
-        result = self # Start with the base MTF
-        for _ in range(exponent - 1): # Multiply 'exponent-1' times to get to the desired power.
-            result = result * self # Repeatedly multiply by itself using MTF multiplication
-        return result.truncate() # Truncate the final result after exponentiation
-
-    def __neg__(self):
-        """
-        Override negation operator (-) for MTF negation (-MTF).
-
-        Negates every coefficient in the MTF, effectively reversing the sign of the entire Taylor expansion.
-
-        Returns:
-            MultivariateTaylorFunction: A new MTF object representing the negation of the original MTF.
-        """
-        new_coefficients = {} # Initialize dictionary for negated coefficients
-        for index, coeff in self.coefficients.items():
-            new_coefficients[index] = -coeff # Negate each coefficient
-        return MultivariateTaylorFunction(
-            coefficients=new_coefficients,
-            expansion_point=self.expansion_point,
-            dimension=self.dimension,
-            order=self.order # Order remains the same as only coefficients are negated
-        ).truncate()
-
-    def derivative(self, wrt_variable_id):
-        """
-        Compute the partial derivative of the MTF with respect to a specified variable.
-
-        Calculates the derivative of the MultivariateTaylorFunction with respect to the variable
-        identified by 'wrt_variable_id'.  The variable ID is 1-indexed, meaning 1 refers to the
-        first variable, 2 to the second, and so on, up to the dimension of the MTF.
-
-        Parameters:
-            wrt_variable_id (int): The ID of the variable with respect to which to differentiate.
-                Must be an integer between 1 and the dimension of the MTF (inclusive).
-
-        Returns:
-            MultivariateTaylorFunction: A new MTF object representing the partial derivative.
-                The order of the derivative MTF is reduced by 1 compared to the original MTF.
-
-        Raises:
-            ValueError: If 'wrt_variable_id' is not a valid variable ID for this MTF's dimension.
-        """
-        if not isinstance(wrt_variable_id, int) or not 1 <= wrt_variable_id <= self.dimension:
-            raise ValueError(f"Invalid variable ID: {wrt_variable_id}. Must be an integer between 1 and {self.dimension}.")
-
-        new_coefficients = {} # Dictionary to store coefficients of the derivative MTF
-        for index, coeff in self.coefficients.items():
-            exponent = index[wrt_variable_id - 1] # Get exponent of the variable to differentiate with respect to
-            if exponent > 0: # Only differentiate terms where the exponent is greater than 0
-                deriv_coefficient = coeff * np.array([float(exponent)]) # Derivative coefficient is original coeff * exponent
-                deriv_index_list = list(index) # Convert index tuple to list for modification
-                deriv_index_list[wrt_variable_id - 1] -= 1 # Decrease exponent of differentiated variable by 1
-                deriv_index = tuple(deriv_index_list) # Convert back to tuple
-                new_coefficients[deriv_index] = deriv_coefficient # Store coefficient for the derivative term
-
-        return MultivariateTaylorFunction(
-            coefficients=new_coefficients,
-            dimension=self.dimension,
-            expansion_point=self.expansion_point,
-            order=self.order # Order of derivative is same as original (though highest order term reduces order by 1, truncate will handle)
-        ).truncate() # Truncate the derivative MTF
-
-    def integrate(self, wrt_variable_id, integration_constant=0.0):
-        """
-        Compute the indefinite integral of the MTF with respect to a specified variable.
-
-        Calculates the indefinite integral of the MultivariateTaylorFunction with respect to the
-        variable identified by 'wrt_variable_id'.  Adds a constant of integration, which defaults to 0.
-
-        Parameters:
-            wrt_variable_id (int): The ID of the variable with respect to which to integrate.
-                Must be an integer between 1 and the dimension of the MTF (inclusive).
-            integration_constant (float, optional): The constant of integration to add to the result. Defaults to 0.0.
-
-        Returns:
-            MultivariateTaylorFunction: A new MTF object representing the indefinite integral.
-                The order of the integrated MTF is increased by 1 compared to the original MTF.
-
-        Raises:
-            ValueError: If 'wrt_variable_id' is not a valid variable ID for this MTF's dimension.
-        """
-        if not isinstance(wrt_variable_id, int) or not 1 <= wrt_variable_id <= self.dimension:
-            raise ValueError(f"Invalid variable ID: {wrt_variable_id}. Must be an integer between 1 and {self.dimension}.")
-
-        new_coefficients = {} # Dictionary to store coefficients of the integral MTF
-        for index, coeff in self.coefficients.items():
-            integ_index_list = list(index) # Convert index tuple to list for modification
-            integ_index_list[wrt_variable_id - 1] += 1 # Increase exponent of integrated variable by 1
-            integ_index = tuple(integ_index_list) # Convert back to tuple
-            exponent = integ_index[wrt_variable_id - 1] # Get new exponent after integration
-            integ_coefficient = coeff / np.array([float(exponent)]) # Integral coefficient is original coeff / new exponent
-            new_coefficients[integ_index] = integ_coefficient # Store coefficient for the integral term
-
-        constant_index = (0,) * self.dimension # Index for the constant term
-        # Add the integration constant as the constant term of the integrated MTF
-        new_coefficients[constant_index] = new_coefficients.get(constant_index, np.array([0.0])) + np.array([float(integration_constant)])
-
-        return MultivariateTaylorFunction(
-            coefficients=new_coefficients,
-            dimension=self.dimension,
-            expansion_point=self.expansion_point,
-            order=self.order # Order of integral is same as original (though constant term is added, truncate will handle)
-        ).truncate() # Truncate the integral MTF
-
-
-    def compose(self, substitution_dict):
-        """
-        Compose this MTF with other MTFs or constants.
-
-        Performs function composition by substituting variables in this MTF with other MTFs or constants.
-        For each variable x_i in this MTF, a substitution can be provided in the form of another MTF
-        or a constant value. The result is a new MTF representing the composition.
-
-        Parameters:
-            substitution_dict (dict): A dictionary defining the substitutions.
-                Keys should be Var objects (representing variables of this MTF), and values
-                should be either MultivariateTaylorFunction objects (MTFs to substitute with) or
-                scalar values (int or float constants to substitute with).
-
-        Returns:
-            MultivariateTaylorFunction: A new MTF representing the composed function.
-
-        Raises:
-            ValueError: If no substitution is provided for a variable that is expected in the composition.
-            TypeError: If a substitution value is not an MTF or a scalar.
-        """
-        composed_coefficients = {(0,) * self.dimension: np.array([0.0])}  # Initialize coefficients for composed MTF with a zero constant term
-
-        def expand_term(term_coeff, term_index):
-            """
-            Recursive helper function to expand a single term in the polynomial composition.
-
-            For a term of the form c * x_1^e_1 * x_2^e_2 * ... * x_d^e_d, this function substitutes each x_i^e_i
-            with the Taylor expansion of the substitution function for x_i raised to the power e_i, and then multiplies
-            these substituted expansions together.
-
-            Parameters:
-                term_coeff (np.array): The coefficient of the current term.
-                term_index (tuple): The multi-index of the current term.
-
-            Returns:
-                dict: Coefficients resulting from expanding this term after substitution.
-            """
-            current_term_result_coeffs = {(0,) * self.dimension: term_coeff} # Start with just the coefficient
-
-            for var_pos, var_exponent in enumerate(term_index): # Iterate through each variable in the term's index
-                if var_exponent > 0: # If the exponent for the current variable is positive, substitution is needed
-                    var_id = var_pos + 1 # Variable ID is 1-indexed, var_pos is 0-indexed
-                    # Find the substitution value for the current variable ID from the substitution dictionary
-                    substitution_value = substitution_dict.get(next((v for v in substitution_dict if v.var_id == var_id and v.dimension == self.dimension), None))
-
-                    if substitution_value is None:
-                        raise ValueError(f"No substitution provided for variable with ID {var_id} and dimension {self.dimension}.")
-
-                    if isinstance(substitution_value, MultivariateTaylorFunction):
-                        # Case 1: Substitution is an MTF
-                        term_product_mtf = substitution_value**var_exponent # Raise the substitution MTF to the power of the exponent
-                        term_product_coeffs = term_product_mtf.coefficients # Get the coefficients of the powered MTF
-
-                    elif isinstance(substitution_value, (int, float)):
-                        # Case 2: Substitution is a constant
-                        constant_mtf = MultivariateTaylorFunction.from_constant(substitution_value, dimension=self.dimension) # Convert constant to MTF
-                        term_product_mtf = constant_mtf**var_exponent # Raise the constant MTF to the power of the exponent
-                        term_product_coeffs = term_product_mtf.coefficients # Get the coefficients (should be a constant MTF)
-
-                    else:
-                        raise TypeError("Substitution value must be MTF or scalar.")
-
-
-                    # Multiply the current term's result coefficients with the coefficients from the substitution
-                    next_term_result_coeffs = {} # Initialize coefficients for the next term result
-                    for current_index, current_coeff in current_term_result_coeffs.items(): # Iterate through current term coefficients
-                        for substitution_index, substitution_coeff in term_product_coeffs.items(): # Iterate through substitution coefficients
-                            new_index = tuple(sum(pair) for pair in zip(current_index, substitution_index)) # Add indices
-                            next_term_result_coeffs[new_index] = next_term_result_coeffs.get(new_index, np.array([0.0])) + current_coeff * substitution_coeff # Accumulate product of coefficients
-                    current_term_result_coeffs = next_term_result_coeffs # Update current term result for next variable in index
-
-            return current_term_result_coeffs # Return coefficients after processing all variables in the term index
-
-        # Iterate through each term in the original MTF
-        for index, coeff in self.coefficients.items():
-            term_contribution_coeffs = expand_term(coeff, index) # Expand this term by substitution
-            # Accumulate the contributions from expanding this term into the overall composed coefficients
-            for term_index, term_coeff in term_contribution_coeffs.items():
-                composed_coefficients[term_index] = composed_coefficients.get(term_index, np.array([0.0])) + term_coeff
-
-
-        return MultivariateTaylorFunction(
-            coefficients=composed_coefficients,
-            dimension=self.dimension,
-            expansion_point=self.expansion_point,
-            order=self.order # Order remains same, composition within order, truncate at end if needed
-        ).truncate() # Truncate the composed MTF to manage order
-
-    def inverse(self, order):
-        """
-        Calculate the inverse of the MultivariateTaylorFunction using polynomial inversion.
-
-        This method computes the Taylor expansion of 1/MTF up to the specified 'order'.
-        It is based on polynomial inversion and is currently implemented only for dimension=1.
-        The inverse is calculated around the same expansion point as the original MTF.
-
-        Parameters:
-            order (int): The order of the Taylor expansion of the inverse function.
-
-        Returns:
-            MultivariateTaylorFunction: The MTF representing the inverse function (1/MTF) up to the given order.
-
-        Raises:
-            NotImplementedError: If the dimension of the MTF is not 1 (inversion only for 1D MTFs).
-            ValueError: If the constant term of the MTF is zero or very close to zero, as inversion is not possible.
-        """
-        if self.dimension != 1:
-            raise NotImplementedError("Inverse function is only implemented for dimension=1.")
-        # Check if the constant term is non-zero, which is necessary for inversion to exist.
-        if (0,) * self.dimension not in self.coefficients or np.isclose(self.coefficients.get((0,) * self.dimension), 0):
-            raise ValueError("Constant term of MTF must be non-zero to have an inverse.")
-
-        inverse_coefficients = {(0,) * self.dimension: np.array([1.0 / self.coefficients.get((0,) * self.dimension)])} # Initialize inverse constant term
-        for order_val in range(1, order + 1): # Iterate for each order from 1 up to the requested order
-            current_coeff_index = (order_val,) * self.dimension # Index for the coefficient of current order
-            current_coeff_sum = np.array([0.0]) # Initialize sum for calculating current coefficient
-
-            for term_order in range(1, order_val + 1): # Summation for polynomial inversion formula
-                index_pair = ((term_order,) * self.dimension, (order_val - term_order,) * self.dimension) # Indices for multiplication in formula
-                coeff1 = self.coefficients.get(index_pair[0], np.array([0.0])) # Get coefficient from original MTF
-                coeff2 = inverse_coefficients.get(index_pair[1], np.array([0.0])) # Get coefficient from inverse MTF calculated so far
-                current_coeff_sum += coeff1.item() * coeff2.item() # Accumulate product
-
-            # Calculate the coefficient for the current order using the inversion formula
-            current_coeff = -inverse_coefficients.get((0,) * self.dimension) * current_coeff_sum
-            inverse_coefficients[current_coeff_index] = current_coeff # Store the calculated coefficient for the current order
-
-        return MultivariateTaylorFunction(
-            coefficients=inverse_coefficients,
-            dimension=self.dimension,
-            expansion_point=self.expansion_point,
-            order=order # Set order of inverse MTF to requested order
-        )
 
     def __str__(self):
         """
@@ -788,21 +178,154 @@ class MultivariateTaylorFunction:
         """
         return self.get_tabular_string() # Delegate to get_tabular_string for tabular output
 
+
     def __repr__(self):
-        """
-        Return a detailed string representation of the MTF for debugging and inspection.
+        return f"MultivariateTaylorFunction(dimension={self.dimension}, coefficients={self.coefficients})"
 
-        This method is called when `repr(mtf_object)` is used or when an MTF object is displayed in
-        an interactive Python session without explicitly calling `print`. It provides a comprehensive
-        string that includes all the defining attributes of the MTF: coefficients, dimension,
-        expansion point, and order.
 
-        Returns:
-            str: A string representation that includes coefficients, dimension, expansion point, and order.
+    def __add__(self, other):
+        """Addition of two MultivariateTaylorFunction objects or a MTF and a scalar."""
+        other_mtf = convert_to_mtf(other, dimension=self.dimension) # Pass dimension
+        if self.dimension != other_mtf.dimension:
+            raise ValueError("Dimensions must be the same for addition.")
+        new_coeffs = defaultdict(lambda: np.array([0.0]))
+        all_exponents = set(self.coefficients.keys()) | set(other_mtf.coefficients.keys())
+        debug = False # Set to True for debugging info
+        if debug:
+            print(f"Debug __add__: self.dimension={self.dimension}, other_mtf.dimension={other_mtf.dimension}")
+            print(f"Debug __add__: all_exponents={all_exponents}")
+        for exponents in all_exponents:
+            coeff1 = self.coefficients.get(exponents, np.array([0.0]))
+            coeff2 = other_mtf.coefficients.get(exponents, np.array([0.0]))
+            if debug:
+                print(f"Debug __add__: exponents={exponents}, coeff1={coeff1}, coeff2={coeff2}")
+            new_coeffs[exponents] = coeff1 + coeff2
+        return MultivariateTaylorFunction(coefficients=new_coeffs, dimension=self.dimension, expansion_point=self.expansion_point)
+
+
+    def __radd__(self, other):
+        """Right-side addition to handle cases like scalar + MTF."""
+        return self.__add__(other) # Addition is commutative
+
+
+    def __sub__(self, other):
+        """Subtraction of two MultivariateTaylorFunction objects or a MTF and a scalar."""
+        other_mtf = convert_to_mtf(other, dimension=self.dimension) # Pass dimension
+        if self.dimension != other_mtf.dimension:
+            raise ValueError("Dimensions must be the same for subtraction.")
+        new_coeffs = defaultdict(lambda: np.array([0.0]))
+        all_exponents = set(self.coefficients.keys()) | set(other_mtf.coefficients.keys())
+        for exponents in all_exponents:
+            coeff1 = self.coefficients.get(exponents, np.array([0.0]))
+            coeff2 = other_mtf.coefficients.get(exponents, np.array([0.0]))
+            new_coeffs[exponents] = coeff1 - coeff2
+        return MultivariateTaylorFunction(coefficients=new_coeffs, dimension=self.dimension, expansion_point=self.expansion_point)
+
+
+    def __rsub__(self, other):
+        """Right-side subtraction to handle cases like scalar - MTF."""
+        other_mtf = convert_to_mtf(other, dimension=self.dimension) # Pass dimension
+        if self.dimension != other_mtf.dimension:
+            raise ValueError("Dimensions must be the same for subtraction.")
+        new_coeffs = defaultdict(lambda: np.array([0.0]))
+        all_exponents = set(self.coefficients.keys()) | set(other_mtf.coefficients.keys())
+        for exponents in all_exponents:
+            coeff1 = convert_to_mtf(other, dimension=self.dimension).coefficients.get(exponents, np.array([0.0])) # scalar converted to MTF here too, with dimension
+            coeff2 = self.coefficients.get(exponents, np.array([0.0]))
+            new_coeffs[exponents] = coeff1 - coeff2
+        return MultivariateTaylorFunction(coefficients=new_coeffs, dimension=self.dimension, expansion_point=self.expansion_point)
+
+
+    def __mul__(self, other):
+        """Multiplication of two MultivariateTaylorFunction objects or a MTF and a scalar."""
+        other_mtf = convert_to_mtf(other, dimension=self.dimension) # Pass dimension
+        if self.dimension != other_mtf.dimension:
+            raise ValueError("Dimensions must be the same for multiplication.")
+        new_coeffs = defaultdict(lambda: np.array([0.0]))
+        for exp1, coeff1 in self.coefficients.items():
+            for exp2, coeff2 in other_mtf.coefficients.items():
+                new_exponent = tuple(exp1[i] + exp2[i] for i in range(self.dimension)) # Correct exponent tuple creation - v9.9
+                new_coeffs[new_exponent] += coeff1 * coeff2 # Accumulate coefficients - v9.9
+        return MultivariateTaylorFunction(coefficients=new_coeffs, dimension=self.dimension, expansion_point=self.expansion_point)
+
+
+    def __rmul__(self, other):
+        """Right-side multiplication to handle cases like scalar * MTF."""
+        return self.__mul__(other) # Multiplication is commutative
+
+
+    def __truediv__(self, other):
+        """Division by a scalar."""
+        if isinstance(other, (int, float, np.number)): # Handle scalar division directly
+            if other == 0:
+                raise ZeroDivisionError("Division by zero scalar.")
+            new_coeffs = {exp: coeff / other for exp, coeff in self.coefficients.items()}
+            return MultivariateTaylorFunction(coefficients=new_coeffs, dimension=self.dimension, expansion_point=self.expansion_point)
+        else: # For now, don't handle MTF division in tests, just scalar.
+            raise NotImplementedError("Division by MultivariateTaylorFunction is not fully tested yet in this simplified test run. Please focus on scalar division.")
+
+
+    def __rtruediv__(self, other):
+        """Right division (scalar / MTF) - not typically well-defined for Taylor series in general, and inverse is complex."""
+        raise NotImplementedError("Scalar division by MultivariateTaylorFunction (scalar / MTF) is not supported in this simplified version.")
+
+
+    def __neg__(self):
+        """Negation of a MultivariateTaylorFunction."""
+        neg_coeffs = {exp: -coeff for exp, coeff in self.coefficients.items()}
+        return MultivariateTaylorFunction(coefficients=neg_coeffs, dimension=self.dimension, expansion_point=self.expansion_point)
+    
+    def __pow__(self, exponent):
+        """Define exponentiation for MTF ** integer exponent."""
+        if not isinstance(exponent, int):
+            raise TypeError("Exponent must be an integer for MTF**exponent.")
+        if exponent < 0:
+            raise ValueError("Negative exponents are not supported for MTF**exponent in this simplified version.")
+        if exponent == 0:
+            return MultivariateTaylorFunction.from_constant(1.0, dimension=self.dimension) # MTF**0 = 1 (constant MTF)
+        if exponent == 1:
+            return self # MTF**1 = self
+
+        result_mtf = self # Start with base MTF
+        for _ in range(exponent - 1): # Multiply 'exponent - 1' times
+            result_mtf = result_mtf * self # Use MTF multiplication
+
+        return result_mtf
+
+    def to_string_table(self):
         """
-        coeff_repr = ", ".join([f"{index}: {coeff}" for index, coeff in self.coefficients.items()]) # Format coefficients for representation
-        return (f"MultivariateTaylorFunction(coefficients={{{coeff_repr}}}, dimension={self.dimension}, "
-                f"expansion_point={list(self.expansion_point)}, order={self.order})") # Construct detailed representation string
+        Returns a string formatted as a table of exponents and coefficients.
+        """
+        headers = ["Exponents", "Coefficient"]
+        rows = []
+        for exponents, coefficient in self.coefficients.items():
+            rows.append([str(exponents), str(coefficient)]) # Convert to string for table
+
+        # Calculate column widths - adjust padding as needed
+        col_width = [max(len(header), max(len(row[i]) for row in rows)) + 2 for i, header in enumerate(headers)] # +2 for padding
+
+        # Create separator
+        separator = "-" * (sum(col_width) + len(headers) - 1) # Correctly calculate separator length
+
+        table_str = separator + "\n"
+
+        # Add headers
+        header_row = ""
+        for i, header in enumerate(headers):
+            header_row += header.ljust(col_width[i]) + "|"
+        table_str += header_row[:-1] + "\n" # Remove last "|" and add newline
+        table_str += separator + "\n"
+
+        # Add rows
+        for row in rows:
+            row_str = ""
+            for i, cell in enumerate(row):
+                row_str += cell.ljust(col_width[i]) + "|"
+            table_str += row_str[:-1] + "\n" # Remove last "|" and add newline
+
+        table_str += separator
+
+        return table_str
 
     def get_tabular_string(self, order=None, variable_names=None):
         """
@@ -814,21 +337,25 @@ class MultivariateTaylorFunction:
 
         Parameters:
             order (int, optional): Maximum order of terms to include in the table.
-                Defaults to the global maximum order if None, showing terms up to the global max order.
+                                            Defaults to the global maximum order if None, showing terms up to the global max order.
             variable_names (list of str, optional): List of names for each variable.
-                Used as column headers in the table. If None, default names 'x_1', 'x_2', ... are used.
+                                                     Used as column headers in the table. If None, default names 'x_1', 'x_2', ... are used.
 
         Returns:
             str: Tabular string representation of the Taylor expansion.
         """
-        truncated_function = self.truncate(order) # Truncate the MTF to the display order for clarity
+        display_order = order if order is not None else get_global_max_order()
+        truncated_function = self.truncate(
+            display_order)  # Truncate the MTF to the display order for clarity
+
         if variable_names is None:
-            variable_names = [f"x_{i+1}" for i in range(self.dimension)] # Default variable names if none provided
+            variable_names = [f"x_{i + 1}" for i in
+                              range(self.dimension)]  # Default variable names if none provided
 
         # Construct header row of the table
         header_row = "| Term Index | Coefficient | Order | Exponents "
         if variable_names:
-            header_row += "| " + " | ".join(variable_names) + " |" # Add variable name columns if provided
+            header_row += "| " + " | ".join(variable_names) + " |"  # Add variable name columns if provided
         else:
             header_row += "|"
         header_row += "\n"
@@ -836,35 +363,35 @@ class MultivariateTaylorFunction:
         # Construct separator row for table formatting
         separator_row = "|------------|-------------|-------|-----------"
         if variable_names:
-            separator_row += "|" + "-----|" * self.dimension + "-" # Add separators for variable name columns
+            separator_row += "|" + "-----|" * self.dimension + "-"  # Add separators for variable name columns
         separator_row += "\n"
 
-        table_str = header_row + separator_row # Start table string with header and separator
+        table_str = header_row + separator_row  # Start table string with header and separator
         term_count = 0  # Initialize counter for term index
 
         # Sort terms by total order for ordered display in table
         sorted_items = sorted(truncated_function.coefficients.items(), key=lambda item: sum(item[0]))
 
-        for multi_index, coefficient in sorted_items: # Iterate through terms in sorted order
-            term_count += 1 # Increment term index for each term
-            term_order = sum(multi_index) # Calculate total order of the term
-            index_str = f"| {term_count:<10} " # Format term index
-            coefficient_str = f"| {coefficient[0]:11.8f} " # Format coefficient value
-            order_str = f"| {term_order:<5} " # Format term order
-            exponent_str = f"| { ' '.join(map(str, multi_index)) :<9} " # Format exponents as string
+        for multi_index, coefficient in sorted_items:  # Iterate through terms in sorted order
+            term_count += 1  # Increment term index for each term
+            term_order = sum(multi_index)  # Calculate total order of the term
+            index_str = f"| {term_count:<10} "  # Format term index
+            coefficient_str = f"| {coefficient[0]:11.8f} "  # Format coefficient value
+            order_str = f"| {term_order:<5} "  # Format term order
+            exponent_str = f"| {' '.join(map(str, multi_index)):<9} "  # Format exponents as string
 
-            row = index_str + coefficient_str + order_str + exponent_str # Start row with index, coefficient, order, exponents
+            row = index_str + coefficient_str + order_str + exponent_str  # Start row with index, coefficient, order, exponents
 
             if variable_names:
                 for exponent in multi_index:
-                    row += f"| {exponent:5} " # Add column for each variable's exponent with name if variable names provided
+                    row += f"| {exponent:5} "  # Add column for each variable's exponent with name if variable names provided
                 row += "|"
             else:
                 row += "|"
 
-            table_str += row + "\n" # Append row to table string
+            table_str += row + "\n"  # Append row to table string
 
-        return table_str # Return the complete tabular string
+        return table_str  # Return the complete tabular string
 
 
     def print_tabular(self, order=None, variable_names=None, coeff_format="{:15.3e}"):
@@ -876,10 +403,345 @@ class MultivariateTaylorFunction:
 
         Parameters:
             order (int, optional): Maximum order of terms to include in the printed table.
-                Defaults to the global maximum order if None.
+                                            Defaults to the global maximum order if None.
             variable_names (list of str, optional): Names of variables for table column headers.
-                Defaults to ['x_1', 'x_2', ...] if None.
+                                                     Defaults to ['x_1', 'x_2', ...] if None.
             coeff_format (str, optional): Format string for displaying coefficients in the table.
-                Defaults to "{:15.3e}" (scientific notation with 3 decimal places, width 15).
+                                             Defaults to "{:15.3e}" (scientific notation with 3 decimal places, width 15).
         """
-        print(self.get_tabular_string(order=order, variable_names=variable_names)) # Generate tabular string and print it to console
+        print(self.get_tabular_string(order=order, variable_names=variable_names))  # Generate tabular string and print it to console
+
+
+    def __repr__(self):  # Added __repr__ for debugging and clarity - v9.8
+        return f"MultivariateTaylorFunction(dimension={self.dimension}, order={self.order}, coefficients={self.coefficients}, expansion_point={list(self.expansion_point)})"  # Include expansion_point in repr - v9.8
+
+    def evaluate(self, point):
+        if not isinstance(point, np.ndarray) or point.shape != (self.dimension,):  # dimension check - v9.5
+            raise ValueError(f"Evaluation point must be a numpy array of shape ({self.dimension},)")  # dimension in error msg - v9.5
+
+        result = np.array([0.0])  # Initialize result as numpy array - v9.4
+        for index, coefficient in self.coefficients.items():
+            term_value = coefficient
+            for var_index, power in enumerate(index):  # Correctly use enumerate for index and power - v9.3
+                if power > 0:
+                    term_value = term_value * (point[var_index] ** power)  # Use point value - v9.3, corrected power - v9.4
+            result += term_value  # Accumulate term value - v9.4
+        return result
+
+
+    def derivative(self, wrt_variable_id):
+        """
+        Calculate the derivative ... """
+        deriv_coeffs = defaultdict(lambda: np.array([0.0]))
+        variable_index = wrt_variable_id - 1
+
+        print(f"\n--- Calculating derivative wrt var {wrt_variable_id} ---") # Debug start
+
+        for exponents, coefficient in self.coefficients.items():
+            print(f"  Processing term: exponents={exponents}, coefficient={coefficient}") # Debug term input
+            if exponents[variable_index] > 0:
+                print(f"    Exponent for var {wrt_variable_id} is positive.") # Debug condition met
+                new_exponents = list(exponents)
+                new_exponents[variable_index] -= 1
+                deriv_coefficient_val = coefficient * exponents[variable_index]
+                deriv_coeffs[tuple(new_exponents)] = deriv_coefficient_val
+                print(f"    Derivative term: new_exponents={tuple(new_exponents)}, deriv_coefficient_val={deriv_coefficient_val}") # Debug derivative term
+            else:
+                print(f"    Exponent for var {wrt_variable_id} is zero or negative, skipping.") # Debug condition not met
+        
+        print(f"--- Derivative wrt var {wrt_variable_id} coefficients: {deriv_coeffs} ---") # Debug final coefficients
+        return MultivariateTaylorFunction(coefficients=deriv_coeffs, dimension=self.dimension, expansion_point=self.expansion_point)
+
+
+    def integral(self, wrt_variable_id, integration_constant=0.0):
+        """
+        Compute the integral of the MTF with respect to a variable.
+
+        Args:
+            wrt_variable_id (int): The id of the variable to integrate with respect to (1-indexed).
+            integration_constant (float or MultivariateTaylorFunction, optional): The constant of integration. Defaults to 0.0.
+
+        Returns:
+            MultivariateTaylorFunction: The integral MTF.
+        """
+        if not isinstance(wrt_variable_id, int) or not 1 <= wrt_variable_id <= self.dimension:
+            raise ValueError(f"Variable ID must be an integer between 1 and {self.dimension}.")
+
+        integrated_coeffs = defaultdict(lambda: np.array([0.0]))
+        variable_index = wrt_variable_id - 1 # 0-indexed variable index
+
+        for exponents, coefficient in self.coefficients.items():
+            new_exponents = list(exponents)
+            new_exponents[variable_index] += 1
+            integrated_coeffs[tuple(new_exponents)] = coefficient / new_exponents[variable_index] #Integrate: divide by new exponent
+
+        # Add integration constant term
+        constant_mtf = convert_to_mtf(integration_constant, dimension=self.dimension) # Convert constant to MTF of same dimension - v9.9
+        return MultivariateTaylorFunction(coefficients=integrated_coeffs, dimension=self.dimension, expansion_point=self.expansion_point) + constant_mtf # Add constant
+
+
+    def truncate(self, order):
+        """
+        Truncate the Taylor series to a specified order. Terms with order > 'order' are discarded.
+
+        Args:
+            order (int): The maximum order to keep.
+
+        Returns:
+            MultivariateTaylorFunction: A new MTF truncated to the specified order.
+        """
+        if not isinstance(order, int) or order < 0:
+            raise ValueError("Truncation order must be a non-negative integer.")
+        truncated_coeffs = defaultdict(lambda: np.array([0.0]))
+        for exponents, coefficient in self.coefficients.items():
+            if sum(exponents) <= order:
+                truncated_coeffs[exponents] = coefficient
+        return MultivariateTaylorFunction(coefficients=truncated_coeffs, dimension=self.dimension, expansion_point=self.expansion_point)
+
+
+    def compose(self, substitution_dict, max_order=None):
+        """
+        Compose the MTF with other MTFs or scalars, substituting variables.
+
+        Args:
+            substitution_dict (dict): A dictionary where keys are Var objects to be substituted,
+                                        and values are MTF objects or scalars to substitute with.
+            max_order (int, optional): Maximum order of the resulting Taylor expansion.
+                                        Defaults to global max order.
+
+        Returns:
+            MultivariateTaylorFunction: The composed Taylor function.
+        """
+        if max_order is None:
+            max_order = get_global_max_order()
+        if not isinstance(max_order, int) or max_order < 0:
+            raise ValueError("Max order for composition must be a non-negative integer.")
+
+        # Convert substitution values to MTF
+        mtf_substitution_dict = {var: convert_to_mtf(value, dimension=self.dimension) for var, value in substitution_dict.items()} # Ensure dimension match - v9.9
+
+        # Check dimension compatibility - Now checked in convert_to_mtf implicitly via arithmetic ops
+
+        composed_coeffs = defaultdict(lambda: np.array([0.0])) # Initialize coefficients for composed function
+
+        # Calculate constant term by evaluating self at constant terms of substitution MTFs
+        constant_term_value = self.coefficients.get((0,) * self.dimension, np.array([0.0])) # Start with constant term of self
+        substitution_values = []
+        for var_id in range(1, self.dimension + 1): # Iterate through variable IDs of self
+            substitution_var = Var(var_id, self.dimension)
+            if substitution_var in mtf_substitution_dict:
+                substitution_mtf = mtf_substitution_dict[substitution_var]
+                substitution_constant_term = substitution_mtf.coefficients.get((0,) * substitution_mtf.dimension, np.array([0.0]))[0] # Get constant term of substitution MTF
+                substitution_values.append(substitution_constant_term)
+            else:
+                substitution_values.append(0.0) # If no substitution for this variable, assume substitution value is 0 at expansion point
+
+        # Evaluate self at substitution constant terms to get the constant term of composed MTF
+        constant_term_composed = self(np.array(substitution_values)) # Evaluate MTF at substitution constant terms
+        print(f"Substitution values for constant term: {substitution_values}, calculated constant term: {constant_term_composed}") # DEBUG PRINT
+        composed_coeffs[(0,) * self.dimension] = np.array([constant_term_composed]) # Set constant term
+
+
+        initial_order = sum((0,) * self.dimension) # Start from order 0
+        terms_queue = [] # Initialize empty queue
+
+        # Queue all terms from self.coefficients up to max_order
+        for exponents, coefficient in self.coefficients.items():
+            if sum(exponents) <= max_order: # Queue terms within max_order
+                terms_queue.append( (coefficient, exponents) ) # Add term to queue
+
+
+        processed_exponents = set() # Track already processed exponents to avoid re-computation
+
+
+        while terms_queue:
+            current_coefficient, current_exponents = terms_queue.pop(0) # Get term from queue
+
+            print(f"\nProcessing term: exponents={current_exponents}, coefficient={current_coefficient}") # DEBUG PRINT
+
+            if current_exponents in processed_exponents: # Skip if already processed
+                continue
+            processed_exponents.add(current_exponents) # Mark as processed
+
+
+            term_order = sum(current_exponents) # Order of current term
+
+            if term_order > max_order: # Skip terms exceeding max order
+                continue
+
+            # Handle constant term separately (already initialized)
+            if term_order == 0:
+                continue
+
+            # Process non-constant terms
+            current_coefficient_value = current_coefficient[0] # Get scalar value of coefficient
+
+            linear_contribution = MultivariateTaylorFunction.from_constant(0.0, dimension=self.dimension) # Initialize contribution - MOVED HERE
+
+
+            for var_id_index in range(self.dimension): # Iterate over each variable dimension
+                exponent_order = current_exponents[var_id_index] # Get exponent for current variable
+
+                if exponent_order > 0: # If exponent is positive, it's a derivative term
+                    variable_deriv_mtf = self.derivative(wrt_variable_id=var_id_index+1) # Get derivative MTF for this variable
+                    print(f"  Derivative MTF coefficients: {variable_deriv_mtf.coefficients}") # DEBUG PRINT - derivative MTF coefficients
+
+                    new_exponents_deriv = list(current_exponents) # Calculate new exponents for derivative term
+                    new_exponents_deriv[var_id_index] -= 1
+                    deriv_coefficient = variable_deriv_mtf.coefficients.get((0,) * self.dimension, np.array([0.0])) # Fetch CONSTANT term coefficient from derivative MTF
+                    print(f"  Deriv coefficient value: {deriv_coefficient}") # DEBUG PRINT - deriv_coefficient value
+
+                    if not np.isclose(deriv_coefficient, 0.0).all(): # If derivative coefficient is non-zero
+                        substitution_var = Var(var_id_index + 1, dimension=self.dimension) # Get the Var object by id
+                        if substitution_var in mtf_substitution_dict: # Check if variable is in substitution dict
+                            substitution_mtf = mtf_substitution_dict[substitution_var] # Get substitution MTF
+                            term_contribution = convert_to_mtf(deriv_coefficient, dimension=self.dimension) * substitution_mtf # Multiply derivative coefficient with substitution MTF
+                            print(f"  Var index: {var_id_index}, term_contribution coefficients: {term_contribution.coefficients}") # DEBUG PRINT - term_contribution for xy term
+                            linear_contribution += term_contribution # Add to linear contribution
+
+            print(f"Linear contribution coefficients: {linear_contribution.coefficients}") # DEBUG PRINT
+
+            composed_coeffs_temp_mtf = MultivariateTaylorFunction(coefficients=composed_coeffs, dimension=self.dimension) # Create MTF for truncate - v9.9
+            linear_contribution_truncated = linear_contribution.truncate(order=max_order)
+
+            # Correctly add coefficients from linear_contribution, but skip constant term
+            for exponents, coefficient in linear_contribution_truncated.coefficients.items():
+                if sum(exponents) > 0: # <--- ADDED CONDITION: Skip constant term (exponents=(0, 0))
+                    composed_coeffs[exponents] += coefficient # Accumulate non-constant coefficients
+
+            # Queue up terms from linear_contribution for next iteration, avoid reprocessing constant term
+            for exponents, coefficient in linear_contribution.coefficients.items():
+                if sum(exponents) > 0 and sum(exponents) <= max_order: # Queue terms within max_order and not constant
+                    if exponents not in processed_exponents:
+                        print(f"Queueing term from linear_contribution: exponents={exponents}, coefficient={coefficient}") # DEBUG PRINT - Queueing info
+                        terms_queue.append( (coefficient, exponents) ) # Add term to queue for processing
+
+        print(f"Final composed coefficients: {composed_coeffs}") # DEBUG PRINT - Final coefficients before return
+        return MultivariateTaylorFunction(coefficients=composed_coeffs, dimension=self.dimension, expansion_point=self.expansion_point) # Final truncation and return
+
+    def inverse(self, order=None, initial_guess=None):
+        """
+        Compute the inverse of the MTF using Taylor expansion up to the given order.
+        Algorithm based on recursive determination of Taylor coefficients.
+
+        Args:
+            order (int, optional): Order of Taylor expansion for the inverse. Defaults to global max order.
+            initial_guess (float, optional): Initial guess for the constant term of the inverse.
+                                             If None, defaults to 1/f(expansion_point) where f is self.
+
+        Returns:
+            MultivariateTaylorFunction: MTF representing the inverse, truncated to the specified order.
+
+        Raises:
+            ValueError: if the constant term of the MTF is zero, as inverse is undefined at origin in that case.
+        """
+        if order is None:
+            order = get_global_max_order()
+        if not isinstance(order, int) or order < 0:
+            raise ValueError("Order for inverse must be a non-negative integer.")
+
+        # Get the constant term of self
+        constant_term_self = self.coefficients.get(tuple([0]*self.dimension), np.array([0.0]))[0] # Scalar value - v9.9
+
+        if np.isclose(constant_term_self, 0.0):
+            raise ValueError("Cannot compute inverse for MTF with zero constant term at expansion point.")
+
+        # Determine initial guess for the constant term of the inverse
+        if initial_guess is None:
+            initial_guess_value = 1.0 / constant_term_self
+        else:
+            initial_guess_value = float(initial_guess)
+
+
+        inverse_coeffs = defaultdict(lambda: np.array([0.0]))
+        inverse_coeffs[(0,) * self.dimension] = np.array([initial_guess_value]) # Initialize constant term of inverse
+
+
+        for current_order in range(1, order + 1):
+            for exponents in _generate_exponent_combinations(self.dimension, current_order): # Helper function to generate exponents
+                if sum(exponents) == current_order: # Consider only exponents of current order
+                    term_sum = np.array([0.0])
+
+                    # Summation term calculation
+                    for intermediate_order in range(1, current_order + 1):
+                        for beta_exponents in _generate_exponent_combinations(self.dimension, intermediate_order):
+                            if sum(beta_exponents) == intermediate_order: # exponents beta for self
+                                alpha_exponents_tuple_list = _exponents_tuple_generator(exponents, beta_exponents) # Exponents alpha for inverse
+
+                                for alpha_exponents in alpha_exponents_tuple_list: # Iterate over possible alpha exponent tuples
+                                    if sum(alpha_exponents) == (current_order - intermediate_order) and sum(alpha_exponents) >=0: # Order check for alpha and beta
+
+                                        coeff_f_beta = self.coefficients.get(beta_exponents, np.array([0.0])) # Coefficient of f for exponent beta
+                                        coeff_inverse_alpha = inverse_coeffs.get(alpha_exponents, np.array([0.0])) # Coefficient of inverse for exponent alpha
+
+                                        term_sum += coeff_f_beta * coeff_inverse_alpha
+
+                    # Compute coefficient for current exponent for inverse
+                    constant_term_f = self.coefficients.get((0,) * self.dimension, np.array([0.0])) # Constant term of f
+                    current_coefficient = - (1.0/constant_term_f[0]) * term_sum # Scalar division - v9.9
+                    inverse_coeffs[exponents] = current_coefficient
+
+
+        return MultivariateTaylorFunction(coefficients=inverse_coeffs, dimension=self.dimension, expansion_point=self.expansion_point).truncate(order=order) # Truncate to requested order
+
+
+def _generate_exponent_combinations(dimension, order):
+    """
+    Helper function to generate combinations of exponents for a given order and dimension.
+    """
+    if dimension == 1:
+        for o in range(order + 1):
+            yield (o,)
+    elif dimension > 1:
+        for i in range(order + 1):
+            for sub_exponents in _generate_exponent_combinations(dimension - 1, order - i):
+                yield (i,) + sub_exponents
+    else:
+        yield tuple()
+
+
+def _exponents_tuple_generator(gamma, beta):
+    """
+    Helper function to generate tuples of exponents alpha such that alpha + beta = gamma (component-wise).
+    Handles multi-dimensional exponents. Yields valid tuples of alpha exponents.
+    """
+    dimension = len(gamma)
+    alpha_exponents = [0] * dimension # Initialize alpha exponents for each dimension
+
+    def backtrack(current_dimension_index):
+        if current_dimension_index == dimension:
+            yield tuple(alpha_exponents) # Found a valid combination, yield it
+            return
+
+        for i in range(gamma[current_dimension_index] + 1): # Iterate through possible exponents for current dimension
+            alpha_exponents[current_dimension_index] = i
+            valid_alpha = True
+            if alpha_exponents[current_dimension_index] + beta[current_dimension_index] != gamma[current_dimension_index]:
+                valid_alpha = False # current alpha exponent is invalid
+
+            if valid_alpha:
+                yield from backtrack(current_dimension_index + 1) # Recurse to next dimension
+
+    yield from backtrack(0) # Start backtracking from the first dimension
+
+
+def convert_to_mtf(func, dimension=None):
+    if isinstance(func, MultivariateTaylorFunction):
+        return func
+    elif isinstance(func, Var):
+        coeffs = defaultdict(lambda: np.array([0.0]))
+        coeffs[(1,) + (0,) * (func.dimension - 1)] = np.array([1.0]) # Corrected for multi-dimension - v9.9
+        return MultivariateTaylorFunction(coefficients=coeffs, dimension=func.dimension, var_list=[func]) # Include var_list - v9.9
+    elif isinstance(func, (int, float, np.number)):
+        if dimension is None:
+            dimension = 1 # Default dimension for scalars if not specified
+        return MultivariateTaylorFunction.from_constant(float(func), dimension=dimension) # Use provided dimension
+    elif isinstance(func, np.ndarray): # Handle numpy arrays
+        if func.size == 1: # If it's a scalar array
+            if dimension is None:
+                dimension = 1
+            return MultivariateTaylorFunction.from_constant(float(func.item()), dimension=dimension) # Convert to scalar and then to MTF
+        else:
+            raise TypeError("Unsupported numpy array type for conversion to MultivariateTaylorFunction: array must be scalar.") # Or handle array MTFs if needed in future
+    else:
+        raise TypeError("Unsupported type for conversion to MultivariateTaylorFunction.")

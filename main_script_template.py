@@ -1,118 +1,119 @@
-import numpy as np # Added import - v9.2, v9.4
+from taylor_function import MultivariateTaylorFunction, Var, set_global_max_order # Var is now imported from taylor_function
+from elementary_functions import cos_taylor, sin_taylor, exp_taylor, gaussian_taylor, sqrt_taylor, log_taylor, arctan_taylor, sinh_taylor, cosh_taylor, tanh_taylor, arcsin_taylor, arccos_taylor, arctanh_taylor
+import numpy as np
 import math
-from variables import Var
-from taylor_function import MultivariateTaylorFunction, set_global_max_order
-from elementary_functions import cos_taylor, sin_taylor, exp_taylor, sqrt_taylor, log_taylor, arctan_taylor
 
-# def main():
-# Set a lower global max order for cleaner output (optional)
-set_global_max_order(20)
-
-dimension = 2 # Example dimension
+# Set global max order for Taylor expansions
+global_max_order = 10
+set_global_max_order(global_max_order)
+print(f"Global max order set to: {global_max_order}\n")
 
 # Define variables
-x = Var(1, dimension) # Variable 'x' (var_1) in 2D
-y = Var(2, dimension) # Variable 'y' (var_2) in 2D
+x = Var(1, dimension=2) # Var_id=1, dimension=2 - v9.5
+y = Var(2, dimension=2) # Var_id=2, dimension=2 - v9.5
+print(f"Variable x: {x}") # Print var details - v9.5
+print(f"Variable y: {y}") # Print var details - v9.5
 
-print("--- Taylor Package Example Script ---")
+evaluation_point = np.array([0.5, 0.2]) # 2D evaluation point - v9.5
+print(f"Evaluation point: {evaluation_point}\n") # Print evaluation point - v9.5
 
-# --- Example 1: Basic Arithmetic Operations ---
-print("\n--- Example 1: Basic Arithmetic ---")
-f1 = 2*x + 3*y - 5
-print("f1 = 2*x + 3*y - 5:")
-print(f1) # Using default __str__ which calls print_tabular
-print(f"Evaluate f1 at [0.5, 0.1]: {f1.evaluate([0.5, 0.1])}")
+# --- Elementary Functions ---
+print("--- Elementary Functions ---\n")
 
-f2 = f1 * (x + 1) # Multiplication
-print("\nf2 = f1 * (x + 1):")
-print(f2) # Using default __str__ which calls print_tabular
+cos_x_tf = cos_taylor(x, order=global_max_order)
+print(f"Dimension of cos_x_tf: {cos_x_tf.dimension}")  # Debug print for dimension
+print(f"cos_taylor(x):\n{cos_x_tf}")
 
-f3 = f1 / 2.0 # Division by scalar
-print("\nf3 = f1 / 2.0:")
-print(f3) # Using default __str__ which calls print_tabular
+sin_y_tf = sin_taylor(y, order=global_max_order)
+print(f"\nsin_taylor(y):\n{sin_y_tf}") 
 
+exp_x_tf = exp_taylor(x, order=global_max_order)
+print(f"\nexp_taylor(x):\n{exp_x_tf}") 
 
-# --- Example 2: Non-negative Integer Exponentiation ---
-print("\n--- Example 2: Exponentiation (non-negative integer) ---")
-f4 = (x + y)**2 # Exponentiation to power 2
-print("f4 = (x + y)**2:")
-print(f4) # Using default __str__ which calls print_tabular
+gaussian_x_tf = gaussian_taylor(x, order=global_max_order)
+print(f"\ngaussian_taylor(x):\n{gaussian_x_tf}") 
 
-f5 = (x**3) - (y**0) # Exponentiation to powers 3 and 0
-print("\nf5 = (x**3) - (y**0):") # y**0 is constant 1
-print(f5) # Using default __str__ which calls print_tabular
+sqrt_x_tf = sqrt_taylor(x, order=global_max_order)
+print(f"\nsqrt_taylor(x):\n{sqrt_x_tf}") 
 
+log_y_tf = log_taylor(y, order=global_max_order)
+print(f"\nlog_taylor(y):\n{log_y_tf}") 
 
-# --- Example 3: Differentiation and Integration ---
-print("\n--- Example 3: Differentiation & Integration ---")
-f6 = 6*x**2*y + 2*x + 1 # Example function
-print("f6 = 6*x**2*y + 2*x + 1:")
-print(f6) # Using default __str__ which calls print_tabular
+arctan_x_tf = arctan_taylor(x, order=global_max_order)
+print(f"\narctan_taylor(x):\n{arctan_x_tf}") 
 
-f6_dx = f6.derivative(wrt_variable_id=1) # Derivative w.r.t x
-print("\nDerivative of f6 w.r.t x:")
-print(f6_dx) # Using default __str__ which calls print_tabular
+sinh_y_tf = sinh_taylor(y, order=global_max_order)
+print(f"\nsinh_taylor(y):\n{sinh_y_tf}") 
 
-f6_dy = f6.derivative(wrt_variable_id=2) # Derivative w.r.t y
-print("\nDerivative of f6 w.r.t y:")
-print(f6_dy) # Using default __str__ which calls print_tabular
+cosh_x_tf = cosh_taylor(x, order=global_max_order)
+print(f"\ncosh_taylor(x):\n{cosh_x_tf}") 
 
-f6_int_x = f6.integrate(wrt_variable_id=1, integration_constant=0) # Integral w.r.t x
-print("\nIntegral of f6 w.r.t x (constant=0):")
-print(f6_int_x) # Using default __str__ which calls print_tabular
+tanh_y_tf = tanh_taylor(y, order=global_max_order)
+print(f"\ntanh_taylor(y):\n{tanh_y_tf}") 
 
-f6_int_y = f6.integrate(wrt_variable_id=2, integration_constant=5) # Integral w.r.t y with constant
-print("\nIntegral of f6 w.r.t y (constant=5):")
-print(f6_int_y) # Using default __str__ which calls print_tabular
+arcsin_x_tf = arcsin_taylor(x, order=global_max_order)
+print(f"\narcsin_taylor(x):\n{arcsin_x_tf}") 
+
+arccos_y_tf = arccos_taylor(y, order=global_max_order)
+print(f"\narccos_taylor(y):\n{arccos_y_tf}") 
+
+arctanh_x_tf = arctanh_taylor(x, order=global_max_order)
+print(f"\narctanh_taylor(x):\n{arctanh_x_tf}") 
 
 
-# --- Example 4: Function Composition ---
-print("\n--- Example 4: Function Composition ---")
-f7_base = x*y # Base function f(x,y) = xy
-print("Base function f7_base = x*y:")
-print(f7_base) # Using default __str__ which calls print_tabular
+# --- Arithmetic Operations ---
+print("\n--- Arithmetic Operations ---\n")
 
-substitution_functions = {
-    x: x + 1, # Substitute x with (x+1) - also a Taylor function
-    y: MultivariateTaylorFunction(coefficients={(0, 2): np.array(1.0)}, dimension=dimension, expansion_point=np.zeros(dimension)) # Explicit MTF for y**2 - CORRECTED v9.4, order removed to use global default
-}
-f7_composed = f7_base.compose(substitution_functions) # f((x+1), (y**2)) = (x+1)*(y**2)
-print("\nComposed function f7_composed = f7_base.compose({x: x+1, y: y**2}):")
-print(f7_composed) # Using default __str__ which calls print_tabular
+f1 = cos_x_tf * sin_y_tf # Multiplication of two MTFs
+f2 = f1 / 3.0 # Division by a scalar
+print(f"Dimension of f2 after scalar division: {f2.dimension}") # Print dimension of f2
+print(f"\nCombined function f2:\n{f2}") 
 
 
-# --- Example 5: Elementary Functions (Taylor Expansions) ---
-print("\n--- Example 5: Elementary Functions ---")
-f_cos_x = cos_taylor(x) # Taylor expansion of cos(x) - order removed to use global default
-print("cos(x) Taylor expansion:")
-print(f_cos_x) # Using default __str__ which calls print_tabular
+# --- Derivative and Integration ---
+print("\n--- Derivative and Integration ---\n")
 
-f_sin_y = sin_taylor(y) # Taylor expansion of sin(y) - order removed to use global default
-print("\nsin(y) Taylor expansion:")
-print(f_sin_y) # Using default __str__ which calls print_tabular
+# Derivative of f2 with respect to x (var_id=1)
+deriv_f2_x = f2.derivative(wrt_variable_id=1)
+print(f"Derivative of f2 wrt x (var_id=1):\n{deriv_f2_x}") 
 
-f_exp_sum = exp_taylor(x+y) # Taylor expansion of exp(x+y) - order removed to use global default
-print("\nexp(x+y) Taylor expansion:")
-print(f_exp_sum) # Using default __str__ which calls print_tabular
+# Derivative of f2 with respect to y (var_id=2)
+deriv_f2_y = f2.derivative(wrt_variable_id=2)
+print(f"\nDerivative of f2 wrt y (var_id=2):\n{deriv_f2_y}") 
 
-f_sqrt_1_plus_x = sqrt_taylor(x) # Taylor expansion of sqrt(1+x) - order removed to use global default
-print("\msqrt(1+x) Taylor expansion:")
-print(f_sqrt_1_plus_x) # Using default __str__ which calls print_tabular
+# Integral of f2 wrt x (var_id=1) with integration constant 0
+integ_f2_x = f2.integral(wrt_variable_id=1, integration_constant=0.0)
+print(f"\nIntegral of f2 wrt x (var_id=1):\n{integ_f2_x}") 
 
-f_log_1_plus_y = log_taylor(y) # Taylor expansion of ln(1+y) - order removed to use global default
-print("\nln(1+y) Taylor expansion:")
-print(f_log_1_plus_y) # Using default __str__ which calls print_tabular
-
-f_arctan_x = arctan_taylor(x) # Taylor expansion of arctan(x) - order removed to use global default
-print("\narctan(x) Taylor expansion:")
-print(f_arctan_x) # Using default __str__ which calls print_tabular
+# Integral of f2 wrt y (var_id=2) with integration constant 0
+integ_f2_y = f2.integral(wrt_variable_id=2, integration_constant=0.0) # Integral of f2 wrt y (var_id=2) with constant 0
+print(f"\nIntegral of f2 wrt y (var_id=2):\n{integ_f2_y}") 
 
 
-print("\n--- End of Examples ---")
+# --- Composition ---
+print("\n--- Composition ---\n")
 
-fn = sin_taylor(math.pi/6+x+y) # Order removed to use global default
-print(fn) # Using default __str__ which calls print_tabular
+# Example composition: cos(x + sin(y))
+composed_func = cos_taylor(x + sin_taylor(y, order=global_max_order), order=global_max_order)
+print(f"Composed function cos(x + sin(y)):\n{composed_func}") 
 
+# --- Evaluation ---
+print("\n--- Evaluation ---\n")
 
-# if __name__ == "__main__":
-#     main()
+f2_evaluated = f2.evaluate(evaluation_point)
+print(f"Evaluated f2 at {evaluation_point}: {f2_evaluated}")
+
+deriv_f2_x_evaluated = deriv_f2_x.evaluate(evaluation_point)
+print(f"Evaluated derivative of f2 wrt x at {evaluation_point}: {deriv_f2_x_evaluated}")
+
+deriv_f2_y_evaluated = deriv_f2_y.evaluate(evaluation_point)
+print(f"Evaluated derivative of f2 wrt y at {evaluation_point}: {deriv_f2_y_evaluated}")
+
+integ_f2_x_evaluated = integ_f2_x.evaluate(evaluation_point)
+print(f"Evaluated integral of f2 wrt x at {evaluation_point}: {integ_f2_x_evaluated}")
+
+integ_f2_y_evaluated = integ_f2_y.evaluate(evaluation_point)
+print(f"Evaluated integral of f2 wrt y at {evaluation_point}: {integ_f2_y_evaluated}")
+
+composed_func_evaluated = composed_func.evaluate(evaluation_point)
+print(f"Evaluated composed function at {evaluation_point}: {composed_func_evaluated}")
