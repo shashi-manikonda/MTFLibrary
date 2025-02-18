@@ -2,6 +2,48 @@
 from taylor_operations import get_global_max_order # ADD THIS LINE
 import numpy as np
 
+
+# taylor_operations.py (or taylor_function.py if you put them there)
+
+_GLOBAL_MAX_ORDER = 10 # Default global max order
+
+def set_global_max_order(order):
+    """Sets the global maximum order for Taylor expansions."""
+    global _GLOBAL_MAX_ORDER # <---- Ensure 'global' keyword is here
+    _GLOBAL_MAX_ORDER = order
+
+def get_global_max_order():
+    """Gets the current global maximum order."""
+    return _GLOBAL_MAX_ORDER
+
+
+# _GLOBAL_MAX_ORDER = 10 # Default global max order
+
+# def set_global_max_order(order):
+#     """
+#     Set the global maximum order for Taylor expansions.
+
+#     This affects operations like multiplication, division, power, and composition,
+#     where the order of the result might need to be truncated.
+
+#     Parameters:
+#         order (int): The desired maximum order. Must be a non-negative integer.
+#     """
+#     global _GLOBAL_MAX_ORDER
+#     if not isinstance(order, int) or order < 0:
+#         raise ValueError("Global max order must be a non-negative integer.")
+#     _GLOBAL_MAX_ORDER = order
+
+# def get_global_max_order():
+#     """
+#     Get the current global maximum order for Taylor expansions.
+
+#     Returns:
+#         int: The current global maximum order.
+#     """
+#     return _GLOBAL_MAX_ORDER
+
+
 class MultivariateTaylorFunction:
     def __init__(self, coefficients=None, dimension=1, expansion_point=None, order=None):
         """
@@ -79,37 +121,55 @@ class MultivariateTaylorFunction:
             for i, exp in enumerate(index):
                 term_value = term_value * (point_np[i]**exp)
             value = value + term_value # Use numpy array addition
-        return float(value) # Convert to float before returning
+        return float(value[0]) # Convert to float after extracting the scalar from array
+
+
+    # def truncate(self, order=None):
+    #     """
+    #     Truncate the Taylor series to a specified order or the global maximum order.
+    
+    #     Parameters:
+    #         order (int, optional): The order to truncate to. If None, global max order is used.
+    
+    #     Returns:
+    #         MultivariateTaylorFunction: A new MTF truncated to the specified order.
+    #     """
+    #     if order is None:
+    #         if self.order is None:
+    #             trunc_order = get_global_max_order() # Use global max order if no order is given and MTF has no order
+    #         else:
+    #             trunc_order = self.order # If MTF has order, use that
+    #     else:
+    #         trunc_order = order
+    
+    #     truncated_coefficients = {}
+    #     for index in self.coefficients:
+    #         if sum(index) <= trunc_order:
+    #             truncated_coefficients[index] = self.coefficients[index]
+    
+    #     return MultivariateTaylorFunction(coefficients=truncated_coefficients,
+    #                                        dimension=self.dimension,
+    #                                        expansion_point=self.expansion_point,
+    #                                        order=trunc_order) # Keep/set the order
+
 
 
     def truncate(self, order=None):
         """
-        Truncate the Taylor series to a specified order or the global maximum order.
-    
-        Parameters:
-            order (int, optional): The order to truncate to. If None, global max order is used.
-    
-        Returns:
-            MultivariateTaylorFunction: A new MTF truncated to the specified order.
+        Truncate the Taylor expansion to a specified order.
+        If no order is specified, the global maximum order is used.
         """
         if order is None:
-            if self.order is None:
-                trunc_order = get_global_max_order() # Use global max order if no order is given and MTF has no order
-            else:
-                trunc_order = self.order # If MTF has order, use that
-        else:
-            trunc_order = order
-    
-        truncated_coefficients = {}
-        for index in self.coefficients:
-            if sum(index) <= trunc_order:
-                truncated_coefficients[index] = self.coefficients[index]
-    
-        return MultivariateTaylorFunction(coefficients=truncated_coefficients,
-                                           dimension=self.dimension,
-                                           expansion_point=self.expansion_point,
-                                           order=trunc_order) # Keep/set the order
-
+            order = get_global_max_order() # Get global max order when order is None
+            print(f"Order was None, set order to global max order: {order}") # Debug print - keep debug print temporarily
+        truncated_coeffs = {}
+        for index, coeff in self.coefficients.items():
+            if sum(index) <= order:
+                truncated_coeffs[index] = coeff
+        calculated_order = min(order, self.order) if self.order is not None else order # Correctly handle None self.order
+        print(f"Truncated coefficients: {truncated_coeffs}") # Debug print - keep debug print temporarily
+        print(f"Calculated order for MTF: {calculated_order}") # Debug print - keep debug print temporarily
+        return MultivariateTaylorFunction(coefficients=truncated_coeffs, dimension=self.dimension, expansion_point=self.expansion_point, order=calculated_order)
 
     def __add__(self, other):
         """
@@ -440,20 +500,32 @@ class MultivariateTaylorFunction:
             print(f"  inverse_coefficients updated: {inverse_coefficients}")
         return MultivariateTaylorFunction(coefficients=inverse_coefficients, dimension=self.dimension, expansion_point=self.expansion_point, order=order)
 
+    # def __str__(self):
+    #     """
+    #     Return a string representation of the MTF.
+    #     """
+    #     terms = []
+    #     for index, coeff in self.coefficients.items():
+    #         term_str = f"{coeff[0]:.2f}" # Coefficient value
+    #         for i, exp in enumerate(index):
+    #             if exp > 0:
+    #                 var_name = f"x_{i+1}" # Variable name (x_1, x_2, ...)
+    #                 term_str += f"*{var_name}^{exp}"
+    #         terms.append(term_str)
+    #     return " + ".join(terms) if terms else "0.0"
+
     def __str__(self):
         """
-        Return a string representation of the MTF.
-        """
-        terms = []
-        for index, coeff in self.coefficients.items():
-            term_str = f"{coeff[0]:.2f}" # Coefficient value
-            for i, exp in enumerate(index):
-                if exp > 0:
-                    var_name = f"x_{i+1}" # Variable name (x_1, x_2, ...)
-                    term_str += f"*{var_name}^{exp}"
-            terms.append(term_str)
-        return " + ".join(terms) if terms else "0.0"
+        Returns a string representation of the Taylor expansion (tabular format).
 
+        This method is called when you use `str(mtf_object)` or `print(mtf_object)`.
+        It leverages `get_tabular_string` to produce the tabular output.
+
+        Returns:
+            str: Tabular string representation of the Taylor expansion.
+        """
+        return self.get_tabular_string() # Simply call and return tabular string
+    
     def __repr__(self):
         """
         Return a detailed string representation of the MTF, including coefficients and metadata.
@@ -462,5 +534,79 @@ class MultivariateTaylorFunction:
         return (f"MultivariateTaylorFunction(coefficients={{{coeff_repr}}}, dimension={self.dimension}, "
                 f"expansion_point={list(self.expansion_point)}, order={self.order})")
 
+
+    def get_tabular_string(self, order=None, variable_names=None):
+        """
+        Returns a string representing the Taylor expansion in a tabular format.
+
+        Parameters:
+            order (int, optional): Maximum order of terms to include in the table.
+                                    Defaults to global maximum order if None.
+            variable_names (list of str, optional): Names of variables for column headers.
+                                                     Defaults to ['x_1', 'x_2', ...] if None.
+
+        Returns:
+            str: Tabular string representation of the Taylor expansion.
+        """
+        truncated_function = self.truncate(order) # Truncate for display
+        if variable_names is None:
+            variable_names = [f"x_{i+1}" for i in range(self.dimension)] # Default variable names
+
+        header_row = "| Term Index | Coefficient | Order | Exponents "
+        if variable_names:
+            header_row += "| " + " | ".join(variable_names) + " |"
+        else:
+            header_row += "|"
+        header_row += "\n"
+
+        separator_row = "|------------|-------------|-------|-----------"
+        if variable_names:
+            separator_row += "|" + "-----|" * self.dimension + "-"
+        separator_row += "\n"
+
+
+        table_str = header_row + separator_row
+        term_count = 0 # Initialize term counter for Term Index
+
+        # Sort terms by total order for better readability
+        sorted_items = sorted(truncated_function.coefficients.items(), key=lambda item: sum(item[0]))
+
+
+        for multi_index, coefficient in sorted_items:
+            term_count += 1
+            term_order = sum(multi_index)
+            index_str = f"| {term_count:<10} "
+            coefficient_str = f"| {coefficient[0]:11.8f} " # Adjusted coefficient width
+            order_str = f"| {term_order:<5} "
+            exponent_str = f"| { ' '.join(map(str, multi_index)) :<9} " # Adjusted exponent width
+
+            row = index_str + coefficient_str + order_str + exponent_str
+
+            if variable_names:
+                for exponent in multi_index:
+                    row += f"| {exponent:5} "
+                row += "|"
+            else:
+                row += "|"
+
+            table_str += row + "\n"
+
+        return table_str
+
+
+    def print_tabular(self, order=None, variable_names=None, coeff_format="{:15.3e}"):
+        """
+        Prints the tabular representation of the Taylor expansion to the console.
+
+        This method is a convenience wrapper around `get_tabular_string` that directly prints the output.
+
+        Parameters:
+            order (int, optional): Maximum order of terms to include in the table.
+                                    Defaults to global maximum order if None.
+            variable_names (list of str, optional): Names of variables for column headers.
+                                                     Defaults to ['x_1', 'x_2', ...] if None.
+            coeff_format (str, optional): Format string for coefficients in the table.
+        """
+        print(self.get_tabular_string(order=order, variable_names=variable_names))
 # from variables import Var
 # from taylor_operations import set_global_max_order

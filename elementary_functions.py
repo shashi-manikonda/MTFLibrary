@@ -1,260 +1,188 @@
+# elementary_functions.py
+from taylor_function import MultivariateTaylorFunction, get_global_max_order
+from variables import Var # Import Var if not already present
 import numpy as np
-import math # ADD THIS LINE
-from taylor_function import MultivariateTaylorFunction
-from variables import Var
-from taylor_operations import set_global_max_order
+import math
 
-def cos_taylor(input_value, order):
-    """Taylor expansion of cosine function around 0."""
-    if not isinstance(input_value, (MultivariateTaylorFunction, Var, int, float)):
-        raise TypeError("Input must be Var, MultivariateTaylorFunction, int, or float.")
-    if not isinstance(order, int) or order < 0:
-        raise ValueError("Order must be a non-negative integer.")
-    dimension = _get_dimension(input_value)
-    coefficients = {}
-    for n in range(order + 1):
-        if n % 2 == 0:
-            index = (n,) * dimension
-            coefficients[index] = np.array([((-1)**(n/2)) / math.factorial(n)]) # use math.factorial
-    return MultivariateTaylorFunction(coefficients=coefficients, dimension=dimension, order=order)
-
-def sin_taylor(input_value, order):
-    """Taylor expansion of sine function around 0."""
-    if not isinstance(input_value, (MultivariateTaylorFunction, Var, int, float)):
-        raise TypeError("Input must be Var, MultivariateTaylorFunction, int, or float.")
-    if not isinstance(order, int) or order < 0:
-        raise ValueError("Order must be a non-negative integer.")
-    dimension = _get_dimension(input_value)
-    coefficients = {}
-    for n in range(order + 1):
-        if n % 2 != 0:
-            index = (n,) * dimension
-            coefficients[index] = np.array([((-1)**((n-1)/2)) / math.factorial(n)]) # use math.factorial
-    return MultivariateTaylorFunction(coefficients=coefficients, dimension=dimension, order=order)
-
-def exp_taylor(input_value, order):
-    """Taylor expansion of exponential function around 0."""
-    if not isinstance(input_value, (MultivariateTaylorFunction, Var, int, float)):
-        raise TypeError("Input must be Var, MultivariateTaylorFunction, int, or float.")
-    if not isinstance(order, int) or order < 0:
-        raise ValueError("Order must be a non-negative integer.")
-    dimension = _get_dimension(input_value)
-    coefficients = {}
-    for n in range(order + 1):
-        index = (n,) * dimension
-        coefficients[index] = np.array([1.0 / math.factorial(n)]) # use math.factorial
-    return MultivariateTaylorFunction(coefficients=coefficients, dimension=dimension, order=order)
-
-def gaussian_taylor(input_value, order, mean=0.0, std_dev=1.0):
-    """Taylor expansion of Gaussian function around mean."""
-    if not isinstance(input_value, (MultivariateTaylorFunction, Var, int, float)):
-        raise TypeError("Input must be Var, MultivariateTaylorFunction, int, or float.")
-    if not isinstance(order, int) or order < 0:
-        raise ValueError("Order must be a non-negative integer.")
-    if std_dev <= 0:
-        raise ValueError("Standard deviation must be positive.")
-    dimension = _get_dimension(input_value)
-    coefficients = {}
-    for n in range(order + 1):
-        index = (n,) * dimension
-        if n % 2 == 0:
-            coefficients[index] = np.array([(math.factorial(n) / (math.factorial(n//2) * (2**(n//2)))) * ((-1)**(n/2)) / (std_dev**n) * (1/(std_dev * np.sqrt(2*np.pi)))]) # use math.factorial
-        else:
-            coefficients[index] = np.array([0.0])
-    return MultivariateTaylorFunction(coefficients=coefficients, dimension=dimension, expansion_point=np.array([mean]), order=order)
-
-def sqrt_taylor(input_value, order):
-    """Taylor expansion of sqrt function around 1."""
-    if not isinstance(input_value, (MultivariateTaylorFunction, Var, int, float)):
-        raise TypeError("Input must be Var, MultivariateTaylorFunction, int, or float.")
-    if not isinstance(order, int) or order < 0:
-        raise ValueError("Order must be a non-negative integer.")
-    dimension = _get_dimension(input_value)
-    coefficients = {}
-    for n in range(order + 1):
-        index = (n,) * dimension
-        if n == 0:
-            coefficients[index] = np.array([np.sqrt(1)])
-        elif n == 1:
-            coefficients[index] = np.array([1/2])
-        elif n == 2:
-            coefficients[index] = np.array([-1/8])
-        elif n == 3:
-            coefficients[index] = np.array([1/16])
-        elif n == 4:
-            coefficients[index] = np.array([-5/128])
-        elif n >= 5:
-             coefficients[index] = np.array([np.nan]) # Series becomes more complex, needs general term if higher orders needed.
-    return MultivariateTaylorFunction(coefficients=coefficients, dimension=dimension, expansion_point=np.ones(dimension), order=order)
-
-
-def log_taylor(input_value, order):
-    """Taylor expansion of natural logarithm function around 1."""
-    if not isinstance(input_value, (MultivariateTaylorFunction, Var, int, float)):
-        raise TypeError("Input must be Var, MultivariateTaylorFunction, int, or float.")
-    if not isinstance(order, int) or order < 0:
-        raise ValueError("Order must be a non-negative integer.")
-    dimension = _get_dimension(input_value)
-    coefficients = {}
-    for n in range(order + 1):
-        index = (n,) * dimension
-        if n == 0:
-            coefficients[index] = np.array([np.log(1)]) # ln(1) = 0
-        elif n >= 1:
-            coefficients[index] = np.array([((-1)**(n+1)) / n]) # Coefficient for ln(1+x) Taylor series (around 1, it's ln(x) around 1, which is ln(1+(x-1)))
-
-    return MultivariateTaylorFunction(coefficients=coefficients, dimension=dimension, expansion_point=np.ones(dimension), order=order)
-
-
-def arctan_taylor(input_value, order):
-    """Taylor expansion of arctan function around 0."""
-    if not isinstance(input_value, (MultivariateTaylorFunction, Var, int, float)):
-        raise TypeError("Input must be Var, MultivariateTaylorFunction, int, or float.")
-    if not isinstance(order, int) or order < 0:
-        raise ValueError("Order must be a non-negative integer.")
-    dimension = _get_dimension(input_value)
-    coefficients = {}
-    for n in range(order + 1):
-        index = (n,) * dimension
-        if n % 2 != 0:
-            coefficients[index] = np.array([((-1)**((n-1)/2)) / n])
-
-    return MultivariateTaylorFunction(coefficients=coefficients, dimension=dimension, expansion_point=np.zeros(dimension), order=order)
-
-def sinh_taylor(input_value, order):
-    """Taylor expansion of hyperbolic sine function around 0."""
-    if not isinstance(input_value, (MultivariateTaylorFunction, Var, int, float)):
-        raise TypeError("Input must be Var, MultivariateTaylorFunction, int, or float.")
-    if not isinstance(order, int) or order < 0:
-        raise ValueError("Order must be a non-negative integer.")
-    dimension = _get_dimension(input_value)
-    coefficients = {}
-    for n in range(order + 1):
-        index = (n,) * dimension
-        if n % 2 != 0:
-            coefficients[index] = np.array([1.0 / math.factorial(n)]) # use math.factorial
-
-    return MultivariateTaylorFunction(coefficients=coefficients, dimension=dimension, expansion_point=np.zeros(dimension), order=order)
-
-def cosh_taylor(input_value, order):
-    """Taylor expansion of hyperbolic cosine function around 0."""
-    if not isinstance(input_value, (MultivariateTaylorFunction, Var, int, float)):
-        raise TypeError("Input must be Var, MultivariateTaylorFunction, int, or float.")
-    if not isinstance(order, int) or order < 0:
-        raise ValueError("Order must be a non-negative integer.")
-    dimension = _get_dimension(input_value)
-    coefficients = {}
-    for n in range(order + 1):
-        index = (n,) * dimension
-        if n % 2 == 0:
-            coefficients[index] = np.array([1.0 / math.factorial(n)]) # use math.factorial
-
-    return MultivariateTaylorFunction(coefficients=coefficients, dimension=dimension, order=order)
-
-def tanh_taylor(input_value, order):
-    """Taylor expansion of hyperbolic tangent function around 0."""
-    if not isinstance(input_value, (MultivariateTaylorFunction, Var, int, float)):
-        raise TypeError("Input must be Var, MultivariateTaylorFunction, int, or float.")
-    if not isinstance(order, int) or order < 0:
-        raise ValueError("Order must be a non-negative integer.")
-    dimension = _get_dimension(input_value)
-    coefficients = {}
-    for n in range(order + 1):
-        index = (n,) * dimension
-        if n == 1:
-            coefficients[index] = np.array([1.0])
-        elif n == 3:
-            coefficients[index] = np.array([-1/3])
-        elif n == 5:
-            coefficients[index] = np.array([2/15])
-        elif n == 7:
-            coefficients[index] = np.array([-17/315])
-        elif n >= 9:
-            coefficients[index] = np.array([np.nan]) # Series becomes complex
-
-    return MultivariateTaylorFunction(coefficients=coefficients, dimension=dimension, order=order)
-
-
-def arcsin_taylor(input_value, order):
-    """Taylor expansion of arcsin function around 0."""
-    if not isinstance(input_value, (MultivariateTaylorFunction, Var, int, float)):
-        raise TypeError("Input must be Var, MultivariateTaylorFunction, int, or float.")
-    if not isinstance(order, int) or order < 0:
-        raise ValueError("Order must be a non-negative integer.")
-    dimension = _get_dimension(input_value)
-    coefficients = {}
-    for n in range(order + 1):
-        index = (n,) * dimension
-        if n % 2 != 0:
-            if n == 1:
-                coefficients[index] = np.array([1.0])
-            elif n == 3:
-                coefficients[index] = np.array([1/6])
-            elif n == 5:
-                coefficients[index] = np.array([3/40])
-            elif n == 7:
-                coefficients[index] = np.array([5/112])
-            elif n >= 9:
-                coefficients[index] = np.array([np.nan]) # Series becomes complex
-
-    return MultivariateTaylorFunction(coefficients=coefficients, dimension=dimension, order=order)
-
-def arccos_taylor(input_value, order):
-    """Taylor expansion of arccos function around 0. Using arccos(x) = pi/2 - arcsin(x)"""
-    if not isinstance(input_value, (MultivariateTaylorFunction, Var, int, float)):
-        raise TypeError("Input must be Var, MultivariateTaylorFunction, int, or float.")
-    if not isinstance(order, int) or order < 0:
-        raise ValueError("Order must be a non-negative integer.")
-
-    arcsin_mtf = arcsin_taylor(input_value, order)
-    constant_pi_over_2 = MultivariateTaylorFunction.from_constant(np.pi/2.0, arcsin_mtf.dimension)
-    return constant_pi_over_2 - arcsin_mtf
-
-
-def arctanh_taylor(input_value, order):
-    """Taylor expansion of arctanh function around 0."""
-    if not isinstance(input_value, (MultivariateTaylorFunction, Var, int, float)):
-        raise TypeError("Input must be Var, MultivariateTaylorFunction, int, or float.")
-    if not isinstance(order, int) or order < 0:
-        raise ValueError("Order must be a non-negative integer.")
-    dimension = _get_dimension(input_value)
-    coefficients = {}
-    for n in range(order + 1):
-        index = (n,) * dimension
-        if n % 2 != 0:
-            coefficients[index] = np.array([1.0 / n])
-
-    return MultivariateTaylorFunction(coefficients=coefficients, dimension=dimension, order=order)
-
-
-
-# --- Helper functions ---
-def _get_dimension(input_value):
-    """Helper to get dimension from input."""
-    if isinstance(input_value, Var):
-        return input_value.dimension
-    elif isinstance(input_value, MultivariateTaylorFunction):
-        return input_value.dimension
+def cos_taylor(variable, order=None):
+    """Taylor expansion of cosine around 0."""
+    if order is None:
+        order = get_global_max_order()
     else:
-        return 1 # default dimension for scalar input
+        order = min(order, get_global_max_order())
+    coeffs = {}
+    for n in range(0, order + 1, 2):
+        index = (n,) if isinstance(variable, MultivariateTaylorFunction) else (0,) * (variable.dimension if isinstance(variable, Var) else 1) if isinstance(variable, Var) else () # Corrected index
+        coeffs[index] = np.array([((-1)**(n/2)) / math.factorial(n)])
+    return MultivariateTaylorFunction(coefficients=coeffs, dimension=1 if not isinstance(variable, (MultivariateTaylorFunction, Var)) else variable.dimension if isinstance(variable, Var) else variable.dimension, order=order) # Corrected dimension
 
-def _input_to_mtf(input_value, dimension):
-    """Helper to convert input to MTF if necessary."""
-    if isinstance(input_value, MultivariateTaylorFunction):
-        return input_value
-    elif isinstance(input_value, Var):
-        return input_value._create_taylor_function_from_var()
-    else: # int or float
-        return scalar_to_mtf(input_value, dimension)
+def sin_taylor(variable, order=None):
+    """Taylor expansion of sine around 0."""
+    if order is None:
+        order = get_global_max_order()
+    else:
+        order = min(order, get_global_max_order())
+    coeffs = {}
+    for n in range(1, order + 1, 2):
+        index = (n,) if isinstance(variable, MultivariateTaylorFunction) else (0,) * (variable.dimension if isinstance(variable, Var) else 1) if isinstance(variable, Var) else () # Corrected index
+        coeffs[index] = np.array([((-1)**((n-1)/2)) / math.factorial(n)])
+    return MultivariateTaylorFunction(coefficients=coeffs, dimension=1 if not isinstance(variable, (MultivariateTaylorFunction, Var)) else variable.dimension if isinstance(variable, Var) else variable.dimension, order=order) # Corrected dimension
 
-def scalar_to_mtf(scalar, dimension):
-    """Convert a scalar value to a constant MultivariateTaylorFunction."""
-    return MultivariateTaylorFunction.from_constant(scalar, dimension)
+def exp_taylor(variable, order=None):
+    """Taylor expansion of exponential function around 0."""
+    if order is None:
+        order = get_global_max_order()
+    else:
+        order = min(order, get_global_max_order())
+    coeffs = {}
+    for n in range(order + 1):
+        index = (n,) if isinstance(variable, MultivariateTaylorFunction) else (0,) * (variable.dimension if isinstance(variable, Var) else 1) if isinstance(variable, Var) else () # Corrected index
+        coeffs[index] = np.array([1.0 / math.factorial(n)])
+    return MultivariateTaylorFunction(coefficients=coeffs, dimension=1 if not isinstance(variable, (MultivariateTaylorFunction, Var)) else variable.dimension if isinstance(variable, Var) else variable.dimension, order=order) # Corrected dimension
 
-def _composition_dict(input_value, mtf_input):
-    """Helper to create composition dictionary if input is Var."""
-    if isinstance(input_value, Var):
-        return {input_value: mtf_input}
-    return {} # Empty dict for scalar or MTF inputs
+def sqrt_taylor(variable, order=None):
+    """Taylor expansion of sqrt(1+x) around 0."""
+    if order is None:
+        order = get_global_max_order()
+    else:
+        order = min(order, get_global_max_order())
+    coeffs = {}
+    for n in range(order + 1):
+        index = (n,) if isinstance(variable, MultivariateTaylorFunction) else (0,) * (variable.dimension if isinstance(variable, Var) else 1) if isinstance(variable, Var) else () # Corrected index
+        coeffs[index] = np.array([math.sqrt(1) if n == 0 else (-1)**(n+1) * math.factorial(2*n-2) / ((math.factorial(n-1)**2) * (2**(2*n-1)) ) if n >= 1 else 0.0])
+    return MultivariateTaylorFunction(coefficients=coeffs, dimension=1 if not isinstance(variable, (MultivariateTaylorFunction, Var)) else variable.dimension if isinstance(variable, Var) else variable.dimension, order=order) # Corrected dimension
+
+def log_taylor(variable, order=None):
+    """Taylor expansion of ln(1+x) around 0."""
+    if order is None:
+        order = get_global_max_order()
+    else:
+        order = min(order, get_global_max_order())
+    coeffs = {}
+    for n in range(1, order + 1):
+        index = (n,) if isinstance(variable, MultivariateTaylorFunction) else (0,) * (variable.dimension if isinstance(variable, Var) else 1) if isinstance(variable, Var) else () # Corrected index
+        coeffs[index] = np.array([((-1)**(n+1)) / n])
+    coeffs[()] = np.array([0.0]) # ln(1) = 0, constant term is 0, index corrected to empty tuple for scalar input
+    return MultivariateTaylorFunction(coefficients=coeffs, dimension=1 if not isinstance(variable, (MultivariateTaylorFunction, Var)) else variable.dimension if isinstance(variable, Var) else variable.dimension, order=order) # Corrected dimension
+
+def arctan_taylor(variable, order=None):
+    """Taylor expansion of arctan(x) around 0."""
+    if order is None:
+        order = get_global_max_order()
+    else:
+        order = min(order, get_global_max_order())
+    coeffs = {}
+    for n in range(1, order + 1, 2):
+        index = (n,) if isinstance(variable, MultivariateTaylorFunction) else (0,) * (variable.dimension if isinstance(variable, Var) else 1) if isinstance(variable, Var) else () # Corrected index
+        coeffs[index] = np.array([((-1)**((n-1)/2)) / n])
+    return MultivariateTaylorFunction(coefficients=coeffs, dimension=1 if not isinstance(variable, (MultivariateTaylorFunction, Var)) else variable.dimension if isinstance(variable, Var) else variable.dimension, order=order) # Corrected dimension
+
+def sinh_taylor(variable, order=None):
+    """Taylor expansion of sinh(x) around 0."""
+    if order is None:
+        order = get_global_max_order()
+    else:
+        order = min(order, get_global_max_order())
+    coeffs = {}
+    for n in range(1, order + 1, 2):
+        index = (n,) if isinstance(variable, MultivariateTaylorFunction) else (0,) * (variable.dimension if isinstance(variable, Var) else 1) if isinstance(variable, Var) else () # Corrected index
+        coeffs[index] = np.array([1.0 / math.factorial(n)])
+    return MultivariateTaylorFunction(coefficients=coeffs, dimension=1 if not isinstance(variable, (MultivariateTaylorFunction, Var)) else variable.dimension if isinstance(variable, Var) else variable.dimension, order=order) # Corrected dimension
+
+def cosh_taylor(variable, order=None):
+    """Taylor expansion of cosh(x) around 0."""
+    if order is None:
+        order = get_global_max_order()
+    else:
+        order = min(order, get_global_max_order())
+    coeffs = {}
+    for n in range(0, order + 1, 2):
+        index = (n,) if isinstance(variable, MultivariateTaylorFunction) else (0,) * (variable.dimension if isinstance(variable, Var) else 1) if isinstance(variable, Var) else () # Corrected index
+        coeffs[index] = np.array([1.0 / math.factorial(n)])
+    return MultivariateTaylorFunction(coefficients=coeffs, dimension=1 if not isinstance(variable, (MultivariateTaylorFunction, Var)) else variable.dimension if isinstance(variable, Var) else variable.dimension, order=order) # Corrected dimension
+
+def tanh_taylor(variable, order=None):
+    """Taylor expansion of tanh(x) around 0. (Requires higher order for accuracy)"""
+    if order is None:
+        order = get_global_max_order()
+    else:
+        order = min(order, get_global_max_order())
+    coeffs = {}
+    # Bernoulli numbers (B_n), tanh(x) = sum_{n=1}^inf (B_{2n} * 4^n * (4^n - 1) / (2n)!) * x^(2n-1)
+    bernoulli_numbers = {2: 1/6, 4: -1/30, 6: 1/42, 8: -1/30, 10: 5/66, 12: -691/2730, 14: 7/6, 16: -3617/510, 18: 43867/798, 20: -174611/330} # Up to B_20
+    for n_double in bernoulli_numbers: # n_double represents 2n
+        if n_double - 1 <= order:
+            n = n_double // 2
+            index = (n_double - 1,) if isinstance(variable, MultivariateTaylorFunction) else (0,) * (variable.dimension if isinstance(variable, Var) else 1) if isinstance(variable, Var) else () # Corrected index
+            coeffs[index] = np.array([(bernoulli_numbers[n_double] * (4**n) * (4**n - 1)) / math.factorial(n_double)])
+    return MultivariateTaylorFunction(coefficients=coeffs, dimension=1 if not isinstance(variable, (MultivariateTaylorFunction, Var)) else variable.dimension if isinstance(variable, Var) else variable.dimension, order=order) # Corrected dimension
 
 
+def arcsin_taylor(variable, order=None):
+    """Taylor expansion of arcsin(x) around 0."""
+    if order is None:
+        order = get_global_max_order()
+    else:
+        order = min(order, get_global_max_order())
+    coeffs = {}
+    for n in range(0, order + 1, 2): # n starts from 0, step 2, so we use (n//2) in formula to get sequence 0, 1, 2, ...
+        index = (n+1,) if isinstance(variable, MultivariateTaylorFunction) else (0,) * (variable.dimension if isinstance(variable, Var) else 1) if isinstance(variable, Var) else () # Corrected index
+        n_half = n // 2 # We are iterating over 0, 2, 4, ..., so n_half will be 0, 1, 2, ...
+        coeffs[index] = np.array([(math.factorial(n) / ((2**n_half) * math.factorial(n_half) * math.factorial(n_half))) * (1 / (n + 1))])
+    return MultivariateTaylorFunction(coefficients=coeffs, dimension=1 if not isinstance(variable, (MultivariateTaylorFunction, Var)) else variable.dimension if isinstance(variable, Var) else variable.dimension, order=order) # Corrected dimension
+
+
+def arccos_taylor(variable, order=None):
+    """Taylor expansion of arccos(x) around 0. (Using arcsin and pi/2 - arcsin(x) relation)"""
+    if order is None:
+        order = get_global_max_order()
+    else:
+        order = min(order, get_global_max_order())
+    arcsin_exp = arcsin_taylor(variable, order=order)
+    constant_term = MultivariateTaylorFunction(coefficients={(0,): np.array([math.pi/2])}, dimension=1, order=0) # Dimension corrected to 1 for scalar input
+    arccos_exp = constant_term - arcsin_exp # arccos(x) = pi/2 - arcsin(x)
+    arccos_exp.order = order # Ensure order is set to requested order after operations
+    return arccos_exp
+
+
+def arctanh_taylor(variable, order=None):
+    """Taylor expansion of arctanh(x) around 0."""
+    if order is None:
+        order = get_global_max_order()
+    else:
+        order = min(order, get_global_max_order())
+    coeffs = {}
+    for n in range(0, order + 1, 2):
+        index = (n+1,) if isinstance(variable, MultivariateTaylorFunction) else (0,) * (variable.dimension if isinstance(variable, Var) else 1) if isinstance(variable, Var) else () # Corrected index
+        coeffs[index] = np.array([1.0 / (n + 1)])
+    return MultivariateTaylorFunction(coefficients=coeffs, dimension=1 if not isinstance(variable, (MultivariateTaylorFunction, Var)) else variable.dimension if isinstance(variable, Var) else variable.dimension, order=order) # Corrected dimension
+
+
+def gaussian_taylor(variable, order=None, mu=0, sigma=1):
+    """Taylor expansion of Gaussian function around mu. (default mu=0, sigma=1)"""
+    if order is None:
+        order = get_global_max_order()
+    else:
+        order = min(order, get_global_max_order())
+    coeffs = {}
+
+    if sigma <= 0:
+        raise ValueError("Sigma (standard deviation) must be positive for Gaussian function.")
+
+    for n in range(order + 1):
+        index = (n,) if isinstance(variable, MultivariateTaylorFunction) else (0,) * (variable.dimension if isinstance(variable, Var) else 1) if isinstance(variable, Var) else () # Corrected index
+        # Use series expansion for Gaussian around mu. Here we use mu=0 in series formula and shift variable by mu later in composition.
+        coeff_val = (1 / (sigma * math.sqrt(2 * math.pi))) * ((-1)**n / (sigma**n * math.factorial(n))) # Coefficient for expansion around 0
+
+        coeffs[index] = np.array([coeff_val])
+
+    exp_around_zero = MultivariateTaylorFunction(coefficients=coeffs, dimension=1 if not isinstance(variable, (MultivariateTaylorFunction, Var)) else variable.dimension if isinstance(variable, Var) else variable.dimension, order=order) # Corrected dimension
+
+    if mu != 0: # Shift expansion point if mu is not zero
+        mu_shift_mtf = MultivariateTaylorFunction(coefficients={(1,): np.array([1.0]), (0,): np.array([-mu])}, dimension=1) if variable.dimension == 1 else MultivariateTaylorFunction(coefficients={(0,): np.array([-mu])}, dimension=variable.dimension) #  MTF representing (x - mu) for composition. For multi-dimension, assume shift applies to first variable
+
+        composed_gaussian = exp_around_zero.compose({Var(1, variable.dimension): mu_shift_mtf}) # Compose to shift expansion point to mu
+        composed_gaussian.order = order # Ensure order is correct after composition
+        return composed_gaussian
+    else:
+        return exp_around_zero # No shift needed if mu=0
