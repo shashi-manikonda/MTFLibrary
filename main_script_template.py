@@ -6,7 +6,7 @@ from elementary_functions import cos_taylor, sin_taylor, exp_taylor, sqrt_taylor
 
 # def main():
 # Set a lower global max order for cleaner output (optional)
-set_global_max_order(10)
+set_global_max_order(20)
 
 dimension = 2 # Example dimension
 
