@@ -1,6 +1,6 @@
 # test_taylor_functions.py
-from taylor_function import MultivariateTaylorFunction, Var, set_global_max_order, get_global_max_order, convert_to_mtf # Var is now imported from taylor_function
-from elementary_functions import cos_taylor, sin_taylor, exp_taylor, gaussian_taylor, sqrt_taylor, log_taylor, arctan_taylor, sinh_taylor, cosh_taylor, tanh_taylor, arcsin_taylor, arccos_taylor, arctanh_taylor
+from MTFLibrary.taylor_function import MultivariateTaylorFunction, Var, set_global_max_order, get_global_max_order, convert_to_mtf # Var is now imported from taylor_function
+from MTFLibrary.elementary_functions import cos_taylor, sin_taylor, exp_taylor, gaussian_taylor, sqrt_taylor, log_taylor, arctan_taylor, sinh_taylor, cosh_taylor, tanh_taylor, arcsin_taylor, arccos_taylor, arctanh_taylor
 import numpy as np
 import pytest
 import math

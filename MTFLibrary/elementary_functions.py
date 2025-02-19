@@ -11,8 +11,8 @@ and an optional order for the Taylor expansion.
 """
 import math
 import numpy as np
-from taylor_function import MultivariateTaylorFunction, get_global_max_order, convert_to_mtf
-from taylor_function import Var  # Correct import of Var from taylor_function - v9.9.6
+from MTFLibrary.taylor_function import MultivariateTaylorFunction, get_global_max_order, convert_to_mtf
+from MTFLibrary.taylor_function import Var  # Correct import of Var from taylor_function - v9.9.6
 
 
 def _generate_exponent(order, var_index, dimension):
