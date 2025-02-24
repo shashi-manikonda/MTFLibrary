@@ -1,20 +1,27 @@
+# setup.py
 from setuptools import setup, find_packages
 
 setup(
     name='MTFLibrary',
-    version='0.0.1',
-    packages=find_packages(),
+    version='0.1.0',
+    description='Multivariate Taylor Expansion Library',
     author='Shashikant Manikonda',
     author_email='manikonda@outlook.com',
-    description='Multivariate Taylor Functions Library',
-    long_description=open('README.md').read(),
-    long_description_content_type='text/markdown',
-    url='https://github.com/shashi-manikonda/MTFLibrary',
     license='MIT',
+    packages=find_packages(),
+    install_requires=['numpy'],
     classifiers=[
-        'Programming Language :: Python :: 3',
+        'Development Status :: 3 - Alpha',
+        'Intended Audience :: Developers',
+        'Intended Audience :: Science/Research',
         'License :: OSI Approved :: MIT License',
-        'Operating System :: OS Independent',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Topic :: Scientific/Engineering :: Mathematics',
+        'Topic :: Software Development :: Libraries',
     ],
-    python_requires='>=3.6',
 )

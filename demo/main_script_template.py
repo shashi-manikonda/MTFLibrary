@@ -1,119 +1,121 @@
-from MTFLibrary.taylor_function import MultivariateTaylorFunction, Var, set_global_max_order # Var is now imported from taylor_function
-from MTFLibrary.elementary_functions import cos_taylor, sin_taylor, exp_taylor, gaussian_taylor, sqrt_taylor, log_taylor, arctan_taylor, sinh_taylor, cosh_taylor, tanh_taylor, arcsin_taylor, arccos_taylor, arctanh_taylor
+# demo/main_script_template.py
+from MTFLibrary.taylor_function import initialize_mtf_globals, set_global_etol, get_tabular_string
+from MTFLibrary.taylor_function import MultivariateTaylorFunction, ComplexMultivariateTaylorFunction
+from MTFLibrary.elementary_functions import exp_taylor, sin_taylor, cos_taylor
+from MTFLibrary.MTFExtended import Var
 import numpy as np
-import math
 
-# Set global max order for Taylor expansions
-global_max_order = 10
-set_global_max_order(global_max_order)
-print(f"Global max order set to: {global_max_order}\n")
+if __name__ == "__main__":
+    # Initialize global settings
+    initialize_mtf_globals(max_order=10, max_dimension=3)
+    set_global_etol(1e-9)
 
-# Define variables
-x = Var(1, dimension=2) # Var_id=1, dimension=2 - v9.5
-y = Var(2, dimension=2) # Var_id=2, dimension=2 - v9.5
-print(f"Variable x: {x}") # Print var details - v9.5
-print(f"Variable y: {y}") # Print var details - v9.5
+    # Define variables
+    x = Var(1)
+    y = Var(2)
 
-evaluation_point = np.array([0.5, 0.2]) # 2D evaluation point - v9.5
-print(f"Evaluation point: {evaluation_point}\n") # Print evaluation point - v9.5
+    # Example 1: Create a simple Multivariate Taylor Function
+    coefficients_simple = {
+        (0, 0): np.array([1.0]),
+        (1, 0): np.array([2.0]),
+        (0, 1): np.array([3.0]),
+        (1, 1): np.array([4.0])
+    }
+    mtf_simple = MultivariateTaylorFunction(coefficients_simple, dimension=2)
+    
+    print("Example 1: Simple MTF")
+    mtf_simple.print_tabular()
+    print(f"MTF at [0.1, 0.2]: {mtf_simple(np.array([0.1, 0.2]))}\n")
 
-# --- Elementary Functions ---
-print("--- Elementary Functions ---\n")
+    # Example 2: Arithmetic operations
+    mtf_const = MultivariateTaylorFunction.from_constant(5.0, dimension=2)
+    mtf_sum = mtf_simple + mtf_const
+    mtf_product = mtf_simple * mtf_const
 
-cos_x_tf = cos_taylor(x, order=global_max_order)
-print(f"Dimension of cos_x_tf: {cos_x_tf.dimension}")  # Debug print for dimension
-print(f"cos_taylor(x):\n{cos_x_tf}")
+    print("Example 2: Arithmetic Operations")
+    print("mtf_sum:")
+    mtf_sum.print_tabular()
+    print("mtf_product:")
+    mtf_product.print_tabular()
+    print("\n")
 
-sin_y_tf = sin_taylor(y, order=global_max_order)
-print(f"\nsin_taylor(y):\n{sin_y_tf}") 
+    # Example 3: Elementary functions
+    mtf_exp = exp_taylor(mtf_simple)
+    mtf_sin = sin_taylor(x)
+    mtf_cos = cos_taylor(y)
 
-exp_x_tf = exp_taylor(x, order=global_max_order)
-print(f"\nexp_taylor(x):\n{exp_x_tf}") 
+    print("Example 3: Elementary Functions")
+    print("exp_taylor(mtf_simple):")
+    mtf_exp.truncate(2).print_tabular() # Truncate to order 2 for display
+    print("sin_taylor(x):")
+    sin_taylor(x).truncate(2).print_tabular()
+    print("cos_taylor(y):")
+    cos_taylor(y).truncate(2).print_tabular()
+    print("\n")
 
-gaussian_x_tf = gaussian_taylor(x, order=global_max_order)
-print(f"\ngaussian_taylor(x):\n{gaussian_x_tf}") 
+    # Example 4: Complex MTF
+    cmtf_const = ComplexMultivariateTaylorFunction.from_constant(1+1j, dimension=2)
+    cmtf_real_to_complex = mtf_simple.to_complex_mtf()
+    cmtf_sum = cmtf_real_to_complex + cmtf_const
 
-sqrt_x_tf = sqrt_taylor(x, order=global_max_order)
-print(f"\nsqrt_taylor(x):\n{sqrt_x_tf}") 
-
-log_y_tf = log_taylor(y, order=global_max_order)
-print(f"\nlog_taylor(y):\n{log_y_tf}") 
-
-arctan_x_tf = arctan_taylor(x, order=global_max_order)
-print(f"\narctan_taylor(x):\n{arctan_x_tf}") 
-
-sinh_y_tf = sinh_taylor(y, order=global_max_order)
-print(f"\nsinh_taylor(y):\n{sinh_y_tf}") 
-
-cosh_x_tf = cosh_taylor(x, order=global_max_order)
-print(f"\ncosh_taylor(x):\n{cosh_x_tf}") 
-
-tanh_y_tf = tanh_taylor(y, order=global_max_order)
-print(f"\ntanh_taylor(y):\n{tanh_y_tf}") 
-
-arcsin_x_tf = arcsin_taylor(x, order=global_max_order)
-print(f"\narcsin_taylor(x):\n{arcsin_x_tf}") 
-
-arccos_y_tf = arccos_taylor(y, order=global_max_order)
-print(f"\narccos_taylor(y):\n{arccos_y_tf}") 
-
-arctanh_x_tf = arctanh_taylor(x, order=global_max_order)
-print(f"\narctanh_taylor(x):\n{arctanh_x_tf}") 
-
-
-# --- Arithmetic Operations ---
-print("\n--- Arithmetic Operations ---\n")
-
-f1 = cos_x_tf * sin_y_tf # Multiplication of two MTFs
-f2 = f1 / 3.0 # Division by a scalar
-print(f"Dimension of f2 after scalar division: {f2.dimension}") # Print dimension of f2
-print(f"\nCombined function f2:\n{f2}") 
+    print("Example 4: Complex MTF")
+    print("cmtf_sum:")
+    cmtf_sum.truncate(1).print_tabular() # Truncate to order 1 for display
+    print("\n")
 
 
-# --- Derivative and Integration ---
-print("\n--- Derivative and Integration ---\n")
+    # Example Usage (assuming you have MTF and CMTF classes and instances)
+    # Dummy get_global_max_order and get_global_etol for example
+    def get_global_max_order():
+        return 2
+    def get_global_etol():
+        return 1e-10
 
-# Derivative of f2 with respect to x (var_id=1)
-deriv_f2_x = f2.derivative(wrt_variable_id=1)
-print(f"Derivative of f2 wrt x (var_id=1):\n{deriv_f2_x}") 
+    class MockMTF: # Mock MultivariateTaylorFunction class for example
+        def __init__(self, coefficients, dimension):
+            self.coefficients = coefficients
+            self.dimension = dimension
+        def get_global_max_order(self): # Mock get_global_max_order if needed as instance method
+            return get_global_max_order()
 
-# Derivative of f2 with respect to y (var_id=2)
-deriv_f2_y = f2.derivative(wrt_variable_id=2)
-print(f"\nDerivative of f2 wrt y (var_id=2):\n{deriv_f2_y}") 
-
-# Integral of f2 wrt x (var_id=1) with integration constant 0
-integ_f2_x = f2.integral(wrt_variable_id=1, integration_constant=0.0)
-print(f"\nIntegral of f2 wrt x (var_id=1):\n{integ_f2_x}") 
-
-# Integral of f2 wrt y (var_id=2) with integration constant 0
-integ_f2_y = f2.integral(wrt_variable_id=2, integration_constant=0.0) # Integral of f2 wrt y (var_id=2) with constant 0
-print(f"\nIntegral of f2 wrt y (var_id=2):\n{integ_f2_y}") 
+    class MockCMTF: # Mock ComplexMultivariateTaylorFunction class for example
+        def __init__(self, coefficients, dimension):
+            self.coefficients = coefficients
+            self.dimension = dimension
+        def get_global_max_order(self): # Mock get_global_max_order if needed as instance method
+            return get_global_max_order()
 
 
-# --- Composition ---
-print("\n--- Composition ---\n")
+    # Example coefficients for COMPLEX MTF (CMTF)
+    complex_coefficients = {
+        (0, 0): np.array([1.0 + 0.5j]),
+        (1, 0): np.array([2.0 - 1.0j]),
+        (0, 1): np.array([-0.5 + 2.0j]),
+        (2, 0): np.array([0.5]),
+        (1, 1): np.array([0.25j]),
+        (0, 2): np.array([0.1]),
+    }
+    complex_dimension = 2
+    cmtf_instance = MockCMTF(coefficients=complex_coefficients, dimension=complex_dimension) # Use MockCMTF
 
-# Example composition: cos(x + sin(y))
-composed_func = cos_taylor(x + sin_taylor(y, order=global_max_order), order=global_max_order)
-print(f"Composed function cos(x + sin(y)):\n{composed_func}") 
+    table_string_complex = get_tabular_string(cmtf_instance, order=2) # Pass CMTF instance
+    print("--- Complex MTF Table (Instance Input) ---")
+    print(table_string_complex)
 
-# --- Evaluation ---
-print("\n--- Evaluation ---\n")
 
-f2_evaluated = f2.evaluate(evaluation_point)
-print(f"Evaluated f2 at {evaluation_point}: {f2_evaluated}")
+    # Example coefficients for REAL MTF (MTF)
+    real_coefficients = {
+        (0, 0): np.array([2.0]),
+        (1, 0): np.array([3.0]),
+        (0, 1): np.array([-1.0]),
+        (2, 0): np.array([0.8]),
+    }
+    real_dimension = 2
+    mtf_instance = MockMTF(coefficients=real_coefficients, dimension=real_dimension) # Use MockMTF
 
-deriv_f2_x_evaluated = deriv_f2_x.evaluate(evaluation_point)
-print(f"Evaluated derivative of f2 wrt x at {evaluation_point}: {deriv_f2_x_evaluated}")
+    table_string_real = get_tabular_string(mtf_instance, order=2) # Pass MTF instance
+    print("\n--- Real MTF Table (Instance Input) ---")
+    print(table_string_real)
 
-deriv_f2_y_evaluated = deriv_f2_y.evaluate(evaluation_point)
-print(f"Evaluated derivative of f2 wrt y at {evaluation_point}: {deriv_f2_y_evaluated}")
 
-integ_f2_x_evaluated = integ_f2_x.evaluate(evaluation_point)
-print(f"Evaluated integral of f2 wrt x at {evaluation_point}: {integ_f2_x_evaluated}")
-
-integ_f2_y_evaluated = integ_f2_y.evaluate(evaluation_point)
-print(f"Evaluated integral of f2 wrt y at {evaluation_point}: {integ_f2_y_evaluated}")
-
-composed_func_evaluated = composed_func.evaluate(evaluation_point)
-print(f"Evaluated composed function at {evaluation_point}: {composed_func_evaluated}")
+    print("Demo script completed. Explore more functionalities by checking unit tests and library documentation.")
