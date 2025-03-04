@@ -1,7 +1,6 @@
 #test_MFT.py
-from MTFLibrary.taylor_function import initialize_mtf_globals, set_global_etol
-from MTFLibrary.elementary_functions import cos_taylor, sin_taylor, exp_taylor, gaussian_taylor, sqrt_taylor, log_taylor, arctan_taylor, sinh_taylor, cosh_taylor, tanh_taylor, arcsin_taylor, arccos_taylor, arctanh_taylor
-from MTFLibrary.MTFExtended import Var
+
+from MTFLibrary import *
 
 import numpy as np
 
@@ -40,10 +39,10 @@ print(f"\nexp_taylor(x):\n{exp_x_tf}")
 gaussian_x_tf = gaussian_taylor(x)
 print(f"\ngaussian_taylor(x):\n{gaussian_x_tf}") 
 
-sqrt_x_tf = sqrt_taylor(x)
+sqrt_x_tf = sqrt_taylor(1+x)
 print(f"\nsqrt_taylor(x):\n{sqrt_x_tf}") 
 
-log_y_tf = log_taylor(y)
+log_y_tf = log_taylor(1+y)
 print(f"\nlog_taylor(y):\n{log_y_tf}") 
 
 arctan_x_tf = arctan_taylor(x+2*y+.5*z)

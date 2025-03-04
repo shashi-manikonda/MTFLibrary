@@ -3,7 +3,6 @@ from ..taylor_function import initialize_mtf_globals, set_global_etol, convert_t
 from ..elementary_functions import cos_taylor, sin_taylor, exp_taylor, gaussian_taylor, sqrt_taylor, log_taylor, arctan_taylor, sinh_taylor, cosh_taylor, tanh_taylor, arcsin_taylor, arccos_taylor, arctanh_taylor
 from ..MTFExtended import Var
 
-
 def current_ring(ring_radius, num_segments_ring, ring_center_point, ring_axis_direction):
     """
     Generates MTF representations for segments of a current ring defined by its center point
@@ -96,66 +95,3 @@ def current_ring(ring_radius, num_segments_ring, ring_center_point, ring_axis_di
 
     return np.array(segment_mtfs_ring), np.array(element_lengths_ring), np.array(direction_vectors_ring)
 
-
-
-# import numpy as np
-# from ..taylor_function import initialize_mtf_globals, set_global_etol, convert_to_mtf
-# from ..elementary_functions import cos_taylor, sin_taylor, exp_taylor, gaussian_taylor, sqrt_taylor, log_taylor, arctan_taylor, sinh_taylor, cosh_taylor, tanh_taylor, arcsin_taylor, arccos_taylor, arctanh_taylor
-# from ..MTFExtended import Var
-
-
-# def current_ring(ring_radius, num_segments_ring, rotation_axis, rotation_angle):
-#     """
-#     Generates center points, element lengths, and direction vectors for a current ring.
-#     """
-#     x = Var(1)
-#     y = Var(2)
-#     z = Var(3)
-#     u = Var(4)
-
-#     d_phi = 2 * np.pi / num_segments_ring
-
-#     # Rotation matrix (same as before)
-#     def rotation_matrix(axis, angle): # ... (Rotation matrix function - same as before) ...
-#         axis = axis / np.linalg.norm(axis)
-#         a = np.cos(angle/2)
-#         b,c,d = -axis*np.sin(angle/2)
-#         aa, bb, cc, dd = a*a, b*b, c*c, d*d
-#         bc, bd, cd = b*c, b*d, c*d
-#         ad, ac, ab = a*d, a*c, a*b
-#         return np.array([[aa+bb-cc-dd, 2*(bc+ad), 2*(bd-ac)],
-#                          [2*(bc-ad), aa+cc-bb-dd, 2*(cd+ab)],
-#                          [2*(bd+ac), 2*(cd-ab), aa+dd-bb-cc]])
-
-#     rot_matrix = rotation_matrix(rotation_axis, rotation_angle)
-
-#     center_points_ring = []
-#     element_lengths_ring = []
-#     direction_vectors_ring = []
-
-#     for i in range(num_segments_ring):
-#         phi = (i + 0.5 +0.5*u) * d_phi # Center point at midpoint of segment
-#         # Base ring in xy-plane
-#         x_center = ring_radius * cos_taylor(phi)
-#         y_center = ring_radius * sin_taylor(phi)
-#         z_center = 0.0
-
-#         # Rotate center point
-#         center_point_rotated = rot_matrix @ np.array([x_center, y_center, z_center])
-#         center_points_ring.append(center_point_rotated)
-
-#         element_lengths_ring.append(ring_radius * d_phi) # Arc length is approx. dl = r * d_phi
-
-#         # Tangent direction at center point (for base ring in xy-plane):
-#         direction_base = np.array([-sin_taylor(phi), cos_taylor(phi), 0]) # Tangent in xy-plane
-#         direction_rotated = rot_matrix @ direction_base
-#         # MTF Norm calculation: sqrt(Bx^2 + By^2 + Bz^2) using MTF operations
-#         norm_mtf_squared = direction_rotated[0]**2 + direction_rotated[1]**2 + direction_rotated[2]**2
-#         norm_mtf = sqrt_taylor(norm_mtf_squared)
-        
-#         # Normalize direction_rotated by the MTF norm
-#         direction_normalized_mtf = direction_rotated / norm_mtf  # Element-wise division of MTF array by MTF scalar (should work due to __array_ufunc__)
-#         direction_vectors_ring.append(direction_normalized_mtf)
-
-
-#     return np.array(center_points_ring), np.array(element_lengths_ring), np.array(direction_vectors_ring)

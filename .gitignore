@@ -3,6 +3,16 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# COSY 
+*.fox 
+*.cod
+*.lis 
+*.bin 
+foxyinp.dat 
+cosy.exe 
+grwnd.exe 
+
+
 # C extensions
 *.so
 
