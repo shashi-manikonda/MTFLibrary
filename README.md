@@ -90,6 +90,7 @@ To install MTFLibrary from the package directory, use pip:
 
 ```bash
 pip install .
+```
 
 ### Demo Files:
 To help you get started with MTFLibrary, we have included several demo files that illustrate how to use the library for various applications. These demo files cover a range of topics, including:
