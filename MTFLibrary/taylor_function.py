@@ -4,6 +4,7 @@ from collections import defaultdict
 import math
 from MTFLibrary.elementary_coefficients import load_precomputed_coefficients
 import time
+import numbers
 
 from . import elementary_coefficients
 
@@ -231,7 +232,7 @@ class MultivariateTaylorFunctionBase:
 
     def __pow__(self, power):
         """Defines exponentiation (**) for MultivariateTaylorFunction objects."""
-        if isinstance(power, int):
+        if isinstance(power, numbers.Integral):
             if power < 0:
                 if power == -1:
                     return self._inv_mtf_internal(self)
@@ -303,7 +304,7 @@ class MultivariateTaylorFunctionBase:
             exponent_tuple = (i,)
             coeff_items.append((exponent_tuple, coeff_val))
         inverse_series_1d_mtf = MultivariateTaylorFunctionBase(coefficients=dict(coeff_items), dimension=1)
-        composed_mtf = inverse_series_1d_mtf.compose(
+        composed_mtf = inverse_series_1d_mtf.compose_one_dim(
             rescaled_mtf - MultivariateTaylorFunctionBase.from_constant(1.0, rescaled_mtf.dimension)
         )
         final_mtf = composed_mtf / c0
@@ -366,14 +367,16 @@ class MultivariateTaylorFunctionBase:
             raise ValueError("Invalid var_dimension.")
         if not isinstance(value, (int, float)):
             raise TypeError("Value must be an integer or float.")
-        dimension_index = var_dimension
+        dimension_index = var_dimension - 1
         original_coefficients = self.coefficients.copy()
-        self.coefficients = {}
+        self.coefficients = defaultdict(lambda: np.array([0.0]).reshape(1))
         for exponent_tuple, coeff_value in original_coefficients.items():
-            exponent_for_var = exponent_tuple[dimension_index - 1]
+            exponent_for_var = exponent_tuple[dimension_index]
             multiplier = value**exponent_for_var
-            new_coeff_value = coeff_value * multiplier
-            self.coefficients[exponent_tuple] = new_coeff_value
+            new_exponent_list = list(exponent_tuple)
+            new_exponent_list[dimension_index] = 0
+            new_exponent_tuple = tuple(new_exponent_list)
+            self.coefficients[new_exponent_tuple] += coeff_value * multiplier
 
     def is_zero_mtf(self, mtf, zero_tolerance=None):
         """Checks if an MTF is effectively zero."""
@@ -386,7 +389,7 @@ class MultivariateTaylorFunctionBase:
                 return False
         return True
 
-    def compose(self, other_mtf):
+    def compose_one_dim(self, other_mtf):
         """Performs function composition: self(other_mtf(x))."""
         if self.dimension != 1:
             raise ValueError("Composition is only supported for 1D MTF as the outer function.")
@@ -537,7 +540,7 @@ def get_tabular_string(mtf_instance, order=None, variable_names=None):
     table_str = header_row + "\n" + separator + "\n"
     for row in rows:
         table_str += "| " + "| ".join(row[i].ljust(column_widths[i]-2) for i in range(len(headers))) + "|\n"
-    return table_str
+    return '\n' + table_str
 
 def _split_constant_polynomial_part(input_mtf: MultivariateTaylorFunctionBase) -> tuple[float, MultivariateTaylorFunctionBase]:
     """Helper: Splits MTF into constant and polynomial parts."""
@@ -596,7 +599,7 @@ def sqrt_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylorF
     sqrt_taylor_1d_mtf = MultivariateTaylorFunctionBase(
         coefficients=sqrt_taylor_1d_coefficients, dimension=taylor_dimension_1d
     )
-    composed_mtf = sqrt_taylor_1d_mtf.compose(input_mtf)
+    composed_mtf = sqrt_taylor_1d_mtf.compose_one_dim(input_mtf)
     return composed_mtf.truncate(order)
 
 def isqrt_taylor(variable, order: int = None) -> MultivariateTaylorFunctionBase:
@@ -642,5 +645,5 @@ def isqrt_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylor
     isqrt_taylor_1d_mtf = MultivariateTaylorFunctionBase(
         coefficients=isqrt_taylor_1d_coefficients, dimension=taylor_dimension_1d
     )
-    composed_mtf = isqrt_taylor_1d_mtf.compose(input_mtf)
+    composed_mtf = isqrt_taylor_1d_mtf.compose_one_dim(input_mtf)
     return composed_mtf.truncate(order)

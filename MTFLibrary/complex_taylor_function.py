@@ -459,7 +459,7 @@ class ComplexMultivariateTaylorFunction(MultivariateTaylorFunctionBase):
         sqrt_series_1d_mtf = MultivariateTaylorFunctionBase._sqrt_taylor_1d(order) # We can reuse the real series for sqrt(1+w)
 
         # (4) Compose g(f_rescaled - 1) - using rescaled CMTF
-        composed_cmtf = sqrt_series_1d_mtf.compose(rescaled_cmtf - ComplexMultivariateTaylorFunction.from_constant(1.0, rescaled_cmtf.dimension))
+        composed_cmtf = sqrt_series_1d_mtf.compose_one_dim(rescaled_cmtf - ComplexMultivariateTaylorFunction.from_constant(1.0, rescaled_cmtf.dimension))
 
         # (5) Rescale back by sqrt(c0) - now using cmath.sqrt for complex sqrt
         rescale_factor = np.sqrt(c0) # Use np.sqrt which handles complex numbers correctly
@@ -539,7 +539,7 @@ class ComplexMultivariateTaylorFunction(MultivariateTaylorFunctionBase):
         inverse_series_1d_mtf = MultivariateTaylorFunctionBase._inverse_taylor_1d(order)
 
         # (4) Compose g(f_rescaled - 1) - using rescaled CMTF
-        composed_cmtf = inverse_series_1d_mtf.compose(rescaled_cmtf - ComplexMultivariateTaylorFunction.from_constant(1.0, rescaled_cmtf.dimension))
+        composed_cmtf = inverse_series_1d_mtf.compose_one_dim(rescaled_cmtf - ComplexMultivariateTaylorFunction.from_constant(1.0, rescaled_cmtf.dimension))
 
         # (5) Rescale back by 1/c0
         final_cmtf = composed_cmtf / c0

@@ -123,7 +123,7 @@ def sin_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFun
     sin_taylor_1d_mtf = MultivariateTaylorFunctionBase(
         coefficients=sin_taylor_1d_coefficients, dimension=taylor_dimension_1d
     )
-    composed_mtf = sin_taylor_1d_mtf.compose(input_mtf)
+    composed_mtf = sin_taylor_1d_mtf.compose_one_dim(input_mtf)
     return composed_mtf.truncate(order)
 
 def cos_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFunctionBase:
@@ -154,7 +154,7 @@ def cos_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFun
     cos_taylor_1d_mtf = MultivariateTaylorFunctionBase(
         coefficients=cos_taylor_1d_coefficients, dimension=taylor_dimension_1d
     )
-    composed_mtf = cos_taylor_1d_mtf.compose(input_mtf)
+    composed_mtf = cos_taylor_1d_mtf.compose_one_dim(input_mtf)
     return composed_mtf.truncate(order)
 
 
@@ -210,7 +210,7 @@ def exp_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFun
     exp_taylor_1d_mtf = MultivariateTaylorFunctionBase(
         coefficients=exp_taylor_1d_coefficients, dimension=taylor_dimension_1d
     )
-    composed_mtf = exp_taylor_1d_mtf.compose(input_mtf)
+    composed_mtf = exp_taylor_1d_mtf.compose_one_dim(input_mtf)
     return composed_mtf.truncate(order)
 
 
@@ -243,7 +243,7 @@ def gaussian_taylor(variable, order: int = None) -> MultivariateTaylorFunctionBa
     gaussian_taylor_1d_mtf = MultivariateTaylorFunctionBase(
         coefficients=gaussian_taylor_1d_coefficients, dimension=taylor_dimension_1d
     )
-    composed_mtf = gaussian_taylor_1d_mtf.compose(input_mtf)
+    composed_mtf = gaussian_taylor_1d_mtf.compose_one_dim(input_mtf)
     return composed_mtf.truncate(order)
 
 
@@ -308,7 +308,7 @@ def log_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylorFu
     log_taylor_1d_mtf = MultivariateTaylorFunctionBase(
         coefficients=log_taylor_1d_coefficients, dimension=taylor_dimension_1d
     )
-    composed_mtf = log_taylor_1d_mtf.compose(input_mtf)
+    composed_mtf = log_taylor_1d_mtf.compose_one_dim(input_mtf)
     return composed_mtf.truncate(order)
 
 
@@ -363,7 +363,7 @@ def arctan_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylo
     arctan_taylor_1d_mtf = MultivariateTaylorFunctionBase(
         coefficients=arctan_taylor_1d_coefficients, dimension=taylor_dimension_1d
     )
-    composed_mtf = arctan_taylor_1d_mtf.compose(input_mtf)
+    composed_mtf = arctan_taylor_1d_mtf.compose_one_dim(input_mtf)
     return composed_mtf.truncate(order)
 
 def sinh_taylor(variable, order: int = None) -> MultivariateTaylorFunctionBase:
@@ -434,7 +434,7 @@ def sinh_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFu
     sinh_taylor_1d_mtf = MultivariateTaylorFunctionBase(
         coefficients=sinh_taylor_coefficients, dimension=taylor_dimension_1d
     )
-    composed_mtf = sinh_taylor_1d_mtf.compose(input_mtf)
+    composed_mtf = sinh_taylor_1d_mtf.compose_one_dim(input_mtf)
     return composed_mtf.truncate(order)
 
 
@@ -464,7 +464,7 @@ def cosh_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFu
     cosh_taylor_1d_mtf = MultivariateTaylorFunctionBase(
         coefficients=cosh_taylor_coefficients, dimension=taylor_dimension_1d
     )
-    composed_mtf = cosh_taylor_1d_mtf.compose(input_mtf)
+    composed_mtf = cosh_taylor_1d_mtf.compose_one_dim(input_mtf)
     return composed_mtf.truncate(order)
 
 
@@ -529,7 +529,7 @@ def arctanh_taylor_1D_expansion(variable, order: int = None) -> MultivariateTayl
     arctanh_taylor_1d_mtf = MultivariateTaylorFunctionBase(
         coefficients=arctanh_taylor_1d_coefficients, dimension=taylor_dimension_1d
     )
-    composed_mtf = arctanh_taylor_1d_mtf.compose(input_mtf)
+    composed_mtf = arctanh_taylor_1d_mtf.compose_one_dim(input_mtf)
     return composed_mtf.truncate(order)
 
 def arcsin_taylor(variable, order: int = None) -> MultivariateTaylorFunctionBase:
@@ -635,7 +635,8 @@ def derivative(mtf_instance, deriv_dim):
 
     Args:
         mtf_instance (MultivariateTaylorFunctionBase): The MultivariateTaylorFunction to differentiate.
-        deriv_dim (int): The dimension index (0-based) with respect to which to differentiate.
+        deriv_dim (int): The dimension index (1-based) with respect to which to differentiate.
+                         Values should be from 1 to mtf_instance.dimension.
 
     Returns:
         MultivariateTaylorFunctionBase: A new MTF representing the derivative.
@@ -646,17 +647,18 @@ def derivative(mtf_instance, deriv_dim):
     """
     if not isinstance(mtf_instance, MultivariateTaylorFunctionBase):
         raise TypeError("mtf_instance must be a MultivariateTaylorFunctionBase object.")
-    if not isinstance(deriv_dim, int) or deriv_dim < 0 or deriv_dim >= mtf_instance.dimension:
-        raise ValueError(f"deriv_dim must be an integer between 0 and {mtf_instance.dimension-1} inclusive.")
+    if not isinstance(deriv_dim, int) or deriv_dim < 1 or deriv_dim > mtf_instance.dimension:
+        raise ValueError(f"deriv_dim must be an integer between 1 and {mtf_instance.dimension} inclusive.")
 
     derivative_coefficients = defaultdict(lambda: np.array([0.0]).reshape(1)) # Initialize coefficients for derivative
+    deriv_dim_index = deriv_dim - 1 # Convert 1-based to 0-based index
 
     for exponents, coeff in mtf_instance.coefficients.items():
-        exponent_value_deriv_dim = exponents[deriv_dim] # Get exponent value for the dimension we are differentiating
+        exponent_value_deriv_dim = exponents[deriv_dim_index] # Get exponent value for the dimension we are differentiating
 
         if exponent_value_deriv_dim > 0: # Derivative is zero if exponent is 0 in this dimension
             new_exponent_list = list(exponents) # Convert tuple to list for modification
-            new_exponent_list[deriv_dim] -= 1   # Reduce exponent for deriv_dim by 1
+            new_exponent_list[deriv_dim_index] -= 1   # Reduce exponent for deriv_dim by 1
             new_exponents = tuple(new_exponent_list) # Convert back to tuple
 
             new_coefficient_value = coeff * exponent_value_deriv_dim # Apply power rule: multiply by original exponent

@@ -23,7 +23,7 @@ from .elementary_functions import (cos_taylor, sin_taylor, tan_taylor,
     arctanh_taylor, integrate, derivative)
 from .complex_taylor_function import (ComplexMultivariateTaylorFunction,
     convert_to_cmtf)
-from .MTFExtended import Var, MultivariateTaylorFunction
+from .MTFExtended import Var, MultivariateTaylorFunction, compose
 from .elementary_coefficients import load_precomputed_coefficients
 
 
@@ -48,6 +48,7 @@ __all__ = [
     'get_global_max_dimension',
     'set_global_max_order', # Added set_global_max_order
     'Var',
+    'compose',
     'convert_to_mtf',
     'get_mtf_initialized_status', # Added get_mtf_initialized_status - although already present, ensuring
     'integrate',

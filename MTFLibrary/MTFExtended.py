@@ -118,3 +118,64 @@ def Var(var_index):
     coefficients[tuple(exponent)] = np.array([1.0]).reshape(1)
 
     return MultivariateTaylorFunction(coefficients=coefficients, dimension=dimension)
+
+
+def compose(mtf_instance: MultivariateTaylorFunctionBase, other_function_dict: dict[int, MultivariateTaylorFunctionBase]) -> MultivariateTaylorFunctionBase:
+    """
+    Composes a Taylor function with other Taylor functions.
+
+    Substitutes variables in the given MultivariateTaylorFunctionBase object
+    with other MultivariateTaylorFunctionBase objects.
+
+    Args:
+        mtf_instance (MultivariateTaylorFunctionBase): The MultivariateTaylorFunctionBase to compose.
+        other_function_dict (Dict[int, MultivariateTaylorFunctionBase]): A dictionary where keys are
+            1-based integer indices of the variables to substitute, and values are
+            MultivariateTaylorFunctionBase objects (substituting functions).
+
+    Returns:
+        MultivariateTaylorFunctionBase: A new MTF representing the composed function.
+
+    Raises:
+        TypeError: if mtf_instance is not a MultivariateTaylorFunctionBase,
+                   or if other_function_dict is not a dictionary,
+                   or if keys of other_function_dict are not integers,
+                   or if values of other_function_dict are not MultivariateTaylorFunctionBase.
+    """
+    if not isinstance(mtf_instance, MultivariateTaylorFunctionBase):
+        raise TypeError("mtf_instance must be a MultivariateTaylorFunctionBase object.")
+    if not isinstance(other_function_dict, dict):
+        raise TypeError("other_function_dict must be a dictionary.")
+
+    for var_index, substitution_function in other_function_dict.items():
+        if not isinstance(var_index, int):
+            raise TypeError("Keys of other_function_dict must be integers (variable indices).")
+        if not isinstance(substitution_function, MultivariateTaylorFunctionBase):
+            raise TypeError("Values of other_function_dict must be MultivariateTaylorFunctionBase objects.")
+        if not (1 <= var_index <= mtf_instance.dimension):
+            raise ValueError(f"Variable index {var_index} is out of bounds for dimension {mtf_instance.dimension}.")
+
+    composed_coefficients = defaultdict(lambda: np.array([0.0]).reshape(1))
+
+    if not mtf_instance.coefficients:
+        return MultivariateTaylorFunctionBase({}, mtf_instance.dimension)
+
+    for original_multi_index, original_coefficient in mtf_instance.coefficients.items():
+        term_result = MultivariateTaylorFunctionBase.from_constant(original_coefficient, mtf_instance.dimension)
+
+        for i in range(mtf_instance.dimension):
+            order = original_multi_index[i]
+            if order > 0:
+                var_to_substitute = i + 1
+                if var_to_substitute in other_function_dict:
+                    substitution_function = other_function_dict[var_to_substitute]
+                    term_result = term_result * (substitution_function ** order)
+                else:
+                    # If no substitution, treat the variable as itself
+                    variable_function = MultivariateTaylorFunctionBase.from_variable(var_to_substitute, mtf_instance.dimension)
+                    term_result = term_result * (variable_function ** order)
+
+        for exp, coeff in term_result.coefficients.items():
+            composed_coefficients[exp] += coeff
+
+    return MultivariateTaylorFunctionBase(composed_coefficients, mtf_instance.dimension)
