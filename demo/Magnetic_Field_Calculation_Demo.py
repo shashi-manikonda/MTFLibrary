@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 # --- Global MTF Settings ---
-initialize_mtf_globals(max_order=4, max_dimension=4)
+initialize_mtf_globals(max_order=6, max_dimension=4)
 set_global_etol(1e-16)
 
 # --- Define Variables for MTF ---

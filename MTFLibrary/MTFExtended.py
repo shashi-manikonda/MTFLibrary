@@ -94,7 +94,35 @@ class MultivariateTaylorFunction(MultivariateTaylorFunctionBase, np.ndarray):
             return NotImplemented  # Let NumPy handle other ufuncs or methods
     
         return NotImplemented # For other methods like reduce, accumulate, etc. which are not handled.
-    
+
+
+    def __reduce__(self):
+        ndarray_state = super().__getstate__()
+        custom_state = {'coefficients': self.coefficients,
+                        'dimension': self.dimension,
+                        'var_name': self.var_name}
+        return (self.__class__,
+                (self.coefficients, self.dimension, self.var_name),
+                (ndarray_state, custom_state))
+
+    def __setstate__(self, state):
+        ndarray_state, custom_state = state
+        if isinstance(ndarray_state, tuple) and len(ndarray_state) >= 4:
+            super().__setstate__(ndarray_state)
+        elif isinstance(ndarray_state, dict):
+            # This might happen in some cases, try updating __dict__
+            self.__dict__.update(ndarray_state)
+        else:
+            raise TypeError(f"Unexpected type for ndarray_state: {type(ndarray_state)}, value: {ndarray_state}")
+        self.__dict__.update(custom_state)
+
+
+'''
+Create a Alias for MultivariateTaylorFunction class for ease of calling and use
+'''
+MTF = MultivariateTaylorFunction
+
+
 def Var(var_index):
     """
     Represents an independent variable as an MultivariateTaylorFunction object.
@@ -104,6 +132,17 @@ def Var(var_index):
 
     Returns:
         MultivariateTaylorFunction: A MultivariateTaylorFunction object representing the variable x_var_index.
+    
+    Note:
+    Var(var_id_int) Function: The Var(var_id_int) function is used to initialize 
+    a symbolic variable for Taylor expansion. It creates a first-order Taylor 
+    polynomial representing a single variable. The var_id_int argument specifies 
+    the dimension of the variable, represented as an integer from 1 to 
+    max_dimension (inclusive). The order of this integer also corresponds to the 
+    order of the variable in the coefficient exponent tuple 
+    (e.g., for max_dimension=3, the first element of the exponent tuple is the 
+     power of the variable with ID 1, the second element is the power of the 
+    variable with ID 2, and so on).
     """
     dimension = get_global_max_dimension()
 
@@ -161,7 +200,7 @@ def compose(mtf_instance: MultivariateTaylorFunctionBase, other_function_dict: d
         return MultivariateTaylorFunctionBase({}, mtf_instance.dimension)
 
     for original_multi_index, original_coefficient in mtf_instance.coefficients.items():
-        term_result = MultivariateTaylorFunctionBase.from_constant(original_coefficient, mtf_instance.dimension)
+        term_result = MultivariateTaylorFunctionBase.from_constant(original_coefficient)
 
         for i in range(mtf_instance.dimension):
             order = original_multi_index[i]

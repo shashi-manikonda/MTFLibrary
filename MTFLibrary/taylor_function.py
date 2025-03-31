@@ -44,6 +44,15 @@ def initialize_mtf_globals(max_order=None, max_dimension=None):
     print(f"Max coefficient count (order={_GLOBAL_MAX_ORDER}, nvars={_GLOBAL_MAX_DIMENSION}): {get_max_coefficient_count()}")
     print(f"Precomputed coefficients loaded and ready for use.")
 
+
+# Add this function to expose the precomputed coefficients
+def get_precomputed_coefficients():
+    """Returns the precomputed Taylor coefficients for elementary functions."""
+    global precomputed_coefficients, _INITIALIZED
+    if not _INITIALIZED:
+        raise RuntimeError("MTF Globals are not initialized.")
+    return precomputed_coefficients
+
 def get_mtf_initialized_status():
     """Returns initialization status of MTF globals."""
     return _INITIALIZED
@@ -111,8 +120,9 @@ class MultivariateTaylorFunctionBase:
         self.truncate_inplace()
 
     @classmethod
-    def from_constant(cls, constant_value, dimension):
+    def from_constant(cls, constant_value):
         """Creates an MTF representing a constant value."""
+        dimension=get_global_max_dimension()
         coeffs = {(0,) * dimension: np.array([float(constant_value)]).reshape(1)}
         return cls(coefficients=coeffs, dimension=dimension)
 
@@ -164,7 +174,7 @@ class MultivariateTaylorFunctionBase:
             sum_coeffs = self._add_coefficient_dicts(self.coefficients, other.coefficients)
             return MultivariateTaylorFunctionBase(coefficients=sum_coeffs, dimension=self.dimension)
         elif isinstance(other, (int, float)):
-            return self + MultivariateTaylorFunctionBase.from_constant(other, self.dimension)
+            return self + MultivariateTaylorFunctionBase.from_constant(other)
         else:
             return NotImplemented
 
@@ -180,13 +190,13 @@ class MultivariateTaylorFunctionBase:
             sub_coeffs = self._add_coefficient_dicts(self.coefficients, other.coefficients, subtract=True)
             return MultivariateTaylorFunctionBase(coefficients=sub_coeffs, dimension=self.dimension)
         elif isinstance(other, (int, float)):
-            return self - MultivariateTaylorFunctionBase.from_constant(other, self.dimension)
+            return self - MultivariateTaylorFunctionBase.from_constant(other)
         else:
             return NotImplemented
 
     def __rsub__(self, other):
         """Defines reverse subtraction for non-commutative property."""
-        return (MultivariateTaylorFunctionBase.from_constant(other, self.dimension)) - self
+        return (MultivariateTaylorFunctionBase.from_constant(other)) - self
 
     def __mul__(self, other):
         """Defines multiplication (*) for MultivariateTaylorFunction objects."""
@@ -211,9 +221,9 @@ class MultivariateTaylorFunctionBase:
                 new_coeffs_dict[exponent_tuple] += np.array([new_coeffs_values_flattened[i]]).reshape(1)
             return MultivariateTaylorFunctionBase(coefficients=new_coeffs_dict, dimension=self.dimension)
         elif isinstance(other, (int, float)):
-            return self * MultivariateTaylorFunctionBase.from_constant(other, self.dimension)
+            return self * MultivariateTaylorFunctionBase.from_constant(other)
         elif isinstance(other, np.ndarray) and other.shape == (1,):
-            return self * MultivariateTaylorFunctionBase.from_constant(float(other[0]), self.dimension)
+            return self * MultivariateTaylorFunctionBase.from_constant(float(other[0]))
         else:
             return NotImplemented
 
@@ -239,10 +249,10 @@ class MultivariateTaylorFunctionBase:
                 else:
                     raise ValueError("Power must be a non-negative integer, 0.5, or -0.5.")
             if power == 0:
-                return MultivariateTaylorFunctionBase.from_constant(1.0, self.dimension)
+                return MultivariateTaylorFunctionBase.from_constant(1.0)
             if power == 1:
                 return self
-            result_mtf = MultivariateTaylorFunctionBase.from_constant(1.0, self.dimension)
+            result_mtf = MultivariateTaylorFunctionBase.from_constant(1.0)
             for _ in range(power):
                 if self.is_zero_mtf(result_mtf):
                     continue
@@ -305,7 +315,7 @@ class MultivariateTaylorFunctionBase:
             coeff_items.append((exponent_tuple, coeff_val))
         inverse_series_1d_mtf = MultivariateTaylorFunctionBase(coefficients=dict(coeff_items), dimension=1)
         composed_mtf = inverse_series_1d_mtf.compose_one_dim(
-            rescaled_mtf - MultivariateTaylorFunctionBase.from_constant(1.0, rescaled_mtf.dimension)
+            rescaled_mtf - MultivariateTaylorFunctionBase.from_constant(1.0)
         )
         final_mtf = composed_mtf / c0
         truncated_mtf = final_mtf.truncate(order)
@@ -466,7 +476,24 @@ class MultivariateTaylorFunctionBase:
     def __repr__(self):
         """Returns a detailed string representation of the MTF (for debugging)."""
         return get_tabular_string(self)
+    
+    def __eq__(self, other):
+        """Defines equality (==) for MultivariateTaylorFunction objects."""
+        if not isinstance(other, MultivariateTaylorFunctionBase):
+            return False
+        if self.dimension != other.dimension:
+            return False
+        if set(self.coefficients.keys()) != set(other.coefficients.keys()):
+            return False
+        for exponent, coeff in self.coefficients.items():
+            if not np.array_equal(coeff, other.coefficients[exponent]):
+                return False
+        return True
 
+    def __ne__(self, other):
+        """Defines inequality (!=) for MultivariateTaylorFunction objects."""
+        return not self.__eq__(other)
+        
 
 def _generate_exponent_combinations(dimension, order):
     """Generates all combinations of exponents for a given dimension and order."""
@@ -491,7 +518,7 @@ def convert_to_mtf(input_val, dimension=None):
     elif isinstance(input_val, (int, float)):
         if dimension is None:
             dimension = get_global_max_dimension()
-        return MultivariateTaylorFunctionBase.from_constant(input_val, dimension)
+        return MultivariateTaylorFunctionBase.from_constant(input_val)
     elif isinstance(input_val, np.ndarray) and input_val.shape == ():
         return convert_to_mtf(input_val.item(), dimension)
     elif isinstance(input_val, np.number):

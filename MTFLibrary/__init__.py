@@ -16,14 +16,14 @@ from .taylor_function import (initialize_mtf_globals, get_global_max_order,
     _split_constant_polynomial_part,
     sqrt_taylor,
     isqrt_taylor,
-    precomputed_coefficients) # Added remaining names from taylor_function
+    get_precomputed_coefficients) # Added remaining names from taylor_function
 from .elementary_functions import (cos_taylor, sin_taylor, tan_taylor,
     exp_taylor, gaussian_taylor, log_taylor, arctan_taylor,
     sinh_taylor, cosh_taylor, tanh_taylor, arcsin_taylor, arccos_taylor,
     arctanh_taylor, integrate, derivative)
 from .complex_taylor_function import (ComplexMultivariateTaylorFunction,
     convert_to_cmtf)
-from .MTFExtended import Var, MultivariateTaylorFunction, compose
+from .MTFExtended import Var, MultivariateTaylorFunction, compose, MTF
 from .elementary_coefficients import load_precomputed_coefficients
 
 
@@ -36,7 +36,7 @@ public API of your library.
 __all__ = [
     'taylor_function',
     'load_precomputed_coefficients',
-    'precomputed_coefficients',
+    'get_precomputed_coefficients',
     'elementary_functions',
     'MultivariateTaylorFunctionBase',
     'MultivariateTaylorFunction', 
@@ -49,6 +49,7 @@ __all__ = [
     'set_global_max_order', # Added set_global_max_order
     'Var',
     'compose',
+    'MTF',
     'convert_to_mtf',
     'get_mtf_initialized_status', # Added get_mtf_initialized_status - although already present, ensuring
     'integrate',
