@@ -221,79 +221,6 @@ def compose(mtf_instance: MultivariateTaylorFunctionBase, other_function_dict: d
 
     return MultivariateTaylorFunctionBase(composed_coefficients, mtf_instance.dimension)
 
-# def mtfarray(mtfs, column_names=None):
-#     """
-#     Merges a list of MultivariateTaylorFunction objects into a single pandas DataFrame
-#     based on their Taylor series coefficients' order and exponents.
-
-#     Args:
-#         mtfs (list): A list of MultivariateTaylorFunction or ComplexMultivariateTaylorFunction objects.
-#         column_names (list, optional): An optional list of strings to rename the coefficient
-#                                        columns in the output DataFrame. The length of this list
-#                                        must match the number of MTFs in the `mtfs` argument.
-#                                        Defaults to None, in which case the coefficient columns
-#                                        will be named based on the MTF names or indices.
-
-#     Returns:
-#         pandas.DataFrame: A DataFrame where each row represents a unique combination
-#                           of 'Order' and 'Exponents' found across all input MTFs.
-#                           The DataFrame will have columns for the coefficients of each
-#                           input MTF, along with 'Order' and 'Exponents'. Missing
-#                           coefficients are filled with 0.
-
-#     Raises:
-#         TypeError: If `mtfs` is not a list or if any element in `mtfs` is not a
-#                    MultivariateTaylorFunction or ComplexMultivariateTaylorFunction,
-#                    or if `column_names` is provided but is not a list.
-#         ValueError: If the MTF objects in the `mtfs` list have different dimensions
-#                     or different variable lists (if the variable consistency check is enabled),
-#                     or if `column_names` is provided but its length does not match
-#                     the number of input MTFs.
-#     """
-
-    
-    
-#     if not isinstance(mtfs, list):
-#             raise TypeError("Input 'mtfs' must be a list.")
-
-#     if not mtfs:
-#         return pd.DataFrame(columns=['Order', 'Exponents'])  # Return an empty DataFrame for an empty list
-
-#     valid_mtf_types = (MultivariateTaylorFunction, 
-#                        MultivariateTaylorFunctionBase)
-#     for mtf in mtfs:
-#         if not isinstance(mtf, valid_mtf_types):
-#             raise TypeError(f"All elements in 'mtfs' must be instances of {MultivariateTaylorFunction.__name__}, but found {type(mtf).__name__}.")
-
-#     first_dim = mtfs[0].dimension
-#     for i, mtf in enumerate(mtfs[1:]):
-#         if mtf.dimension != first_dim:
-#             raise ValueError(f"MTF at index {i+1} has dimension {mtf.dimension}, but the first MTF has dimension {first_dim}. All MTFs must have the same dimension.")
-
-
-#     dfs = [mtf.get_tabular_dataframe() for mtf in mtfs]
-#     tmap = reduce(lambda left, right: pd.merge(left, right, on=['Order', 'Exponents'], how='outer'), dfs)
-
-#     coef_cols_initial = [col for col in tmap.columns if col.startswith('Coefficient')]
-#     cols =  coef_cols_initial + ['Order', 'Exponents']
-#     tmap = tmap[cols]
-#     tmap[coef_cols_initial] = tmap[coef_cols_initial].fillna(0)
-
-#     if column_names is not None:
-#         if not isinstance(column_names, list):
-#             raise TypeError("The 'column_names' argument must be a list.")
-#         if len(column_names) != len(mtfs):
-#             raise ValueError(f"The length of 'column_names' ({len(column_names)}) must match the number of MTFs ({len(mtfs)}).")
-
-#         new_coef_cols = {old_name: new_name for old_name, new_name in zip(coef_cols_initial, column_names)}
-#         tmap = tmap.rename(columns=new_coef_cols)
-
-#     tmap = tmap.sort_values(by=['Order', 'Exponents'], ascending=[True, False]).reset_index(drop=True)
-#     return tmap
-
-# import pandas as pd
-# from functools import reduce
-# from MTFLibrary import MultivariateTaylorFunction, MultivariateTaylorFunctionBase
 
 def mtfarray(mtfs, column_names=None):
     """
@@ -324,6 +251,10 @@ def mtfarray(mtfs, column_names=None):
                     the number of input MTFs.
     """
 
+    
+    if isinstance(mtfs, np.ndarray):
+        mtfs = list(mtfs)
+    
     if not isinstance(mtfs, list):
         raise TypeError("Input 'mtfs' must be a list.")
 
@@ -335,6 +266,7 @@ def mtfarray(mtfs, column_names=None):
     for mtf in mtfs:
         if not isinstance(mtf, valid_mtf_types):
             raise TypeError(f"All elements in 'mtfs' must be instances of {MultivariateTaylorFunction.__name__}, but found {type(mtf).__name__}.")
+            
 
     first_dim = mtfs[0].dimension
     for i, mtf in enumerate(mtfs[1:]):

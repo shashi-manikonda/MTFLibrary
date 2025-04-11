@@ -430,7 +430,7 @@ class MultivariateTaylorFunctionBase:
     def get_tabular_dataframe(self):
         """Returns a pandas DataFrame representation of MTF or CMTF instance."""
         coefficients = self.coefficients
-        # dimension = get_global_max_dimension()
+        dimension = get_global_max_dimension()
         order = get_global_max_order()
     
         data = []
@@ -450,7 +450,8 @@ class MultivariateTaylorFunctionBase:
                 term_index += 1
     
         if not data:
-            return pd.DataFrame({"Info": ["MultivariateTaylorFunction (truncated or zero)"]})
+            return pd.DataFrame([{'Coefficient':0, 'Order':0, 'Exponents':(0,)*dimension}])
+            # return pd.DataFrame({"Info": ["MultivariateTaylorFunction (truncated or zero)"]})
     
         df = pd.DataFrame(data)
         df = df.sort_values(by=['Order', 'Exponents'], ascending=[True, False]).reset_index(drop=True)
@@ -496,12 +497,12 @@ class MultivariateTaylorFunctionBase:
     def __str__(self):
         """Returns a string representation of the MTF (tabular format)."""
         df = self.get_tabular_dataframe()
-        return f'\n{df}'
+        return f'{df}\n'
 
     def __repr__(self):
         """Returns a detailed string representation of the MTF (for debugging)."""
         df = self.get_tabular_dataframe()
-        return f'\n{df}'
+        return f'{df}\n'
     
     def __eq__(self, other):
         """Defines equality (==) for MultivariateTaylorFunction objects."""

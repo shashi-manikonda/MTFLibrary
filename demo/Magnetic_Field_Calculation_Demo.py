@@ -57,12 +57,19 @@ if parallel_mode:
 else:
     B_field_ring_axis = serial_biot_savart(segment_mtfs_ring, element_lengths_ring, direction_vectors_ring, field_points_axis)
 
+
+for i in range(num_field_points_axis):
+    B_field_ring_axis[i] = [integrate(bfld, 4, -1, 1) for bfld in B_field_ring_axis[i]]
+    # fmap = mtfarray(list(B_field_ring_axis[i]),['Bx','By','Bz'])
+    # print(f'{fmap}\n')
+
 if rank == 0:
     mid_point = num_field_points_axis//2
     print("Magnetic field along axis of rotated ring (Example 1 - Element Input, first point):")
-    print(B_field_ring_axis[mid_point][2])
+    print(mtfarray(B_field_ring_axis[mid_point]))
 
-    Bzfldxyz = integrate(B_field_ring_axis[mid_point][2],4,-1,1)
+    # Bzfldxyz = integrate(B_field_ring_axis[mid_point][2],4,-1,1)
+    Bzfldxyz = B_field_ring_axis[mid_point][2]
     Bzfld = Bzfldxyz.substitute_variable(1,0).substitute_variable(2,0)
     print('Bz field along z: \n', Bzfld)
 
