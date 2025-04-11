@@ -1,5 +1,22 @@
 # MTFLibrary/__init__.py
 
+"""
+A library for working with Multivariate Taylor Functions.
+
+This package provides tools for creating, manipulating, and analyzing
+Multivariate Taylor Series expansions. It includes classes for both
+real and complex-valued functions, elementary function implementations,
+and extended functionalities.
+"""
+
+import pandas as pd
+
+# Set the display format for floats
+pd.options.display.float_format = '{:.12e}'.format
+pd.set_option('display.max_columns', None)
+pd.set_option('display.max_rows', None)
+pd.set_option('display.width', 1000)
+
 from . import elementary_coefficients
 from . import taylor_function
 from . import elementary_functions
@@ -23,7 +40,7 @@ from .elementary_functions import (cos_taylor, sin_taylor, tan_taylor,
     arctanh_taylor, integrate, derivative)
 from .complex_taylor_function import (ComplexMultivariateTaylorFunction,
     convert_to_cmtf)
-from .MTFExtended import Var, MultivariateTaylorFunction, compose, MTF
+from .MTFExtended import Var, MultivariateTaylorFunction, compose, MTF, mtfarray
 from .elementary_coefficients import load_precomputed_coefficients
 
 
@@ -48,6 +65,7 @@ __all__ = [
     'get_global_max_dimension',
     'set_global_max_order', # Added set_global_max_order
     'Var',
+    'mtfarray',
     'compose',
     'MTF',
     'convert_to_mtf',

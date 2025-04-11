@@ -4,7 +4,7 @@ from collections import defaultdict
 from MTFLibrary.taylor_function import (initialize_mtf_globals, get_global_max_order, 
         get_global_max_dimension, set_global_max_order, set_global_etol, 
         get_global_etol, convert_to_mtf, get_mtf_initialized_status, 
-        get_tabular_string, MultivariateTaylorFunctionBase)
+        MultivariateTaylorFunctionBase)
 # from MTFLibrary.elementary_functions import (cos_taylor, sin_taylor, 
 #         exp_taylor, gaussian_taylor, sqrt_taylor, log_taylor, arctan_taylor, 
 #         sinh_taylor, cosh_taylor, tanh_taylor, arcsin_taylor, arccos_taylor, 
@@ -578,11 +578,15 @@ class ComplexMultivariateTaylorFunction(MultivariateTaylorFunctionBase):
     def __str__(self):
         if self.var_name: # Use var_name if available for concise representation
             return f"MultivariateTaylorFunction({self.var_name})"
-        return get_tabular_string(self)
+        # return get_tabular_string(self)
+        df = self.get_tabular_dataframe()
+        return f'\n{df}'
 
     def print_tabular(self, order=None, variable_names=None):
         """Prints the tabular string representation of the MTF."""
-        print(get_tabular_string(self, order, variable_names))
+        # print(get_tabular_string(self, order, variable_names))
+        df = self.get_tabular_dataframe()
+        return f'\n{df}'
 
 
 

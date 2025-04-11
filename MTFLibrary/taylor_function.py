@@ -5,6 +5,7 @@ import math
 from MTFLibrary.elementary_coefficients import load_precomputed_coefficients
 import time
 import numbers
+import pandas as pd
 
 from . import elementary_coefficients
 
@@ -426,9 +427,34 @@ class MultivariateTaylorFunctionBase:
                             composed_coefficients[term_exponents] = term_coeff
         return MultivariateTaylorFunctionBase(coefficients=composed_coefficients, dimension=other_mtf.dimension)
 
-    def print_tabular(self, order=None, variable_names=None):
-        """Prints a tabular representation of the MTF coefficients."""
-        print(get_tabular_string(self, order, variable_names))
+    def get_tabular_dataframe(self):
+        """Returns a pandas DataFrame representation of MTF or CMTF instance."""
+        coefficients = self.coefficients
+        # dimension = get_global_max_dimension()
+        order = get_global_max_order()
+    
+        data = []
+        term_index = 1
+        etol = get_global_etol()
+        for exponents, coeff in sorted(coefficients.items(), key=lambda item: sum(item[0])):
+            if sum(exponents) <= order and np.any(np.abs(coeff) > etol):
+                if np.iscomplexobj(coeff):
+                    coeff_str = f"{coeff[0].real:.8f}{coeff[0].imag:+8f}j"
+                else:
+                    coeff_str = coeff[0]
+                data.append({
+                    "Coefficient": coeff_str,
+                    "Order": sum(exponents),
+                    "Exponents": exponents
+                })
+                term_index += 1
+    
+        if not data:
+            return pd.DataFrame({"Info": ["MultivariateTaylorFunction (truncated or zero)"]})
+    
+        df = pd.DataFrame(data)
+        df = df.sort_values(by=['Order', 'Exponents'], ascending=[True, False]).reset_index(drop=True)
+        return df
 
     def extract_coefficient(self, exponents):
         """Extracts the coefficient for a given exponent tuple."""
@@ -469,13 +495,13 @@ class MultivariateTaylorFunctionBase:
 
     def __str__(self):
         """Returns a string representation of the MTF (tabular format)."""
-        if self.var_name:
-            return f"MultivariateTaylorFunction({self.var_name})"
-        return get_tabular_string(self)
+        df = self.get_tabular_dataframe()
+        return f'\n{df}'
 
     def __repr__(self):
         """Returns a detailed string representation of the MTF (for debugging)."""
-        return get_tabular_string(self)
+        df = self.get_tabular_dataframe()
+        return f'\n{df}'
     
     def __eq__(self, other):
         """Defines equality (==) for MultivariateTaylorFunction objects."""
@@ -528,46 +554,51 @@ def convert_to_mtf(input_val, dimension=None):
     else:
         raise TypeError(f"Unsupported input type: {type(input_val)}. Cannot convert to MTF/CMTF.")
 
-def get_tabular_string(mtf_instance, order=None, variable_names=None):
-    """Returns tabular string representation of MTF or CMTF instance."""
-    coefficients = mtf_instance.coefficients
-    dimension = mtf_instance.dimension
-    if order is None:
-        if hasattr(mtf_instance, 'get_global_max_order'):
-            order = mtf_instance.get_global_max_order()
-        else:
-            order = get_global_max_order()
-    if variable_names is None:
-        variable_names = [f'x_{i+1}' for i in range(dimension)]
-    headers = ["I", "Coefficient", "Order", "Exponents"]
-    rows = []
-    term_index = 1
-    etol = get_global_etol()
-    for exponents, coeff in sorted(coefficients.items(), key=lambda item: sum(item[0])):
-        if sum(exponents) <= order and np.any(np.abs(coeff) > etol):
-            exponent_str = " ".join(map(str, exponents))
-            if np.iscomplexobj(coeff):
-                coeff_str = f"{coeff[0].real:.8f}{coeff[0].imag:+8f}j"
-            else:
-                coeff_str = f"{coeff[0]:+16.16e}"
-            rows.append([f"{term_index: <4}", coeff_str, str(sum(exponents)), exponent_str])
-            term_index += 1
-    if not rows:
-        return "MultivariateTaylorFunction (truncated or zero)"
-    column_widths = []
-    current_header_index = 0
-    for header in headers:
-        if header == "I":
-            column_widths.append(4 + 2)
-        else:
-            column_widths.append(max(len(header), max(len(row[current_header_index]) for row in rows)) + 2)
-        current_header_index += 1
-    header_row = "| " + "| ".join(headers[i].ljust(column_widths[i]-2) for i in range(len(headers))) + "|"
-    separator = "|" + "|".join("-" * (w-1) for w in column_widths) + "|"
-    table_str = header_row + "\n" + separator + "\n"
-    for row in rows:
-        table_str += "| " + "| ".join(row[i].ljust(column_widths[i]-2) for i in range(len(headers))) + "|\n"
-    return '\n' + table_str
+# def get_tabular_string(mtf_instance, order=None, variable_names=None):
+#     print('-- ## will be removed ## --')
+
+
+# def get_tabular_string(mtf_instance, order=None, variable_names=None):
+#     """Returns tabular string representation of MTF or CMTF instance."""
+#     coefficients = mtf_instance.coefficients
+#     dimension = mtf_instance.dimension
+#     if order is None:
+#         if hasattr(mtf_instance, 'get_global_max_order'):
+#             order = mtf_instance.get_global_max_order()
+#         else:
+#             order = get_global_max_order()
+#     if variable_names is None:
+#         variable_names = [f'x_{i+1}' for i in range(dimension)]
+#     headers = ["I", "Coefficient", "Order", "Exponents"]
+#     rows = []
+#     term_index = 1
+#     etol = get_global_etol()
+#     for exponents, coeff in sorted(coefficients.items(), key=lambda item: sum(item[0])):
+#         if sum(exponents) <= order and np.any(np.abs(coeff) > etol):
+#             exponent_str = " ".join(map(str, exponents))
+#             if np.iscomplexobj(coeff):
+#                 coeff_str = f"{coeff[0].real:.8f}{coeff[0].imag:+8f}j"
+#             else:
+#                 coeff_str = f"{coeff[0]:+16.16e}"
+#             rows.append([f"{term_index: <4}", coeff_str, str(sum(exponents)), exponent_str])
+#             term_index += 1
+#     if not rows:
+#         return "MultivariateTaylorFunction (truncated or zero)"
+#     column_widths = []
+#     current_header_index = 0
+#     for header in headers:
+#         if header == "I":
+#             column_widths.append(4 + 2)
+#         else:
+#             column_widths.append(max(len(header), max(len(row[current_header_index]) for row in rows)) + 2)
+#         current_header_index += 1
+#     header_row = "| " + "| ".join(headers[i].ljust(column_widths[i]-2) for i in range(len(headers))) + "|"
+#     separator = "|" + "|".join("-" * (w-1) for w in column_widths) + "|"
+#     table_str = header_row + "\n" + separator + "\n"
+#     for row in rows:
+#         table_str += "| " + "| ".join(row[i].ljust(column_widths[i]-2) for i in range(len(headers))) + "|\n"
+#     return '\n' + table_str
+
 
 def _split_constant_polynomial_part(input_mtf: MultivariateTaylorFunctionBase) -> tuple[float, MultivariateTaylorFunctionBase]:
     """Helper: Splits MTF into constant and polynomial parts."""
