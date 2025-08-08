@@ -9,7 +9,10 @@ setup(
     author_email='manikonda@outlook.com',
     license='MIT',
     packages=find_packages(),
-    install_requires=['numpy'],
+    install_requires=['numpy', 'pandas'],
+    extras_require={
+        'test': ['pytest'],
+    },
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
