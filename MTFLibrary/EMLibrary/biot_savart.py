@@ -13,27 +13,26 @@ mu_0_4pi = 1e-7 # Define mu_0_4pi if it's not already globally defined
 
 def _numpy_biot_savart_core(source_points, dl_vectors, field_points):
     """
-    Core NumPy vectorized Biot-Savart calculation, with shape correction for 1/r^3 multiplication.
+    Core vectorized Biot-Savart calculation.
     """
     source_points_reshaped = source_points[:, np.newaxis, :]
     field_points_reshaped = field_points[np.newaxis, :, :]
 
     r_vectors = field_points_reshaped - source_points_reshaped
     r_squared = np.sum(r_vectors**2, axis=2)
+
+    # Avoid division by zero at the source point location
     r_squared = np.where(r_squared == 0, 1e-18, r_squared)
 
     dl_vectors_reshaped = dl_vectors[:, np.newaxis, :]
     cross_products = np.cross(dl_vectors_reshaped, r_vectors, axis=2)
 
-    dB_contributions = (mu_0_4pi * cross_products) / r_squared[:, :, np.newaxis] # Initial dB with 1/r^2
+    # Calculate 1/r^3 for magnitude scaling.
+    # This is done as 1/r^2 * 1/r to work with MTF ufunc overrides.
+    inv_r_cubed = np.reciprocal(r_squared) * r_squared**(-0.5)
+    inv_r_cubed_expanded = np.expand_dims(inv_r_cubed, axis=2)
 
-    # --- Modified part: Calculate 1/r^3 and correct shape for multiplication ---
-    inv_r_cubed_mtf_array = np.reciprocal(r_squared) * r_squared**(-0.5) # MTF array for 1/r^3 (shape: (N, M))
-    inv_r_cubed_mtf_array_expanded = np.expand_dims(inv_r_cubed_mtf_array, axis=2) # Reshape to (N, M, 1)
-
-    dB_contributions_corrected = (mu_0_4pi * cross_products) * inv_r_cubed_mtf_array_expanded # Element-wise multiply, broadcasting (N, M, 3) * (N, M, 1) -> (N, M, 3)
-    dB_contributions = dB_contributions_corrected  # Update dB_contributions
-    # --- End of modified part ---
+    dB_contributions = (mu_0_4pi * cross_products) * inv_r_cubed_expanded
 
     B_field = np.sum(dB_contributions, axis=0)
     return B_field
@@ -91,7 +90,9 @@ def numpy_biot_savart(element_centers, element_lengths, element_directions, fiel
         raise ValueError("field_points must be a NumPy array of shape (M, 3)")
 
     source_points = element_centers  # Center points are used as source points
-    dl_vectors = 0.5*element_lengths[:, np.newaxis] * element_directions  # dl_vector = dl * direction
+    # The 0.5 factor is necessary for the MTF integration workflow, where the
+    # result is integrated over a parameter that ranges from -1 to 1 (an interval of length 2).
+    dl_vectors = 0.5 * element_lengths[:, np.newaxis] * element_directions  # dl_vector = dl * direction
 
     return _numpy_biot_savart_core(source_points, dl_vectors, field_points)
 
@@ -199,4 +200,3 @@ def serial_biot_savart(element_centers, element_lengths, element_directions, fie
          [ 0.00000000e+00  0.00000000e+00  5.00000000e-09]]
     """
     return numpy_biot_savart(element_centers, element_lengths, element_directions, field_points)  # Calls numpy version
-
