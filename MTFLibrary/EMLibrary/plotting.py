@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from ..taylor_function import MultivariateTaylorFunctionBase
-from ..mtf_base import MTF
 from .biot_savart import serial_biot_savart
 
 class Coil:
