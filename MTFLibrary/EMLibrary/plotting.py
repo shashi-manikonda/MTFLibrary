@@ -15,12 +15,12 @@ class Coil:
 
         Parameters:
         -----------
-        segment_mtfs : list of MTFs
-            The MTF representation of the wire segments.
+        segment_mtfs : list of MTFs or list of array-like
+            The MTF representation of the wire segments, or raw coordinates.
         element_lengths : list of floats
             The length of each segment.
-        direction_vectors : list of arrays
-            The direction of current in each segment.
+        direction_vectors : list of MTFs or list of array-like
+            The MTF representation of the direction of current in each segment, or raw vectors.
         current : float, optional
             The current flowing through the coil in Amperes (default is 1.0).
         label : str, optional
@@ -28,9 +28,26 @@ class Coil:
         color : str, optional
             A color for plotting the coil's geometry (default is 'blue').
         """
-        self.segment_mtfs = segment_mtfs
+        # Input validation for segment_mtfs: if raw numbers are provided, convert to MTFs
+        if segment_mtfs and len(segment_mtfs) > 0 and len(segment_mtfs[0]) > 0 and isinstance(segment_mtfs[0][0], (int, float, np.number)):
+            self.segment_mtfs = [
+                [MultivariateTaylorFunctionBase.from_constant(comp) for comp in seg]
+                for seg in segment_mtfs
+            ]
+        else:
+            self.segment_mtfs = segment_mtfs
+
         self.element_lengths = element_lengths
-        self.direction_vectors = direction_vectors
+
+        # Input validation for direction_vectors: if raw numbers are provided, convert to MTFs
+        if direction_vectors and len(direction_vectors) > 0 and len(direction_vectors[0]) > 0 and isinstance(direction_vectors[0][0], (int, float, np.number)):
+            self.direction_vectors = [
+                [MultivariateTaylorFunctionBase.from_constant(comp) for comp in vec]
+                for vec in direction_vectors
+            ]
+        else:
+            self.direction_vectors = direction_vectors
+
         self.current = current
         self.label = label
         self.color = color
