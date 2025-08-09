@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from ..taylor_function import MultivariateTaylorFunctionBase
+from ..mtf_base import MTF
 from .biot_savart import serial_biot_savart
 
 class Coil:
@@ -11,26 +12,19 @@ class Coil:
     """
     def __init__(self, segment_mtfs, element_lengths, direction_vectors, current=1.0, label=None, color='blue'):
         """
-        Initializes a Coil object.
-
-        Parameters:
-        -----------
-        segment_mtfs : list of MTFs
-            The MTF representation of the wire segments.
-        element_lengths : list of floats
-            The length of each segment.
-        direction_vectors : list of arrays
-            The direction of current in each segment.
-        current : float, optional
-            The current flowing through the coil in Amperes (default is 1.0).
-        label : str, optional
-            A name for the coil for legends (default is None).
-        color : str, optional
-            A color for plotting the coil's geometry (default is 'blue').
+        Initializes a Coil object. Can accept MTF objects or NumPy arrays.
         """
-        self.segment_mtfs = segment_mtfs
-        self.element_lengths = element_lengths
-        self.direction_vectors = direction_vectors
+        if isinstance(segment_mtfs, np.ndarray) and np.issubdtype(segment_mtfs.dtype, np.number):
+            self.segment_mtfs = [[MultivariateTaylorFunctionBase.from_constant(component) for component in vector] for vector in segment_mtfs]
+        else:
+            self.segment_mtfs = segment_mtfs
+
+        if isinstance(direction_vectors, np.ndarray) and np.issubdtype(direction_vectors.dtype, np.number):
+            self.direction_vectors = [[MultivariateTaylorFunctionBase.from_constant(component) for component in vector] for vector in direction_vectors]
+        else:
+            self.direction_vectors = direction_vectors
+
+        self.element_lengths = np.array(element_lengths)
         self.current = current
         self.label = label
         self.color = color
