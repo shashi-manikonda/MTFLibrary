@@ -602,25 +602,14 @@ def integrate(mtf_instance, integration_variable_index, lower_limit=None, upper_
     original_max_order = get_global_max_order()
     set_global_max_order(original_max_order + 1)  # Step 1: Increment computation order by one.
 
-    integrated_coefficients = defaultdict(lambda: np.array([0.0], dtype=mtf_instance.coeffs.dtype))
+    new_exponents = mtf_instance.exponents.copy()
+    new_coeffs = mtf_instance.coeffs.copy()
 
-    for i in range(mtf_instance.coeffs.size):
-        exponent_tuple = tuple(mtf_instance.exponents[i])
-        coeff_value = mtf_instance.coeffs[i]
+    p = new_exponents[:, integration_variable_index - 1]
+    new_coeffs /= (p + 1)
+    new_exponents[:, integration_variable_index - 1] += 1
 
-        exponent_for_var = exponent_tuple[integration_variable_index - 1]
-        if exponent_for_var < 0:
-            raise ValueError(f"Cannot integrate term with negative exponent {exponent_for_var} for variable dimension {integration_variable_index}.")
-
-        new_exponent_list = list(exponent_tuple)
-        new_exponent_list[integration_variable_index - 1] += 1
-        new_exponent_tuple = tuple(new_exponent_list)
-
-        integrated_coefficient = coeff_value / (exponent_for_var + 1)
-        integrated_coefficients[new_exponent_tuple] += integrated_coefficient
-
-    indefinite_integral_mtf = type(mtf_instance)(coefficients=integrated_coefficients,  # Step 2: Perform indefinite integral
-                                                                    dimension=mtf_instance.dimension) # Pass dimension
+    indefinite_integral_mtf = type(mtf_instance)((new_exponents, new_coeffs), dimension=mtf_instance.dimension)
 
     if lower_limit is not None and upper_limit is not None:
         # Step 3: substitute variable that integration was performed on with upper and lower limit
@@ -659,23 +648,19 @@ def derivative(mtf_instance, deriv_dim):
     if not isinstance(deriv_dim, int) or deriv_dim < 1 or deriv_dim > mtf_instance.dimension:
         raise ValueError(f"deriv_dim must be an integer between 1 and {mtf_instance.dimension} inclusive.")
 
-    derivative_coefficients = defaultdict(lambda: np.array([0.0], dtype=mtf_instance.coeffs.dtype)) # Initialize coefficients for derivative
     deriv_dim_index = deriv_dim - 1 # Convert 1-based to 0-based index
 
-    for i in range(mtf_instance.coeffs.size):
-        exponents = tuple(mtf_instance.exponents[i])
-        coeff = mtf_instance.coeffs[i]
+    # Filter out terms where the exponent in the derivative dimension is 0
+    mask = mtf_instance.exponents[:, deriv_dim_index] > 0
 
-        exponent_value_deriv_dim = exponents[deriv_dim_index] # Get exponent value for the dimension we are differentiating
+    if not np.any(mask):
+        return type(mtf_instance)((np.empty((0, mtf_instance.dimension), dtype=np.int32), np.empty((0,), dtype=mtf_instance.coeffs.dtype)), mtf_instance.dimension)
 
-        if exponent_value_deriv_dim > 0: # Derivative is zero if exponent is 0 in this dimension
-            new_exponent_list = list(exponents) # Convert tuple to list for modification
-            new_exponent_list[deriv_dim_index] -= 1   # Reduce exponent for deriv_dim by 1
-            new_exponents = tuple(new_exponent_list) # Convert back to tuple
+    new_exponents = mtf_instance.exponents[mask].copy()
+    new_coeffs = mtf_instance.coeffs[mask].copy()
 
-            new_coefficient_value = coeff * exponent_value_deriv_dim # Apply power rule: multiply by original exponent
+    p = new_exponents[:, deriv_dim_index]
+    new_coeffs *= p
+    new_exponents[:, deriv_dim_index] -= 1
 
-            derivative_coefficients[new_exponents] += new_coefficient_value # Add to derivative coefficients
-
-
-    return type(mtf_instance)(derivative_coefficients, mtf_instance.dimension)
+    return type(mtf_instance)((new_exponents, new_coeffs), mtf_instance.dimension)
