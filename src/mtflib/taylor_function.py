@@ -1,4 +1,4 @@
-# MTFLibrary/taylor_function.py
+# mtflib/taylor_function.py
 import numpy as np
 from collections import defaultdict
 import math
@@ -154,9 +154,10 @@ class MultivariateTaylorFunctionBase:
         self.truncate_inplace()
 
     @classmethod
-    def from_constant(cls, constant_value):
+    def from_constant(cls, constant_value, dimension=None):
         """Creates an MTF representing a constant value."""
-        dimension=get_global_max_dimension()
+        if dimension is None:
+            dimension=get_global_max_dimension()
         coeffs = {(0,) * dimension: np.array([float(constant_value)]).reshape(1)}
         return cls(coefficients=coeffs, dimension=dimension)
 
@@ -277,7 +278,7 @@ class MultivariateTaylorFunctionBase:
                 raise ValueError("MTF dimensions must match for multiplication.")
 
             if self.coeffs.size == 0 or other.coeffs.size == 0:
-                return MultivariateTaylorFunctionBase((np.empty((0, self.dimension), dtype=np.int32), np.empty((0,), dtype=np.float64)), self.dimension)
+                return type(self)((np.empty((0, self.dimension), dtype=np.int32), np.empty((0,), dtype=self.coeffs.dtype)), self.dimension)
 
             # This is the core convolution.
             new_exponents = self.exponents[:, np.newaxis, :] + other.exponents[np.newaxis, :, :]
@@ -333,10 +334,10 @@ class MultivariateTaylorFunctionBase:
                 else:
                     raise ValueError("Power must be a non-negative integer, 0.5, or -0.5.")
             if power == 0:
-                return MultivariateTaylorFunctionBase.from_constant(1.0)
+                return type(self).from_constant(1.0)
             if power == 1:
                 return self
-            result_mtf = MultivariateTaylorFunctionBase.from_constant(1.0)
+            result_mtf = type(self).from_constant(1.0)
             for _ in range(power):
                 if self.is_zero_mtf(result_mtf):
                     continue
@@ -354,7 +355,7 @@ class MultivariateTaylorFunctionBase:
 
     def __neg__(self):
         """Defines negation (-) for MultivariateTaylorFunction objects."""
-        return MultivariateTaylorFunctionBase((self.exponents.copy(), -self.coeffs.copy()), self.dimension)
+        return type(self)((self.exponents.copy(), -self.coeffs.copy()), self.dimension)
 
     def __truediv__(self, other):
         """Defines division (/) for MultivariateTaylorFunction objects."""
@@ -362,7 +363,7 @@ class MultivariateTaylorFunctionBase:
             inverse_other_mtf = self._inv_mtf_internal(other)
             return self * inverse_other_mtf
         elif isinstance(other, (int, float, np.number)):
-            return MultivariateTaylorFunctionBase((self.exponents.copy(), self.coeffs / other), self.dimension)
+            return type(self)((self.exponents.copy(), self.coeffs / other), self.dimension)
         else:
             return NotImplemented
 
@@ -391,9 +392,9 @@ class MultivariateTaylorFunctionBase:
         for i, coeff_val in enumerate(coeffs_to_use):
             exponent_tuple = (i,)
             coeff_items.append((exponent_tuple, coeff_val))
-        inverse_series_1d_mtf = MultivariateTaylorFunctionBase(coefficients=dict(coeff_items), dimension=1)
+        inverse_series_1d_mtf = type(self)(coefficients=dict(coeff_items), dimension=1)
         composed_mtf = inverse_series_1d_mtf.compose_one_dim(
-            rescaled_mtf - MultivariateTaylorFunctionBase.from_constant(1.0)
+            rescaled_mtf - type(self).from_constant(1.0)
         )
         final_mtf = composed_mtf / c0
         truncated_mtf = final_mtf.truncate(order)
@@ -487,7 +488,7 @@ class MultivariateTaylorFunctionBase:
         new_exponents = self.exponents[keep_mask]
         new_coeffs = self.coeffs[keep_mask]
 
-        return MultivariateTaylorFunctionBase((new_exponents, new_coeffs), self.dimension)
+        return type(self)((new_exponents, new_coeffs), self.dimension)
 
     def substitute_variable_inplace(self, var_dimension, value):
         """Substitutes a variable in the MTF with a numerical value IN-PLACE."""
@@ -514,8 +515,8 @@ class MultivariateTaylorFunctionBase:
             raise ValueError("Composition is only supported for 1D MTF as the outer function.")
 
         # The result starts as a zero MTF, with the dimension of the inner function
-        composed_mtf = MultivariateTaylorFunctionBase(
-            (np.empty((0, other_mtf.dimension), dtype=np.int32), np.empty((0,), dtype=np.float64)),
+        composed_mtf = type(other_mtf)(
+            (np.empty((0, other_mtf.dimension), dtype=np.int32), np.empty((0,), dtype=self.coeffs.dtype)),
             other_mtf.dimension
         )
 
@@ -571,7 +572,7 @@ class MultivariateTaylorFunctionBase:
         if match_indices.size > 0:
             return np.array([self.coeffs[match_indices[0]]]).reshape(1)
         else:
-            return np.array([0.0]).reshape(1)
+            return np.array([0.0], dtype=self.coeffs.dtype)
 
     def set_coefficient(self, exponents, value):
         """Sets the coefficient for a given exponent tuple."""
@@ -631,7 +632,7 @@ class MultivariateTaylorFunctionBase:
     
     def copy(self):
         """Returns a copy of the MTF."""
-        return MultivariateTaylorFunctionBase((self.exponents.copy(), self.coeffs.copy()), self.dimension, var_name=self.var_name)
+        return type(self)((self.exponents.copy(), self.coeffs.copy()), self.dimension, var_name=self.var_name, implementation=self.implementation)
 
     def __eq__(self, other):
         """Defines equality (==) for MultivariateTaylorFunction objects."""
@@ -679,7 +680,7 @@ def convert_to_mtf(input_val, dimension=None):
     elif isinstance(input_val, (int, float)):
         if dimension is None:
             dimension = get_global_max_dimension()
-        return MultivariateTaylorFunctionBase.from_constant(input_val)
+        return MultivariateTaylorFunctionBase.from_constant(input_val, dimension=dimension)
     elif isinstance(input_val, np.ndarray) and input_val.shape == ():
         return convert_to_mtf(input_val.item(), dimension)
     elif isinstance(input_val, np.number):
@@ -748,7 +749,7 @@ def _split_constant_polynomial_part(input_mtf: MultivariateTaylorFunctionBase) -
         poly_mask = ~match
         poly_exponents = input_mtf.exponents[poly_mask]
         poly_coeffs = input_mtf.coeffs[poly_mask]
-        polynomial_part_mtf = MultivariateTaylorFunctionBase((poly_exponents, poly_coeffs), dimension)
+        polynomial_part_mtf = type(input_mtf)((poly_exponents, poly_coeffs), dimension)
     else:
         constant_term_C_value = 0.0
         polynomial_part_mtf = input_mtf
@@ -795,7 +796,7 @@ def sqrt_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylorF
                 previous_coefficient = sqrt_taylor_1d_coefficients[_generate_exponent(n_order - 1, variable_index_1d, taylor_dimension_1d)][0]
                 coefficient_val = previous_coefficient * (0.5 - (n_order - 1)) / n_order
             sqrt_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = np.array([coefficient_val]).reshape(1)
-    sqrt_taylor_1d_mtf = MultivariateTaylorFunctionBase(
+    sqrt_taylor_1d_mtf = type(variable)(
         coefficients=sqrt_taylor_1d_coefficients, dimension=taylor_dimension_1d
     )
     composed_mtf = sqrt_taylor_1d_mtf.compose_one_dim(input_mtf)
@@ -841,7 +842,7 @@ def isqrt_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylor
                 previous_coefficient = isqrt_taylor_1d_coefficients[_generate_exponent(n_order - 1, variable_index_1d, taylor_dimension_1d)][0]
                 coefficient_val = previous_coefficient * (-0.5 - (n_order - 1)) / n_order
             isqrt_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = np.array([coefficient_val]).reshape(1)
-    isqrt_taylor_1d_mtf = MultivariateTaylorFunctionBase(
+    isqrt_taylor_1d_mtf = type(variable)(
         coefficients=isqrt_taylor_1d_coefficients, dimension=taylor_dimension_1d
     )
     composed_mtf = isqrt_taylor_1d_mtf.compose_one_dim(input_mtf)
