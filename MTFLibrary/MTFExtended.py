@@ -13,26 +13,16 @@ from MTFLibrary.elementary_functions import (cos_taylor, sin_taylor, tan_taylor,
     sinh_taylor, cosh_taylor, tanh_taylor, arcsin_taylor, arccos_taylor,
     arctanh_taylor)
 
-class MultivariateTaylorFunction(MultivariateTaylorFunctionBase, np.ndarray):
+class MultivariateTaylorFunction(MultivariateTaylorFunctionBase):
     """
     Extended MultivariateTaylorFunction class with NumPy ufunc support.
-    Inherits from MultivariateTaylorFunctionBase and np.ndarray, and implements __array_ufunc__.
+    Inherits from MultivariateTaylorFunctionBase and implements __array_ufunc__.
     """
-    def __new__(cls, coefficients, dimension=None, var_name=None):
-        # This view-based approach is often recommended for ndarray subclassing.
-        # We create a 0-dimensional array to start, which will be properly shaped by __init__.
-        obj = np.asarray([0.0]).view(cls)
-        return obj
-
-    def __init__(self, coefficients, dimension=None, var_name=None):
+    def __init__(self, coefficients, dimension=None, var_name=None, implementation='python'):
         # Base class initialization
-        super().__init__(coefficients, dimension, var_name)
-        # The ndarray part of the instance is not explicitly used for storing MTF data,
-        # but this structure is required for NumPy's ufunc mechanism to work correctly.
-        # The actual MTF data (coefficients) is managed by the MultivariateTaylorFunctionBase part.
+        super().__init__(coefficients, dimension, var_name, implementation)
 
-
-    def __array_ufunc__(self, ufunc, method, *inputs, out=None, **kwargs):
+    def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
         """
         Implements NumPy ufunc protocol, directly calling taylor functions from elementary_functions.py.
         Handles scalar inputs by converting them to MultivariateTaylorFunction constants.
@@ -99,7 +89,7 @@ class MultivariateTaylorFunction(MultivariateTaylorFunctionBase, np.ndarray):
         # The first element is the class.
         # The second is a tuple of arguments for __init__.
         # We pass the coefficients as a tuple of (exponents, coeffs) which __init__ understands.
-        return (self.__class__, ((self.exponents, self.coeffs), self.dimension, self.var_name))
+        return (self.__class__, ((self.exponents, self.coeffs), self.dimension, self.var_name, self.implementation))
 
 
 '''
@@ -108,7 +98,7 @@ Create a Alias for MultivariateTaylorFunction class for ease of calling and use
 MTF = MultivariateTaylorFunction
 
 
-def Var(var_index):
+def Var(var_index, implementation='python'):
     """
     Represents an independent variable as an MultivariateTaylorFunction object.
 
@@ -136,12 +126,12 @@ def Var(var_index):
     if not isinstance(var_index, int) or var_index <= 0 or var_index > dimension:
         raise ValueError(f"var_index must be a positive integer between 1 and {dimension}, inclusive.")
 
-    coefficients = {}
-    exponent = [0] * dimension
-    exponent[var_index - 1] = 1
-    coefficients[tuple(exponent)] = np.array([1.0]).reshape(1)
+    # Create the exponents and coefficients arrays directly
+    exponents_arr = np.zeros((1, dimension), dtype=np.int32)
+    exponents_arr[0, var_index - 1] = 1
+    coeffs_arr = np.array([1.0], dtype=np.float64)
 
-    return MultivariateTaylorFunction(coefficients=coefficients, dimension=dimension)
+    return MultivariateTaylorFunction(coefficients=(exponents_arr, coeffs_arr), dimension=dimension, implementation=implementation)
 
 
 def compose(mtf_instance: MultivariateTaylorFunctionBase, other_function_dict: dict[int, MultivariateTaylorFunctionBase]) -> MultivariateTaylorFunctionBase:
@@ -179,37 +169,46 @@ def compose(mtf_instance: MultivariateTaylorFunctionBase, other_function_dict: d
         if not (1 <= var_index <= mtf_instance.dimension):
             raise ValueError(f"Variable index {var_index} is out of bounds for dimension {mtf_instance.dimension}.")
 
-    # Start with an empty MTF that will accumulate the results
-    composed_mtf = MultivariateTaylorFunctionBase((np.empty((0, mtf_instance.dimension), dtype=np.int32), np.empty((0,), dtype=np.float64)), mtf_instance.dimension)
+    # The final composed function will be a sum of terms.
+    # Start with a zero MTF.
+    final_mtf = type(mtf_instance).from_constant(0.0)
 
     if mtf_instance.coeffs.size == 0:
-        return composed_mtf
+        return final_mtf
 
-    # Iterate over each term of the MTF to be composed
+    # Pre-fetch or create the substitution functions for all variables
+    substitutions = {}
+    for j in range(mtf_instance.dimension):
+        var_index = j + 1
+        if var_index in other_function_dict:
+            substitutions[var_index] = other_function_dict[var_index]
+        else:
+            # If no substitution is provided, the variable is substituted with itself.
+            substitutions[var_index] = type(mtf_instance).from_variable(var_index, mtf_instance.dimension)
+
+    # Iterate over each term (coefficient and exponent) of the source MTF
     for i in range(mtf_instance.coeffs.size):
-        original_multi_index = mtf_instance.exponents[i]
-        original_coefficient = mtf_instance.coeffs[i]
+        coeff = mtf_instance.coeffs[i]
+        exponents = mtf_instance.exponents[i]
 
-        # Start with the constant coefficient of the term
-        term_result = MultivariateTaylorFunctionBase.from_constant(original_coefficient)
+        # This term is coeff * product( (x_j ^ exponents[j-1]) )
+        # After composition, this becomes: coeff * product( (g_j ^ exponents[j-1]) )
 
-        # For each variable in the term, substitute it with the corresponding function
+        # Start with the constant coefficient for this term
+        term_result = type(mtf_instance).from_constant(coeff)
+
+        # Multiply by the powered substitution functions
         for j in range(mtf_instance.dimension):
-            order = original_multi_index[j]
-            if order > 0:
-                var_to_substitute = j + 1
-                if var_to_substitute in other_function_dict:
-                    substitution_function = other_function_dict[var_to_substitute]
-                    term_result = term_result * (substitution_function ** order)
-                else:
-                    # If no substitution is provided for a variable, it's treated as itself.
-                    variable_function = MultivariateTaylorFunctionBase.from_variable(var_to_substitute, mtf_instance.dimension)
-                    term_result = term_result * (variable_function ** order)
+            power = exponents[j]
+            if power > 0:
+                var_index = j + 1
+                g_j = substitutions[var_index]
+                term_result *= (g_j ** power)
 
-        # Add the result of this term's composition to the total
-        composed_mtf += term_result
+        # Add the fully composed term to the final result
+        final_mtf += term_result
 
-    return composed_mtf
+    return final_mtf
 
 
 def mtfarray(mtfs, column_names=None):

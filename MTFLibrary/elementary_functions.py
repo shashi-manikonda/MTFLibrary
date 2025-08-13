@@ -40,7 +40,7 @@ def _split_constant_polynomial_part(input_mtf: MultivariateTaylorFunctionBase) -
         poly_mask = ~match
         poly_exponents = input_mtf.exponents[poly_mask]
         poly_coeffs = input_mtf.coeffs[poly_mask]
-        polynomial_part_mtf = MultivariateTaylorFunctionBase((poly_exponents, poly_coeffs), dimension)
+        polynomial_part_mtf = type(input_mtf)((poly_exponents, poly_coeffs), dimension)
     else:
         constant_term_C_value = 0.0
         polynomial_part_mtf = input_mtf
@@ -126,7 +126,7 @@ def sin_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFun
             coefficient_val = (-1)**((n_order - 1) // 2) / math.factorial(n_order)
             sin_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = np.array([coefficient_val]).reshape(1)
 
-    sin_taylor_1d_mtf = MultivariateTaylorFunctionBase(
+    sin_taylor_1d_mtf = type(input_mtf)(
         coefficients=sin_taylor_1d_coefficients, dimension=taylor_dimension_1d
     )
     composed_mtf = sin_taylor_1d_mtf.compose_one_dim(input_mtf)
@@ -157,7 +157,7 @@ def cos_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFun
             coefficient_val = (-1)**(n_order // 2) / math.factorial(n_order)
             cos_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = np.array([coefficient_val]).reshape(1)
 
-    cos_taylor_1d_mtf = MultivariateTaylorFunctionBase(
+    cos_taylor_1d_mtf = type(input_mtf)(
         coefficients=cos_taylor_1d_coefficients, dimension=taylor_dimension_1d
     )
     composed_mtf = cos_taylor_1d_mtf.compose_one_dim(input_mtf)
@@ -213,7 +213,7 @@ def exp_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFun
             coefficient_val = 1.0 / math.factorial(n_order)
             exp_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = np.array([coefficient_val]).reshape(1)
 
-    exp_taylor_1d_mtf = MultivariateTaylorFunctionBase(
+    exp_taylor_1d_mtf = type(input_mtf)(
         coefficients=exp_taylor_1d_coefficients, dimension=taylor_dimension_1d
     )
     composed_mtf = exp_taylor_1d_mtf.compose_one_dim(input_mtf)
@@ -246,7 +246,7 @@ def gaussian_taylor(variable, order: int = None) -> MultivariateTaylorFunctionBa
             coefficient_val = (-1)**k / math.factorial(k)
             gaussian_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = np.array([coefficient_val]).reshape(1)
 
-    gaussian_taylor_1d_mtf = MultivariateTaylorFunctionBase(
+    gaussian_taylor_1d_mtf = type(input_mtf)(
         coefficients=gaussian_taylor_1d_coefficients, dimension=taylor_dimension_1d
     )
     composed_mtf = gaussian_taylor_1d_mtf.compose_one_dim(input_mtf)
@@ -311,7 +311,7 @@ def log_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylorFu
             log_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = np.array([coefficient_val]).reshape(1)
 
 
-    log_taylor_1d_mtf = MultivariateTaylorFunctionBase(
+    log_taylor_1d_mtf = type(input_mtf)(
         coefficients=log_taylor_1d_coefficients, dimension=taylor_dimension_1d
     )
     composed_mtf = log_taylor_1d_mtf.compose_one_dim(input_mtf)
@@ -366,7 +366,7 @@ def arctan_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylo
             arctan_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = np.array([coefficient_val]).reshape(1)
 
 
-    arctan_taylor_1d_mtf = MultivariateTaylorFunctionBase(
+    arctan_taylor_1d_mtf = type(input_mtf)(
         coefficients=arctan_taylor_1d_coefficients, dimension=taylor_dimension_1d
     )
     composed_mtf = arctan_taylor_1d_mtf.compose_one_dim(input_mtf)
@@ -437,7 +437,7 @@ def sinh_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFu
                 sinh_taylor_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = np.array([coefficient_val]).reshape(1)
 
 
-    sinh_taylor_1d_mtf = MultivariateTaylorFunctionBase(
+    sinh_taylor_1d_mtf = type(input_mtf)(
         coefficients=sinh_taylor_coefficients, dimension=taylor_dimension_1d
     )
     composed_mtf = sinh_taylor_1d_mtf.compose_one_dim(input_mtf)
@@ -467,7 +467,7 @@ def cosh_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFu
             cosh_taylor_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = np.array([coefficient_val]).reshape(1)
 
 
-    cosh_taylor_1d_mtf = MultivariateTaylorFunctionBase(
+    cosh_taylor_1d_mtf = type(input_mtf)(
         coefficients=cosh_taylor_coefficients, dimension=taylor_dimension_1d
     )
     composed_mtf = cosh_taylor_1d_mtf.compose_one_dim(input_mtf)
@@ -532,7 +532,7 @@ def arctanh_taylor_1D_expansion(variable, order: int = None) -> MultivariateTayl
             arctanh_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = np.array([coefficient_val]).reshape(1)
 
 
-    arctanh_taylor_1d_mtf = MultivariateTaylorFunctionBase(
+    arctanh_taylor_1d_mtf = type(input_mtf)(
         coefficients=arctanh_taylor_1d_coefficients, dimension=taylor_dimension_1d
     )
     composed_mtf = arctanh_taylor_1d_mtf.compose_one_dim(input_mtf)
@@ -602,9 +602,12 @@ def integrate(mtf_instance, integration_variable_index, lower_limit=None, upper_
     original_max_order = get_global_max_order()
     set_global_max_order(original_max_order + 1)  # Step 1: Increment computation order by one.
 
-    integrated_coefficients = defaultdict(lambda: np.array([0.0]).reshape(1))
+    integrated_coefficients = defaultdict(lambda: np.array([0.0], dtype=mtf_instance.coeffs.dtype))
 
-    for exponent_tuple, coeff_value in mtf_instance.coefficients.items():
+    for i in range(mtf_instance.coeffs.size):
+        exponent_tuple = tuple(mtf_instance.exponents[i])
+        coeff_value = mtf_instance.coeffs[i]
+
         exponent_for_var = exponent_tuple[integration_variable_index - 1]
         if exponent_for_var < 0:
             raise ValueError(f"Cannot integrate term with negative exponent {exponent_for_var} for variable dimension {integration_variable_index}.")
@@ -616,7 +619,7 @@ def integrate(mtf_instance, integration_variable_index, lower_limit=None, upper_
         integrated_coefficient = coeff_value / (exponent_for_var + 1)
         integrated_coefficients[new_exponent_tuple] += integrated_coefficient
 
-    indefinite_integral_mtf = MultivariateTaylorFunctionBase(coefficients=integrated_coefficients,  # Step 2: Perform indefinite integral
+    indefinite_integral_mtf = type(mtf_instance)(coefficients=integrated_coefficients,  # Step 2: Perform indefinite integral
                                                                     dimension=mtf_instance.dimension) # Pass dimension
 
     if lower_limit is not None and upper_limit is not None:
@@ -656,10 +659,13 @@ def derivative(mtf_instance, deriv_dim):
     if not isinstance(deriv_dim, int) or deriv_dim < 1 or deriv_dim > mtf_instance.dimension:
         raise ValueError(f"deriv_dim must be an integer between 1 and {mtf_instance.dimension} inclusive.")
 
-    derivative_coefficients = defaultdict(lambda: np.array([0.0]).reshape(1)) # Initialize coefficients for derivative
+    derivative_coefficients = defaultdict(lambda: np.array([0.0], dtype=mtf_instance.coeffs.dtype)) # Initialize coefficients for derivative
     deriv_dim_index = deriv_dim - 1 # Convert 1-based to 0-based index
 
-    for exponents, coeff in mtf_instance.coefficients.items():
+    for i in range(mtf_instance.coeffs.size):
+        exponents = tuple(mtf_instance.exponents[i])
+        coeff = mtf_instance.coeffs[i]
+
         exponent_value_deriv_dim = exponents[deriv_dim_index] # Get exponent value for the dimension we are differentiating
 
         if exponent_value_deriv_dim > 0: # Derivative is zero if exponent is 0 in this dimension
@@ -672,4 +678,4 @@ def derivative(mtf_instance, deriv_dim):
             derivative_coefficients[new_exponents] += new_coefficient_value # Add to derivative coefficients
 
 
-    return MultivariateTaylorFunctionBase(derivative_coefficients, mtf_instance.dimension)
+    return type(mtf_instance)(derivative_coefficients, mtf_instance.dimension)

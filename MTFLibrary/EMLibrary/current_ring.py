@@ -67,22 +67,24 @@ def current_ring(ring_radius, num_segments_ring, ring_center_point, ring_axis_di
             phi = (i + 0.5 + 0.5*u) * d_phi
             x_center = ring_radius * cos_taylor(phi)
             y_center = ring_radius * sin_taylor(phi)
-            z_center = 0.0
+            z_center = convert_to_mtf(0.0)
 
-            center_point_rotated = rotation_align_z_axis @ np.array([x_center, y_center, z_center])
+            center_point = np.array([x_center, y_center, z_center], dtype=object)
+            center_point_rotated = np.dot(rotation_align_z_axis, center_point)
             center_point_translated = center_point_rotated + ring_center_point
             segment_mtfs_ring.append(center_point_translated)
 
             element_lengths_ring.append(ring_radius * d_phi)
 
-            direction_base = np.array([-sin_taylor(phi), cos_taylor(phi), 0])
-            direction_rotated = rotation_align_z_axis @ direction_base
+            direction_base = np.array([-sin_taylor(phi), cos_taylor(phi), convert_to_mtf(0.0)], dtype=object)
+            direction_rotated = np.dot(rotation_align_z_axis, direction_base)
             norm_mtf_squared = direction_rotated[0]**2 + direction_rotated[1]**2 + direction_rotated[2]**2
+            norm_mtf_squared.set_coefficient((0,0,0,0), 1.0)
             norm_mtf = sqrt_taylor(norm_mtf_squared)
-            direction_normalized_mtf = direction_rotated / norm_mtf
+            direction_normalized_mtf = [direction_rotated[i] / norm_mtf for i in range(3)]
             direction_vectors_ring.append(direction_normalized_mtf)
 
-        return np.array(segment_mtfs_ring), np.array(element_lengths_ring), np.array(direction_vectors_ring)
+        return np.array(segment_mtfs_ring, dtype=object), np.array(element_lengths_ring), np.array(direction_vectors_ring, dtype=object)
 
     else: # return_mtf is False, return NumPy arrays
         segment_centers_ring = []

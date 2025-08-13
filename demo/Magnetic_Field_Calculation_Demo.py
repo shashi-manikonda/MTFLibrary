@@ -80,10 +80,15 @@ if rank == 0:
     print('Analytic_fun expression:\n',analytic_fun_expr)
 
     # --- Coefficient Comparison Table ---
-    mtf_coefficients = Bzfld.coefficients
-    analytic_coefficients = analytic_fun_expr.coefficients
+    mtf_exponents = Bzfld.exponents
+    mtf_coeffs = Bzfld.coeffs
+    mtf_map = {tuple(exp): coeff for exp, coeff in zip(mtf_exponents, mtf_coeffs)}
 
-    all_exponents = set(mtf_coefficients.keys()) | set(analytic_coefficients.keys()) # Union of exponents
+    analytic_exponents = analytic_fun_expr.exponents
+    analytic_coeffs = analytic_fun_expr.coeffs
+    analytic_map = {tuple(exp): coeff for exp, coeff in zip(analytic_exponents, analytic_coeffs)}
+
+    all_exponents = set(mtf_map.keys()) | set(analytic_map.keys()) # Union of exponents
 
     print("\nCoefficient Comparison Table:")
     print("----------------------------------------------------------------------------------")
@@ -91,8 +96,8 @@ if rank == 0:
     print("----------------------------------------------------------------------------------")
 
     for exponent in sorted(list(all_exponents)): # Iterate through exponents in sorted order
-        mtf_coeff_raw = mtf_coefficients.get(exponent, 0.0) # Get MTF coefficient, default to 0 if not present
-        analytic_coeff_raw = analytic_coefficients.get(exponent, 0.0) # Get analytic coefficient, default to 0 if not present
+        mtf_coeff_raw = mtf_map.get(exponent, 0.0) # Get MTF coefficient, default to 0 if not present
+        analytic_coeff_raw = analytic_map.get(exponent, 0.0) # Get analytic coefficient, default to 0 if not present
         error_raw = mtf_coeff_raw - analytic_coeff_raw
 
         # Safely convert to float, handling potential NumPy arrays and removing DeprecationWarning
