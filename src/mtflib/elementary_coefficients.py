@@ -279,8 +279,8 @@ def load_precomputed_coefficients(max_order_config: int = None) -> dict:
 
     print(f"Loading/Precomputing Taylor coefficients up to order {max_order_to_init}")
 
-    # Construct the path to the directory RELATIVE TO THE BASE FOLDER
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) # Assumes this file is in a subdirectory of the base. You might need to adjust this.
+    # Construct the path to the directory relative to this file
+    base_dir = os.path.dirname(os.path.abspath(__file__))
     full_coefficient_dir = os.path.join(base_dir, PRECOMPUTED_COEFFICIENT_DIR)
 
 
