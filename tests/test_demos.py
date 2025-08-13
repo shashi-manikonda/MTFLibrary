@@ -4,7 +4,7 @@ import os
 import sys
 
 # Get the single demo script to test
-DEMO_SCRIPT = 'demo/Magnetic_Field_Calculation_Demo.py'
+DEMO_SCRIPT = 'demos/em/Magnetic_Field_Calculation_Demo.py'
 
 @pytest.mark.parametrize("script_path", [DEMO_SCRIPT])
 def test_demo_script_execution(script_path):

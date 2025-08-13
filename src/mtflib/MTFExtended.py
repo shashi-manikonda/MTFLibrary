@@ -4,11 +4,11 @@ from collections import defaultdict
 import pandas as pd
 from functools import reduce
 
-from MTFLibrary.taylor_function import (initialize_mtf_globals, get_global_max_order,
+from .taylor_function import (initialize_mtf_globals, get_global_max_order,
     get_global_max_dimension, set_global_max_order, set_global_etol,
     get_global_etol, MultivariateTaylorFunctionBase, convert_to_mtf,
     get_mtf_initialized_status)
-from MTFLibrary.elementary_functions import (cos_taylor, sin_taylor, tan_taylor,
+from .elementary_functions import (cos_taylor, sin_taylor, tan_taylor,
     exp_taylor, gaussian_taylor, sqrt_taylor, log_taylor, arctan_taylor,
     sinh_taylor, cosh_taylor, tanh_taylor, arcsin_taylor, arccos_taylor,
     arctanh_taylor)

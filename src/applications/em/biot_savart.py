@@ -1,5 +1,5 @@
 import numpy as np
-from MTFLibrary import *
+from mtflib import *
 
 mpi_installed = True  # Assume MPI is installed initially
 try:

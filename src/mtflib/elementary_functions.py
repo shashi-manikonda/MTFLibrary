@@ -12,12 +12,12 @@ Refactored for reduced redundancy and using precomputed coefficients.
 import math
 import numpy as np
 from collections import defaultdict
-from MTFLibrary.taylor_function import (get_global_max_order, set_global_max_order,
+from .taylor_function import (get_global_max_order, set_global_max_order,
     convert_to_mtf, MultivariateTaylorFunctionBase, _split_constant_polynomial_part,
     sqrt_taylor, isqrt_taylor)
-from MTFLibrary.complex_taylor_function import ComplexMultivariateTaylorFunction
+from .complex_taylor_function import ComplexMultivariateTaylorFunction
 from . import elementary_coefficients  # Import the new module with loaded coefficients
-# from MTFLibrary.MTFExtended import MultivariateTaylorFunction
+# from .MTFExtended import MultivariateTaylorFunction
 
 def _generate_exponent(order_val: int, var_index: int, dimension: int) -> tuple:
     """Helper: Generates exponent tuples."""
@@ -225,32 +225,7 @@ def gaussian_taylor(variable, order: int = None) -> MultivariateTaylorFunctionBa
     if order is None:
         order = get_global_max_order()
     input_mtf = convert_to_mtf(variable)
-    gaussian_taylor_1d_coefficients = {}
-    taylor_dimension_1d = 1
-    variable_index_1d = 0
-
-    max_precomputed_order = min(order, elementary_coefficients.MAX_PRECOMPUTED_ORDER)
-    precomputed_coeffs = elementary_coefficients.precomputed_coefficients.get('gaussian')
-    if precomputed_coeffs is None:
-        raise ValueError("Precomputed coefficients for 'gaussian' function not found. Ensure coefficients are loaded.")
-
-    for n_order in range(0, max_precomputed_order + 1, 2):  # Gaussian series has only even terms
-        coefficient_val = precomputed_coeffs[n_order]
-        gaussian_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = np.array([coefficient_val]).reshape(1)
-
-    if order > elementary_coefficients.MAX_PRECOMPUTED_ORDER:
-        print(f"Warning: Requested order {order} exceeds precomputed order {elementary_coefficients.MAX_PRECOMPUTED_ORDER}. "
-              "Calculations may be slower for higher orders.")
-        for n_order in range(elementary_coefficients.MAX_PRECOMPUTED_ORDER + 1, order + 1, 2): # Calculate dynamically for higher orders
-            k = n_order // 2
-            coefficient_val = (-1)**k / math.factorial(k)
-            gaussian_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = np.array([coefficient_val]).reshape(1)
-
-    gaussian_taylor_1d_mtf = type(input_mtf)(
-        coefficients=gaussian_taylor_1d_coefficients, dimension=taylor_dimension_1d
-    )
-    composed_mtf = gaussian_taylor_1d_mtf.compose_one_dim(input_mtf)
-    return composed_mtf.truncate(order)
+    return exp_taylor(-(input_mtf**2), order=order)
 
 
 

@@ -1,7 +1,7 @@
-# MTFLibrary/complex_taylor_function.py
+# mtflib/complex_taylor_function.py
 import numpy as np
 from collections import defaultdict
-from MTFLibrary.taylor_function import (initialize_mtf_globals, get_global_max_order,
+from .taylor_function import (initialize_mtf_globals, get_global_max_order,
         get_global_max_dimension, set_global_max_order, set_global_etol,
         get_global_etol, convert_to_mtf, get_mtf_initialized_status,
         MultivariateTaylorFunctionBase)

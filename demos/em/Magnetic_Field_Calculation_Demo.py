@@ -1,7 +1,7 @@
 import numpy as np
-from MTFLibrary import *
-from MTFLibrary.EMLibrary.biot_savart import mpi_biot_savart, serial_biot_savart
-from MTFLibrary.EMLibrary.current_ring import current_ring
+from mtflib import *
+from applications.em.biot_savart import mpi_biot_savart, serial_biot_savart
+from applications.em.current_ring import current_ring
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 

@@ -2,7 +2,7 @@
 import numpy as np
 from collections import defaultdict
 import math
-from MTFLibrary.elementary_coefficients import load_precomputed_coefficients
+from .elementary_coefficients import load_precomputed_coefficients
 import time
 import numbers
 import pandas as pd

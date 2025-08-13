@@ -1,4 +1,4 @@
-# MTFLibrary/__init__.py
+# mtflib/__init__.py
 
 """
 A library for working with Multivariate Taylor Functions.
@@ -22,7 +22,6 @@ from . import taylor_function
 from . import elementary_functions
 from . import MTFExtended
 from . import complex_taylor_function
-from . import EMLibrary
 
 from .taylor_function import (initialize_mtf_globals, get_global_max_order,
     get_global_max_dimension, set_global_max_order, set_global_etol,
@@ -57,7 +56,6 @@ __all__ = [
     'elementary_functions',
     'MultivariateTaylorFunctionBase',
     'MultivariateTaylorFunction',
-    'EMLibrary',
     'initialize_mtf_globals',
     'set_global_etol',
     'get_global_etol', # Added get_global_etol - although already present, ensuring

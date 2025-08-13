@@ -1,10 +1,10 @@
 # Tests for the EMLibrary module
 import pytest
 import numpy as np
-import MTFLibrary
-from MTFLibrary.EMLibrary import biot_savart
-from MTFLibrary.EMLibrary import current_ring
-from MTFLibrary import initialize_mtf_globals, set_global_etol
+import mtflib
+from applications.em import biot_savart
+from applications.em import current_ring
+from mtflib import initialize_mtf_globals, set_global_etol
 
 @pytest.fixture(scope="function", autouse=True)
 def setup_function():
@@ -12,7 +12,7 @@ def setup_function():
     initialize_mtf_globals(max_order=5, max_dimension=4)
     set_global_etol(1e-12)
     yield
-    MTFLibrary.taylor_function._INITIALIZED = False
+    mtflib.taylor_function._INITIALIZED = False
 
 
 def test_numpy_biot_savart_single_loop():
