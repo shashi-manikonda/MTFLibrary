@@ -87,6 +87,54 @@ def benchmark_arithmetic(mtf1, mtf2, implementation='python'):
     end_time = time.time()
     print(f"Time for 10 power operations (n=3): {end_time - start_time:.6f} seconds")
 
+def benchmark_elementary_functions(mtf, implementation='python'):
+    """Benchmarks elementary functions."""
+    print(f"\n--- Benchmarking Elementary Functions (Implementation: {implementation}) ---")
+
+    # Benchmark sin_taylor
+    start_time = time.time()
+    for _ in range(10):
+        _ = sin_taylor(mtf)
+    end_time = time.time()
+    print(f"Time for 10 sin_taylor operations: {end_time - start_time:.6f} seconds")
+
+    # Benchmark exp_taylor
+    start_time = time.time()
+    for _ in range(10):
+        _ = exp_taylor(mtf)
+    end_time = time.time()
+    print(f"Time for 10 exp_taylor operations: {end_time - start_time:.6f} seconds")
+
+    # Benchmark log_taylor
+    # Ensure constant part is positive for log
+    const_part = mtf.extract_coefficient(tuple([0] * mtf.dimension))
+    if const_part[0] <= 0:
+        mtf_log = mtf + (1.0 - const_part[0]) # Shift to be positive
+    else:
+        mtf_log = mtf
+
+    start_time = time.time()
+    for _ in range(10):
+        _ = log_taylor(mtf_log)
+    end_time = time.time()
+    print(f"Time for 10 log_taylor operations: {end_time - start_time:.6f} seconds")
+
+
+def benchmark_evaluation(mtf):
+    """Benchmarks the eval method."""
+    print("\n--- Benchmarking Evaluation ---")
+    if mtf.dimension == 0:
+        print("Skipping evaluation benchmark for 0-dimension MTF.")
+        return
+
+    eval_point = np.random.rand(mtf.dimension).tolist()
+
+    start_time = time.time()
+    for _ in range(1000):
+        mtf.eval(eval_point)
+    end_time = time.time()
+    print(f"Time for 1000 evaluations: {end_time - start_time:.6f} seconds")
+
 def run_benchmarks(args):
     """Run all the benchmarks based on the provided arguments."""
     print("Setting up benchmark environment...")
@@ -100,6 +148,8 @@ def run_benchmarks(args):
     print("MTF generation complete.")
 
     benchmark_arithmetic(mtf1, mtf2, args.implementation)
+    benchmark_elementary_functions(mtf1, args.implementation)
+    benchmark_evaluation(mtf1)
 
 def main():
     """Main function to parse arguments and run benchmarks."""

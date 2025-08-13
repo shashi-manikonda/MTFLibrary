@@ -7,7 +7,7 @@ from functools import reduce
 from MTFLibrary.taylor_function import (initialize_mtf_globals, get_global_max_order,
     get_global_max_dimension, set_global_max_order, set_global_etol,
     get_global_etol, MultivariateTaylorFunctionBase, convert_to_mtf,
-    get_mtf_initialized_status) 
+    get_mtf_initialized_status)
 from MTFLibrary.elementary_functions import (cos_taylor, sin_taylor, tan_taylor,
     exp_taylor, gaussian_taylor, sqrt_taylor, log_taylor, arctan_taylor,
     sinh_taylor, cosh_taylor, tanh_taylor, arcsin_taylor, arccos_taylor,
@@ -16,24 +16,20 @@ from MTFLibrary.elementary_functions import (cos_taylor, sin_taylor, tan_taylor,
 class MultivariateTaylorFunction(MultivariateTaylorFunctionBase, np.ndarray):
     """
     Extended MultivariateTaylorFunction class with NumPy ufunc support.
-    Inherits from MultivariateTaylorFunction and implements __array_ufunc__.
+    Inherits from MultivariateTaylorFunctionBase and np.ndarray, and implements __array_ufunc__.
     """
-    def __new__(cls, coefficients, dimension, var_name=None):
-        # 1. Create the ndarray instance first.
-        #    We need to decide on a default shape and dtype for the ndarray part.
-        #    Since MTF coefficients are dictionaries, perhaps an empty array initially is okay?
-        #    Shape (0,) and dtype float64 were used before in __init__.
-        obj = np.ndarray.__new__(cls, shape=(0,), dtype=np.float64)
+    def __new__(cls, coefficients, dimension=None, var_name=None):
+        # This view-based approach is often recommended for ndarray subclassing.
+        # We create a 0-dimensional array to start, which will be properly shaped by __init__.
+        obj = np.asarray([0.0]).view(cls)
         return obj
 
-    def __init__(self, coefficients, dimension, var_name=None):
-        # 2. Initialize the MultivariateTaylorFunctionBase part using super().__init__.
-        super().__init__(coefficients, dimension, var_name=var_name)
-        # 3. (Potentially) Initialize or setup anything else specific to MultivariateTaylorFunction
-        #    related to the ndarray part, if needed.  For now, let's see if just __new__ and super().__init__ work.
-        self.coefficients = coefficients # Explicitly set coefficients here in __init__
-        self.dimension = dimension
-        self.var_name = var_name
+    def __init__(self, coefficients, dimension=None, var_name=None):
+        # Base class initialization
+        super().__init__(coefficients, dimension, var_name)
+        # The ndarray part of the instance is not explicitly used for storing MTF data,
+        # but this structure is required for NumPy's ufunc mechanism to work correctly.
+        # The actual MTF data (coefficients) is managed by the MultivariateTaylorFunctionBase part.
 
 
     def __array_ufunc__(self, ufunc, method, *inputs, out=None, **kwargs):
@@ -43,10 +39,10 @@ class MultivariateTaylorFunction(MultivariateTaylorFunctionBase, np.ndarray):
         """
         if method == '__call__':  # Element-wise application of ufunc
             input_mtf = inputs[0] # Assume first input is MTF, for unary ufuncs
-    
+
             if not isinstance(input_mtf, MultivariateTaylorFunctionBase):
                 input_mtf = convert_to_mtf(input_mtf, dimension=self.dimension)
-    
+
             if ufunc is np.sin:
                 return sin_taylor(input_mtf)
             elif ufunc is np.cos:
@@ -92,31 +88,18 @@ class MultivariateTaylorFunction(MultivariateTaylorFunctionBase, np.ndarray):
                     return self ** inputs[1]
             elif ufunc is np.square: # <----- ADDED np.square
                 return input_mtf * input_mtf
-    
+
             return NotImplemented  # Let NumPy handle other ufuncs or methods
-    
+
         return NotImplemented # For other methods like reduce, accumulate, etc. which are not handled.
 
 
     def __reduce__(self):
-        ndarray_state = super().__getstate__()
-        custom_state = {'coefficients': self.coefficients,
-                        'dimension': self.dimension,
-                        'var_name': self.var_name}
-        return (self.__class__,
-                (self.coefficients, self.dimension, self.var_name),
-                (ndarray_state, custom_state))
-
-    def __setstate__(self, state):
-        ndarray_state, custom_state = state
-        if isinstance(ndarray_state, tuple) and len(ndarray_state) >= 4:
-            super().__setstate__(ndarray_state)
-        elif isinstance(ndarray_state, dict):
-            # This might happen in some cases, try updating __dict__
-            self.__dict__.update(ndarray_state)
-        else:
-            raise TypeError(f"Unexpected type for ndarray_state: {type(ndarray_state)}, value: {ndarray_state}")
-        self.__dict__.update(custom_state)
+        # This method should return a tuple that allows the object to be reconstructed.
+        # The first element is the class.
+        # The second is a tuple of arguments for __init__.
+        # We pass the coefficients as a tuple of (exponents, coeffs) which __init__ understands.
+        return (self.__class__, ((self.exponents, self.coeffs), self.dimension, self.var_name))
 
 
 '''
@@ -134,16 +117,16 @@ def Var(var_index):
 
     Returns:
         MultivariateTaylorFunction: A MultivariateTaylorFunction object representing the variable x_var_index.
-    
+
     Note:
-    Var(var_id_int) Function: The Var(var_id_int) function is used to initialize 
-    a symbolic variable for Taylor expansion. It creates a first-order Taylor 
-    polynomial representing a single variable. The var_id_int argument specifies 
-    the dimension of the variable, represented as an integer from 1 to 
-    max_dimension (inclusive). The order of this integer also corresponds to the 
-    order of the variable in the coefficient exponent tuple 
-    (e.g., for max_dimension=3, the first element of the exponent tuple is the 
-     power of the variable with ID 1, the second element is the power of the 
+    Var(var_id_int) Function: The Var(var_id_int) function is used to initialize
+    a symbolic variable for Taylor expansion. It creates a first-order Taylor
+    polynomial representing a single variable. The var_id_int argument specifies
+    the dimension of the variable, represented as an integer from 1 to
+    max_dimension (inclusive). The order of this integer also corresponds to the
+    order of the variable in the coefficient exponent tuple
+    (e.g., for max_dimension=3, the first element of the exponent tuple is the
+     power of the variable with ID 1, the second element is the power of the
     variable with ID 2, and so on).
     """
     dimension = get_global_max_dimension()
@@ -196,30 +179,37 @@ def compose(mtf_instance: MultivariateTaylorFunctionBase, other_function_dict: d
         if not (1 <= var_index <= mtf_instance.dimension):
             raise ValueError(f"Variable index {var_index} is out of bounds for dimension {mtf_instance.dimension}.")
 
-    composed_coefficients = defaultdict(lambda: np.array([0.0]).reshape(1))
+    # Start with an empty MTF that will accumulate the results
+    composed_mtf = MultivariateTaylorFunctionBase((np.empty((0, mtf_instance.dimension), dtype=np.int32), np.empty((0,), dtype=np.float64)), mtf_instance.dimension)
 
-    if not mtf_instance.coefficients:
-        return MultivariateTaylorFunctionBase({}, mtf_instance.dimension)
+    if mtf_instance.coeffs.size == 0:
+        return composed_mtf
 
-    for original_multi_index, original_coefficient in mtf_instance.coefficients.items():
+    # Iterate over each term of the MTF to be composed
+    for i in range(mtf_instance.coeffs.size):
+        original_multi_index = mtf_instance.exponents[i]
+        original_coefficient = mtf_instance.coeffs[i]
+
+        # Start with the constant coefficient of the term
         term_result = MultivariateTaylorFunctionBase.from_constant(original_coefficient)
 
-        for i in range(mtf_instance.dimension):
-            order = original_multi_index[i]
+        # For each variable in the term, substitute it with the corresponding function
+        for j in range(mtf_instance.dimension):
+            order = original_multi_index[j]
             if order > 0:
-                var_to_substitute = i + 1
+                var_to_substitute = j + 1
                 if var_to_substitute in other_function_dict:
                     substitution_function = other_function_dict[var_to_substitute]
                     term_result = term_result * (substitution_function ** order)
                 else:
-                    # If no substitution, treat the variable as itself
+                    # If no substitution is provided for a variable, it's treated as itself.
                     variable_function = MultivariateTaylorFunctionBase.from_variable(var_to_substitute, mtf_instance.dimension)
                     term_result = term_result * (variable_function ** order)
 
-        for exp, coeff in term_result.coefficients.items():
-            composed_coefficients[exp] += coeff
+        # Add the result of this term's composition to the total
+        composed_mtf += term_result
 
-    return MultivariateTaylorFunctionBase(composed_coefficients, mtf_instance.dimension)
+    return composed_mtf
 
 
 def mtfarray(mtfs, column_names=None):
@@ -251,10 +241,10 @@ def mtfarray(mtfs, column_names=None):
                     the number of input MTFs.
     """
 
-    
+
     if isinstance(mtfs, np.ndarray):
         mtfs = list(mtfs)
-    
+
     if not isinstance(mtfs, list):
         raise TypeError("Input 'mtfs' must be a list.")
 
@@ -266,7 +256,7 @@ def mtfarray(mtfs, column_names=None):
     for mtf in mtfs:
         if not isinstance(mtf, valid_mtf_types):
             raise TypeError(f"All elements in 'mtfs' must be instances of {MultivariateTaylorFunction.__name__}, but found {type(mtf).__name__}.")
-            
+
 
     first_dim = mtfs[0].dimension
     for i, mtf in enumerate(mtfs[1:]):
@@ -288,7 +278,7 @@ def mtfarray(mtfs, column_names=None):
     tmap = reduce(lambda left, right: pd.merge(left, right, on=['Order', 'Exponents'], how='outer'), dfs)
 
     coef_cols_initial = [col for col in tmap.columns if col.startswith('Coeff')]
-    cols = coef_cols_initial +['Order', 'Exponents'] 
+    cols = coef_cols_initial +['Order', 'Exponents']
     tmap = tmap[cols]
     tmap[coef_cols_initial] = tmap[coef_cols_initial].fillna(0)
 

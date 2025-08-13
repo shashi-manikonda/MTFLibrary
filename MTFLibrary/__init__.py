@@ -26,7 +26,7 @@ from . import EMLibrary
 
 from .taylor_function import (initialize_mtf_globals, get_global_max_order,
     get_global_max_dimension, set_global_max_order, set_global_etol,
-    get_global_etol, 
+    get_global_etol,
     MultivariateTaylorFunctionBase,
     convert_to_mtf,
     get_mtf_initialized_status,
@@ -46,8 +46,8 @@ from .elementary_coefficients import load_precomputed_coefficients
 
 
 '''
-Purpose of __all__: The __all__ list defines what names are considered public 
-when a user does from MTFLibrary import *. It's crucial for controlling the 
+Purpose of __all__: The __all__ list defines what names are considered public
+when a user does from MTFLibrary import *. It's crucial for controlling the
 public API of your library.
 '''
 __all__ = [
@@ -56,7 +56,7 @@ __all__ = [
     'get_precomputed_coefficients',
     'elementary_functions',
     'MultivariateTaylorFunctionBase',
-    'MultivariateTaylorFunction', 
+    'MultivariateTaylorFunction',
     'EMLibrary',
     'initialize_mtf_globals',
     'set_global_etol',

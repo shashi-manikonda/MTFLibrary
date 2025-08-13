@@ -81,6 +81,12 @@ def test_mtfarray():
     # So there should be 4 rows.
     # Actually, the constant term is not always present if the coefficient is zero.
     # Let's check the number of non-zero coefficients.
-    num_coeffs = len(mtf1.coefficients) + len(mtf2.coefficients)
+    num_coeffs = mtf1.coeffs.size + mtf2.coeffs.size
     # There might be overlapping coefficients, but in this case there are not.
-    assert len(df) == num_coeffs
+    # The mtfarray function will merge the terms, so the number of rows will be the number of unique exponents.
+    # mtf1 has terms (1,0,0) and (0,1,0). mtf2 has term (2,0,0).
+    # The exponents are (1,0,0), (0,1,0), (2,0,0). So there should be 3 rows.
+    # Let's get the number of unique exponents.
+    all_exponents = np.vstack([mtf1.exponents, mtf2.exponents])
+    num_unique_exponents = len(np.unique(all_exponents, axis=0))
+    assert len(df) == num_unique_exponents
