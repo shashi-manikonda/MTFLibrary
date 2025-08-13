@@ -30,15 +30,21 @@ def _generate_exponent(order_val: int, var_index: int, dimension: int) -> tuple:
 def _split_constant_polynomial_part(input_mtf: MultivariateTaylorFunctionBase) -> tuple[float, MultivariateTaylorFunctionBase]:
     """Helper: Splits MTF into constant and polynomial parts."""
     dimension = input_mtf.dimension
-    constant_term_C_value = input_mtf.coefficients.get((0,) * dimension, np.array([0.0])).item()
-    polynomial_part_coefficients = {
-        exponents: coefficients
-        for exponents, coefficients in input_mtf.coefficients.items()
-        if exponents != (0,) * dimension
-    }
-    polynomial_part_mtf = MultivariateTaylorFunctionBase(
-        coefficients=polynomial_part_coefficients, dimension=dimension
-    )
+    const_exp = np.zeros(dimension, dtype=np.int32)
+
+    match = np.all(input_mtf.exponents == const_exp, axis=1)
+    const_idx = np.where(match)[0]
+
+    if const_idx.size > 0:
+        constant_term_C_value = input_mtf.coeffs[const_idx[0]]
+        poly_mask = ~match
+        poly_exponents = input_mtf.exponents[poly_mask]
+        poly_coeffs = input_mtf.coeffs[poly_mask]
+        polynomial_part_mtf = MultivariateTaylorFunctionBase((poly_exponents, poly_coeffs), dimension)
+    else:
+        constant_term_C_value = 0.0
+        polynomial_part_mtf = input_mtf
+
     return constant_term_C_value, polynomial_part_mtf
 
 
