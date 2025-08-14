@@ -1,4 +1,4 @@
-# MTFLibrary/EMLibrary/rectangular_loop.py
+# mtflib/applications/em/rectangular_loop.py
 """
 Function to calculate the magnetic field of a rectangular current loop.
 """

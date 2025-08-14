@@ -1,4 +1,4 @@
-# MTFLibrary/EMLibrary/straight_wire.py
+# mtflib/applications/em/straight_wire.py
 """
 Function to calculate the magnetic field of a straight wire segment.
 """

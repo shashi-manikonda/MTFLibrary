@@ -140,7 +140,7 @@ def mpi_biot_savart(element_centers, element_lengths, element_directions, field_
 
     Example (Run in MPI environment, e.g., `mpiexec -n 4 python your_script.py`):
         >>> import numpy as np
-        >>> from MTFLibrary.EMLibrary.biot_savart import mpi_biot_savart
+        >>> from applications.em.biot_savart import mpi_biot_savart
         >>> element_centers = np.array([[0, 0, 0], [1, 0, 0]])
         >>> element_lengths = np.array([0.1, 0.1])
         >>> element_directions = np.array([[1, 0, 0], [0, 1, 0]])

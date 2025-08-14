@@ -2,6 +2,12 @@
 #include <vector>
 #include <unordered_map>
 #include <algorithm>
+#include <omp.h>
+
+#if defined(_MSC_VER)
+#include <BaseTsd.h>
+typedef SSIZE_T ssize_t;
+#endif
 
 std::pair<py::array_t<int32_t>, py::array_t<double>> add_mtf_cpp(
     py::array_t<int32_t, py::array::c_style | py::array::forcecast> exps1,

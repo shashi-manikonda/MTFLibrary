@@ -1,7 +1,7 @@
 import time
 import numpy as np
-import MTFLibrary
-from MTFLibrary import (
+import mtflib
+from mtflib import (
     initialize_mtf_globals,
     set_global_etol,
     get_global_max_dimension,
@@ -57,8 +57,8 @@ def generate_random_mtf(dimension, max_order, num_terms, implementation='python'
 def setup_environment(max_order, max_dimension, etol):
     """Initializes the MTF library globals."""
     # Reset initialization flag to allow re-running in the same session
-    if hasattr(MTFLibrary.taylor_function, '_INITIALIZED') and MTFLibrary.taylor_function._INITIALIZED:
-        MTFLibrary.taylor_function._INITIALIZED = False
+    if hasattr(mtflib.taylor_function, '_INITIALIZED') and mtflib.taylor_function._INITIALIZED:
+        mtflib.taylor_function._INITIALIZED = False
     initialize_mtf_globals(max_order=max_order, max_dimension=max_dimension)
     set_global_etol(etol)
 
@@ -103,7 +103,7 @@ def run_benchmarks(args):
 
 def main():
     """Main function to parse arguments and run benchmarks."""
-    parser = argparse.ArgumentParser(description="Benchmark script for MTFLibrary.")
+    parser = argparse.ArgumentParser(description="Benchmark script for mtflib.")
     parser.add_argument('--order', type=int, default=DEFAULT_ORDER, help='Maximum order of Taylor series.')
     parser.add_argument('--dimension', type=int, default=DEFAULT_DIMENSION, help='Number of variables.')
     parser.add_argument('--num-terms', type=int, default=DEFAULT_NUM_TERMS, help='Number of non-zero terms in the random MTFs.')

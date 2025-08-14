@@ -1,4 +1,4 @@
-# MTFLibrary/MTFExtended.py
+# mtflib/MTFExtended.py
 import numpy as np
 from collections import defaultdict
 import pandas as pd

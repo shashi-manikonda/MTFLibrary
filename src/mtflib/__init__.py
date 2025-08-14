@@ -46,7 +46,7 @@ from .elementary_coefficients import load_precomputed_coefficients
 
 '''
 Purpose of __all__: The __all__ list defines what names are considered public
-when a user does from MTFLibrary import *. It's crucial for controlling the
+when a user does from mtflib import *. It's crucial for controlling the
 public API of your library.
 '''
 __all__ = [

@@ -14,7 +14,7 @@ def current_ring(ring_radius, num_segments_ring, ring_center_point, ring_axis_di
         ring_center_point (numpy.ndarray): (3,) array defining the center coordinates (x, y, z) of the ring.
         ring_axis_direction (numpy.ndarray): (3,) array defining the direction vector of the ring's axis
                                             (normal to the plane of the ring).
-        return_mtf (bool): If True, returns MTF objects for use within the MTFLibrary.
+        return_mtf (bool): If True, returns MTF objects for use within `mtflib`.
                            If False, returns raw NumPy arrays for external use.
 
     Returns:

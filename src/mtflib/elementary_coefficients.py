@@ -2,7 +2,7 @@
 Precomputed Taylor series coefficients for elementary functions around zero.
 
 This module precomputes and stores Taylor series coefficients for a set of elementary
-functions to enhance the performance of Taylor expansion calculations in the MTFLibrary.
+# functions to enhance the performance of Taylor expansion calculations in `mtflib`.
 
 **Functions Included:**
 
