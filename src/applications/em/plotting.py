@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from ..taylor_function import MultivariateTaylorFunctionBase
+from mtflib.taylor_function import MultivariateTaylorFunctionBase
 from .biot_savart import serial_biot_savart
 
 class Coil:
@@ -142,7 +142,7 @@ def plot_field_on_line(coils, start_point, end_point, component='magnitude', num
             )
             # The result is a list containing one array of 3 MTFs
             # For zero-order, the constant term is the value
-            B_vec_contrib = np.array([b.coefficients.get(tuple([0]*b.dimension), [0.0])[0] for b in B_contrib_mtf[0]])
+            B_vec_contrib = np.array([b.extract_coefficient(tuple([0]*b.dimension)).item() for b in B_contrib_mtf[0]])
             B_total_at_point += B_vec_contrib * coil.current
 
         B_vectors[i] = B_total_at_point
@@ -262,7 +262,7 @@ def plot_field_on_plane(coils, center_point, normal_vector, size=(2, 2), resolut
                 coil.segment_mtfs, coil.element_lengths, coil.direction_vectors,
                 np.array([point]), order=0
             )
-            B_vec_contrib = np.array([b.coefficients.get(tuple([0]*b.dimension), [0.0])[0] for b in B_contrib_mtf[0]])
+            B_vec_contrib = np.array([b.extract_coefficient(tuple([0]*b.dimension)).item() for b in B_contrib_mtf[0]])
             B_total_at_point += B_vec_contrib * coil.current
         B_vectors[i] = B_total_at_point
 
@@ -365,7 +365,7 @@ def plot_field_vectors_3d(coils, points, refine_level=5, eval_order=0, scale=1.0
                 coil.segment_mtfs, coil.element_lengths, coil.direction_vectors,
                 np.array([point]), order=0
             )
-            B_vec_contrib = np.array([b.coefficients.get(tuple([0]*b.dimension), [0.0])[0] for b in B_contrib_mtf[0]])
+            B_vec_contrib = np.array([b.extract_coefficient(tuple([0]*b.dimension)).item() for b in B_contrib_mtf[0]])
             B_total_at_point += B_vec_contrib * coil.current
         B_vectors[i] = B_total_at_point
 
