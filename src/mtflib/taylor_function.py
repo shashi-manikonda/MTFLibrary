@@ -82,7 +82,7 @@ def get_global_max_dimension():
     return _GLOBAL_MAX_DIMENSION
 
 def set_global_etol(etol):
-    """Sets the global error tolerance (etol) for MTFLibrary."""
+    """Sets the global error tolerance (etol) for `mtflib`."""
     global _DEFAULT_ETOL, _INITIALIZED
     if not _INITIALIZED:
         raise RuntimeError("MTF Globals must be initialized before setting error tolerance.")

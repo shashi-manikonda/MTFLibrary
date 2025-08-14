@@ -6,14 +6,13 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 # --- Global MTF Settings ---
-initialize_mtf_globals(max_order=6, max_dimension=4)
+initialize_mtf_globals(max_order=6, max_dimension=3)
 set_global_etol(1e-16)
 
 # --- Define Variables for MTF ---
 x = Var(1)
 y = Var(2)
 z = Var(3)
-u = Var(4)
 
 # --- MPI Setup ---
 mpi_installed = True
@@ -40,7 +39,7 @@ else:
 # --- Example Field Points ---
 num_field_points_axis = 3
 z_axis_coords = np.linspace(-2, 2, num_field_points_axis)
-field_points_axis = np.array([[x, y, zc+z] for zc in z_axis_coords], dtype=object)
+field_points_axis = np.array([[x*0, y*0, zc+z] for zc in z_axis_coords], dtype=object)
 
 # --- Example 1: Current Ring with Specified Center and Axis (element input) ---
 print("\n--- Example 1: Current Ring with Specified Center and Axis (Element Input) ---")
@@ -80,13 +79,8 @@ if rank == 0:
     print('Analytic_fun expression:\n',analytic_fun_expr)
 
     # --- Coefficient Comparison Table ---
-    mtf_exponents = Bzfld.exponents
-    mtf_coeffs = Bzfld.coeffs
-    mtf_map = {tuple(exp): coeff for exp, coeff in zip(mtf_exponents, mtf_coeffs)}
-
-    analytic_exponents = analytic_fun_expr.exponents
-    analytic_coeffs = analytic_fun_expr.coeffs
-    analytic_map = {tuple(exp): coeff for exp, coeff in zip(analytic_exponents, analytic_coeffs)}
+    mtf_map = {tuple(exp): coeff for exp, coeff in zip(Bzfld.exponents, Bzfld.coeffs)}
+    analytic_map = {tuple(exp): coeff for exp, coeff in zip(analytic_fun_expr.exponents, analytic_fun_expr.coeffs)}
 
     all_exponents = set(mtf_map.keys()) | set(analytic_map.keys()) # Union of exponents
 

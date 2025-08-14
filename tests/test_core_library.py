@@ -1,4 +1,4 @@
-# MTFLibrary/test_taylor_functions.py
+# mtflib/test_taylor_functions.py
 
 import pytest
 import numpy as np

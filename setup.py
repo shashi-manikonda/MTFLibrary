@@ -1,9 +1,16 @@
+import sys
 from setuptools import setup, find_packages, Extension
 from Cython.Build import cythonize
 import numpy
 import pybind11
 
-cpp_args = ['-std=c++17', '-fopenmp']
+# Set compiler arguments based on the operating system
+if sys.platform == 'win32':
+    # MSVC compiler arguments
+    cpp_args = ['/std:c++17', '/openmp']
+else:
+    # GCC/Clang compiler arguments
+    cpp_args = ['-std=c++17', '-fopenmp']
 
 extensions = [
     Extension(

@@ -1,6 +1,6 @@
-# MTFLibrary Performance Baseline
+# mtflib Performance Baseline
 
-This document records the baseline performance of the MTFLibrary before any optimizations have been applied. The metrics were gathered by running the `benchmark.py` script.
+This document records the baseline performance of the `mtflib` before any optimizations have been applied. The metrics were gathered by running the `benchmark.py` script.
 
 ## System Configuration
 
