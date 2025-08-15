@@ -4,6 +4,66 @@
 
 **A Python library for creating, manipulating, and composing Multivariate Taylor Functions, with extensions for electromagnetism calculations.**
 
+## Installation
+
+### Prerequisites:
+
+  - **Python:** Requires Python 3.7 or later.
+
+  - **NumPy:** NumPy is essential for numerical computations. Install using:
+
+    ```bash
+    pip install numpy
+    ```
+
+  - **mpi4py (Optional):** For MPI-parallel Biot-Savart calculations, install `mpi4py`:
+
+    ```bash
+    pip install mpi4py
+    ```
+
+    MPI environment setup is also required to utilize MPI features.
+
+### Installation of mtflib:
+
+To install `mtflib` from the package directory, use pip:
+
+```bash
+pip install .
+```
+
+## A Simple Usage Example
+
+Here's a quick example to get you started with `mtflib`:
+
+```python
+import numpy as np
+from mtflib import initialize_mtf_globals, Var, sin_taylor
+
+# 1. Initialize global settings (must be done once)
+initialize_mtf_globals(max_order=5, max_dimension=2)
+
+# 2. Define symbolic variables
+x = Var(1)
+y = Var(2)
+
+# 3. Perform an operation
+# Create a Taylor series for sin(x) + y^2
+f = sin_taylor(x) + y**2
+
+# 4. Evaluate the result at a point
+# Let's evaluate f at (x=0.5, y=2.0)
+eval_point = np.array([0.5, 2.0])
+result = f.eval(eval_point)
+
+print(f"f(x, y) = sin(x) + y^2")
+print(f"Result of f(0.5, 2.0): {result[0]}")
+
+# For comparison, the exact value is sin(0.5) + 2.0^2
+exact_value = np.sin(0.5) + 4.0
+print(f"Exact value: {exact_value}")
+```
+
 ## Overview
 
 `mtflib` is a versatile Python library designed to empower symbolic and numerical computations using Multivariate Taylor Functions (MTFs). It offers a comprehensive suite of classes and methods for:
@@ -40,9 +100,9 @@
       - **Scalar Operations:** Multiplication, division, and power operations with scalars.
       - **Calculus:** Partial differentiation with respect to any variable, integration using `derivative` and `integrate` functions from `elementary_functions`.
       - **Composition:** Variable substitution and MTF composition.
+      - **Map Inversion:** The `TaylorMap` class now includes a powerful `invert()` method. It computes the inverse of a square map using a fixed-point iteration algorithm, provided the map has no constant terms and its linear part is invertible.
       - **Truncation:** Reducing MTF order.
       - **Evaluation:** Numerical evaluation of MTFs at given points.
-      - **Inverse:** Calculation of the inverse of an MTF.
       - **NumPy ufunc Support:**  Integration with NumPy's universal functions (ufuncs) for element-wise operations (e.g., `np.sin`, `np.cos`, `np.exp`, `np.sqrt`, `np.add`, `np.multiply`, etc.) on MTF objects and arrays of MTFs.
   - **Extensive Elementary Function Library:**
       - Includes Taylor series implementations of a wide range of elementary functions: `cos`, `sin`, `tan`, `exp`, `log`, `sqrt`, `arctan`, `sinh`, `cosh`, `tanh`, `arcsin`, `arccos`, `arctanh`, and `gaussian`.
@@ -67,39 +127,12 @@
       - Example scripts and unit tests provided to demonstrate usage.
   - **Efficiency and Performance:**
       - Leverages NumPy for optimized numerical operations and efficient storage of Taylor coefficients.
+      - **Global Coefficient Cleanup Control:** `mtflib` now automatically removes negligible coefficients after arithmetic operations to improve performance and keep Taylor series representations concise. This feature is enabled by default and can be controlled via the `set_truncate_after_operation(enable: bool)` function.
       - MPI-parallel implementation of Biot-Savart law for large-scale electromagnetic computations, utilizing `mpi_biot_savart`.
   - **Testability and Reliability:**
       - Includes a comprehensive suite of unit tests to ensure the correctness and reliability of MTF operations and elementary functions.
 
-## Installation
-
-### Prerequisites:
-
-  - **Python:** Requires Python 3.7 or later.
-
-  - **NumPy:** NumPy is essential for numerical computations. Install using:
-
-    ```bash
-    pip install numpy
-    ```
-
-  - **mpi4py (Optional):** For MPI-parallel Biot-Savart calculations, install `mpi4py`:
-
-    ```bash
-    pip install mpi4py
-    ```
-
-    MPI environment setup is also required to utilize MPI features.
-
-### Installation of mtflib:
-
-To install `mtflib` from the package directory, use pip:
-
-```bash
-pip install .
-```
-
-### Demo Files:
+## Demo Files
 To help you get started with `mtflib`, we have included several demo files that illustrate how to use the library for various applications. These demo files cover a range of topics, including:
 
 - Basic usage of multivariate Taylor functions

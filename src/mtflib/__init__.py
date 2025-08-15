@@ -26,6 +26,7 @@ from . import complex_taylor_function
 from .taylor_function import (initialize_mtf_globals, get_global_max_order,
     get_global_max_dimension, set_global_max_order, set_global_etol,
     get_global_etol,
+    set_truncate_after_operation,
     MultivariateTaylorFunctionBase,
     convert_to_mtf,
     get_mtf_initialized_status,
@@ -41,6 +42,7 @@ from .complex_taylor_function import (ComplexMultivariateTaylorFunction,
     convert_to_cmtf)
 from .MTFExtended import Var, MultivariateTaylorFunction, compose, MTF, mtfarray
 from .elementary_coefficients import load_precomputed_coefficients
+from .taylor_map import TaylorMap
 
 
 
@@ -62,6 +64,7 @@ __all__ = [
     'get_global_max_order',
     'get_global_max_dimension',
     'set_global_max_order', # Added set_global_max_order
+    'set_truncate_after_operation',
     'Var',
     'mtfarray',
     'compose',
@@ -86,5 +89,6 @@ __all__ = [
     'arccos_taylor',
     'arctanh_taylor',
     'ComplexMultivariateTaylorFunction',
-    'convert_to_cmtf'
+    'convert_to_cmtf',
+    'TaylorMap'
 ]
