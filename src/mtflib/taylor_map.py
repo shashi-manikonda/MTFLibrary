@@ -64,17 +64,14 @@ class TaylorMap:
         if not isinstance(other, TaylorMap):
             raise TypeError("Composition is only defined between two TaylorMap objects.")
 
-        if self.map_dim > 0:
-            self_input_dim = self.components[0].dimension
-        else: # self is an empty map
-            self_input_dim = 0
+        if self.map_dim == 0:
+            return TaylorMap([])
+
+        self_input_dim = self.components[0].dimension
 
         if self_input_dim != other.map_dim:
             raise ValueError(f"Cannot compose maps: self input dimension ({self_input_dim}) "
                              f"must equal other output dimension ({other.map_dim}).")
-
-        if self.map_dim == 0:
-            return TaylorMap([])
 
         new_components = []
         # The new dimension will be the input dimension of the 'other' map.
