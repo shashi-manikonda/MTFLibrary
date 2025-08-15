@@ -41,6 +41,7 @@ from .complex_taylor_function import (ComplexMultivariateTaylorFunction,
     convert_to_cmtf)
 from .MTFExtended import Var, MultivariateTaylorFunction, compose, MTF, mtfarray
 from .elementary_coefficients import load_precomputed_coefficients
+from .taylor_map import TaylorMap
 
 
 
@@ -86,5 +87,6 @@ __all__ = [
     'arccos_taylor',
     'arctanh_taylor',
     'ComplexMultivariateTaylorFunction',
-    'convert_to_cmtf'
+    'convert_to_cmtf',
+    'TaylorMap'
 ]

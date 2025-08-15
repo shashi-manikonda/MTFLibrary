@@ -198,7 +198,7 @@ class MultivariateTaylorFunctionBase:
                 const_mtf = ComplexMultivariateTaylorFunction.from_constant(other, dimension=self.dimension)
                 return self + const_mtf
             else: # int or float
-                const_mtf = type(self).from_constant(other)
+                const_mtf = type(self).from_constant(other, dimension=self.dimension)
                 return self + const_mtf
 
         if not isinstance(other, MultivariateTaylorFunctionBase):
@@ -334,10 +334,10 @@ class MultivariateTaylorFunctionBase:
                 else:
                     raise ValueError("Power must be a non-negative integer, 0.5, or -0.5.")
             if power == 0:
-                return type(self).from_constant(1.0)
+                return type(self).from_constant(1.0, dimension=self.dimension)
             if power == 1:
                 return self
-            result_mtf = type(self).from_constant(1.0)
+            result_mtf = type(self).from_constant(1.0, dimension=self.dimension)
             for _ in range(power):
                 if self.is_zero_mtf(result_mtf):
                     continue
