@@ -14,6 +14,7 @@ _GLOBAL_MAX_ORDER = None
 _GLOBAL_MAX_DIMENSION = None
 _INITIALIZED = False
 _DEFAULT_ETOL = 1e-16
+_TRUNCATE_AFTER_OPERATION = True
 precomputed_coefficients = {}
 
 def get_max_coefficient_count(max_order=None, max_dimension=None):
@@ -96,6 +97,15 @@ def get_global_etol():
     if not _INITIALIZED:
         raise RuntimeError("MTF Globals are not initialized.")
     return _DEFAULT_ETOL
+
+def set_truncate_after_operation(enable: bool):
+    """
+    Sets the global flag to enable or disable automatic coefficient cleanup.
+    """
+    global _TRUNCATE_AFTER_OPERATION
+    if not isinstance(enable, bool):
+        raise ValueError("Input 'enable' must be a boolean value (True or False).")
+    _TRUNCATE_AFTER_OPERATION = enable
 
 def _generate_exponent(order, var_index, dimension):
     """Generates an exponent tuple for a monomial term."""
@@ -227,7 +237,10 @@ class MultivariateTaylorFunctionBase:
             unique_exponents, inverse_indices = np.unique(all_exponents, axis=0, return_inverse=True)
             summed_coeffs = np.bincount(inverse_indices, weights=all_coeffs)
 
-        return type(self)((unique_exponents, summed_coeffs), self.dimension, implementation=self.implementation)
+        result_mtf = type(self)((unique_exponents, summed_coeffs), self.dimension, implementation=self.implementation)
+        if _TRUNCATE_AFTER_OPERATION:
+            result_mtf._cleanup_after_operation()
+        return result_mtf
 
     def __radd__(self, other):
         """Defines reverse addition for commutative property."""
@@ -260,7 +273,10 @@ class MultivariateTaylorFunctionBase:
                 unique_exponents, inverse_indices = np.unique(all_exponents, axis=0, return_inverse=True)
                 summed_coeffs = np.bincount(inverse_indices, weights=all_coeffs)
 
-            return type(self)((unique_exponents, summed_coeffs), self.dimension, implementation=self.implementation)
+            result_mtf = type(self)((unique_exponents, summed_coeffs), self.dimension, implementation=self.implementation)
+            if _TRUNCATE_AFTER_OPERATION:
+                result_mtf._cleanup_after_operation()
+            return result_mtf
 
         elif isinstance(other, (int, float, complex, np.number)):
             return self + (-other)
@@ -305,7 +321,10 @@ class MultivariateTaylorFunctionBase:
                 unique_exponents, inverse_indices = np.unique(new_exponents, axis=0, return_inverse=True)
                 summed_coeffs = np.bincount(inverse_indices, weights=new_coeffs)
 
-            return type(self)((unique_exponents, summed_coeffs), self.dimension)
+            result_mtf = type(self)((unique_exponents, summed_coeffs), self.dimension)
+            if _TRUNCATE_AFTER_OPERATION:
+                result_mtf._cleanup_after_operation()
+            return result_mtf
 
         elif isinstance(other, (int, float, complex, np.number)):
             # Scalar multiplication
@@ -363,7 +382,10 @@ class MultivariateTaylorFunctionBase:
             inverse_other_mtf = self._inv_mtf_internal(other)
             return self * inverse_other_mtf
         elif isinstance(other, (int, float, np.number)):
-            return type(self)((self.exponents.copy(), self.coeffs / other), self.dimension)
+            result_mtf = type(self)((self.exponents.copy(), self.coeffs / other), self.dimension)
+            if _TRUNCATE_AFTER_OPERATION:
+                result_mtf._cleanup_after_operation()
+            return result_mtf
         else:
             return NotImplemented
 
@@ -633,6 +655,20 @@ class MultivariateTaylorFunctionBase:
     def copy(self):
         """Returns a copy of the MTF."""
         return type(self)((self.exponents.copy(), self.coeffs.copy()), self.dimension, var_name=self.var_name, implementation=self.implementation)
+
+    def _cleanup_after_operation(self):
+        """
+        Removes coefficients smaller than the global error tolerance in-place.
+        """
+        etol = get_global_etol()
+
+        if self.coeffs.size == 0:
+            return
+
+        keep_mask = np.abs(self.coeffs) > etol
+
+        self.exponents = self.exponents[keep_mask]
+        self.coeffs = self.coeffs[keep_mask]
 
     def __eq__(self, other):
         """Defines equality (==) for MultivariateTaylorFunction objects."""

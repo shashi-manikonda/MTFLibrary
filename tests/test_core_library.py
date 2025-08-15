@@ -864,3 +864,45 @@ def test_mtfarray():
     all_exponents = np.vstack([mtf1.exponents, mtf2.exponents])
     num_unique_exponents = len(np.unique(all_exponents, axis=0))
     assert len(df) == num_unique_exponents
+
+# --- Cleanup Functionality Tests ---
+
+def test_cleanup_default_behavior(setup_function):
+    """
+    Tests that cleanup of negligible coefficients is enabled by default.
+    """
+    etol = get_global_etol()
+    x = Var(1)
+
+    # Create a function with a negligible term
+    f = x + etol / 2
+
+    # The negligible constant term should be removed after the addition
+    assert len(f.coeffs) == 1
+    assert f.extract_coefficient(tuple([0]*get_global_max_dimension())).item() == 0.0
+
+def test_disable_cleanup(setup_function):
+    """
+    Tests that coefficient cleanup can be disabled.
+    """
+    set_truncate_after_operation(False)
+
+    etol = get_global_etol()
+    x = Var(1)
+
+    # Create a function with a negligible term
+    f = x + etol / 2
+
+    # The negligible term should NOT be removed
+    assert len(f.coeffs) == 2
+    assert abs(f.extract_coefficient(tuple([0]*get_global_max_dimension())).item()) > 0
+
+    # Reset for other tests
+    set_truncate_after_operation(True)
+
+def test_set_truncate_after_operation_validation(setup_function):
+    """
+    Tests the input validation for the setter function.
+    """
+    with pytest.raises(ValueError, match="Input 'enable' must be a boolean value"):
+        set_truncate_after_operation("not a boolean")

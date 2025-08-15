@@ -26,6 +26,7 @@ from . import complex_taylor_function
 from .taylor_function import (initialize_mtf_globals, get_global_max_order,
     get_global_max_dimension, set_global_max_order, set_global_etol,
     get_global_etol,
+    set_truncate_after_operation,
     MultivariateTaylorFunctionBase,
     convert_to_mtf,
     get_mtf_initialized_status,
@@ -63,6 +64,7 @@ __all__ = [
     'get_global_max_order',
     'get_global_max_dimension',
     'set_global_max_order', # Added set_global_max_order
+    'set_truncate_after_operation',
     'Var',
     'mtfarray',
     'compose',
