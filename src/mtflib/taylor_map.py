@@ -232,6 +232,85 @@ class TaylorMap:
 
     def invert(self):
         """
-        Placeholder for map inversion. Not implemented.
+        Computes the inverse of the TaylorMap object using a fixed-point iteration.
+
+        This method is based on the inversion of a transfer map using a
+        Differential Algebraic (DA) approach. The formula used is the standard
+        iterative method F⁻¹_{n+1} = β⁻¹ ∘ (I - G ∘ F⁻¹_n), where β is the
+        linear part of the map and G is the non-linear part.
+
+        Returns:
+            A new TaylorMap object representing the inverse map F⁻¹.
+
+        Raises:
+            ValueError: If the map is not a square map, has constant terms, or
+                        if its linear part is not invertible.
         """
-        raise NotImplementedError("Inversion of TaylorMap is not implemented.")
+        # --- Pre-condition Checks ---
+        if self.map_dim == 0:
+            return TaylorMap([]) # Inverse of an empty map is an empty map
+
+        dim = self.components[0].dimension
+        if self.map_dim != dim:
+            raise ValueError(f"Map must be square to be invertible (input_dim={dim}, output_dim={self.map_dim}).")
+
+        # Check for constant terms
+        zero_exp = tuple([0] * dim)
+        for i, component in enumerate(self.components):
+            const_term = component.extract_coefficient(zero_exp).item()
+            if abs(const_term) > 1e-14: # Use a tolerance for floating point
+                raise ValueError(f"Map must have no constant terms to be invertible. Component {i} has constant term {const_term}.")
+
+        # --- Algorithm Step 1: Extract Linear Part (β) and Jacobian ---
+        jacobian = np.zeros((dim, dim))
+        for i in range(dim):
+            for j in range(dim):
+                exp = tuple([1 if k == j else 0 for k in range(dim)])
+                coeff = self.get_coefficient(i, np.array(exp))
+                jacobian[i, j] = coeff
+
+        # Check for invertible linear part
+        if abs(np.linalg.det(jacobian)) < 1e-14:
+            raise ValueError("The linear part of the map is not invertible (Jacobian is singular).")
+
+        # --- Algorithm Step 4 (early): Invert Linear Part (β⁻¹) ---
+        inv_jacobian = np.linalg.inv(jacobian)
+        inv_linear_components = []
+        for i in range(dim):
+            comp_mtf = MTF.from_constant(0.0, dimension=dim)
+            for j in range(dim):
+                if abs(inv_jacobian[i, j]) > 1e-14:
+                    var_mtf = MTF.from_variable(j + 1, dim)
+                    comp_mtf += inv_jacobian[i, j] * var_mtf
+            inv_linear_components.append(comp_mtf)
+        beta_inv = TaylorMap(inv_linear_components)
+
+        # --- Algorithm Step 2 & 3: Extract G and create Identity ---
+        # We don't need to create beta explicitly. G = F - beta
+        # The non-linear part G can be calculated on the fly.
+        # Let's get the full non-linear part first.
+
+        non_linear_components = []
+        for component in self.components:
+            # Create a new MTF with only non-linear terms (order > 1)
+            nl_coeffs = {}
+            for k in range(len(component.coeffs)):
+                exp = tuple(component.exponents[k])
+                if sum(exp) > 1:
+                    nl_coeffs[exp] = component.coeffs[k]
+            non_linear_components.append(MTF(nl_coeffs, dimension=dim))
+        G = TaylorMap(non_linear_components)
+
+        identity_components = [MTF.from_variable(i + 1, dim) for i in range(dim)]
+        identity_map = TaylorMap(identity_components)
+
+        # --- Algorithm Step 5: Fixed-Point Iteration ---
+        F_inv = beta_inv # Initial guess
+
+        max_order = mtf_lib.get_global_max_order()
+        for _ in range(max_order):
+            composition_G_F_inv = G.compose(F_inv).truncate(max_order)
+            inner_map = identity_map - composition_G_F_inv
+            F_inv = beta_inv.compose(inner_map).truncate(max_order)
+
+        return F_inv

@@ -291,3 +291,68 @@ def test_empty_map():
     # Composing a map with input_dim=2 with a map with output_dim=0 should fail.
     with pytest.raises(ValueError):
         map_non_empty.compose(empty_map)
+
+def test_inversion():
+    """
+    Tests a successful map inversion.
+    F(x,y) = [x + y^2, y - x^2]
+    """
+    dim = 2
+    x = MTF.from_variable(1, dim)
+    y = MTF.from_variable(2, dim)
+
+    # Define the map F
+    f1 = x + y**2
+    f2 = y - x**2
+    F = TaylorMap([f1, f2])
+
+    # Get the inverse map
+    F_inv = F.invert()
+
+    # Verify that F_inv o F is the identity map
+    composition = F_inv.compose(F)
+
+    # Create the identity map for comparison
+    identity_map = TaylorMap([x, y])
+
+    # The composition should be equal to the identity map up to the working order.
+    # A direct equality check is sufficient if both are truncated to the same order.
+    max_order = mtflib.get_global_max_order()
+    truncated_composition = composition.truncate(max_order)
+    truncated_identity = identity_map.truncate(max_order)
+
+    # Check component-wise equality
+    assert truncated_composition.get_component(0) == truncated_identity.get_component(0)
+    assert truncated_composition.get_component(1) == truncated_identity.get_component(1)
+
+def test_invert_non_square(sample_maps):
+    """
+    Tests that a ValueError is raised for a non-square map.
+    """
+    _, _, map3 = sample_maps # map3 is R^2 -> R^3
+    with pytest.raises(ValueError, match="Map must be square to be invertible"):
+        map3.invert()
+
+def test_invert_with_constant(sample_maps):
+    """
+    Tests that a ValueError is raised for a map with constant terms.
+    """
+    map1, _, _ = sample_maps # map1 has constant terms
+    with pytest.raises(ValueError, match="Map must have no constant terms to be invertible"):
+        map1.invert()
+
+def test_invert_singular():
+    """
+    Tests that a ValueError is raised for a map with a singular linear part.
+    """
+    dim = 2
+    x = MTF.from_variable(1, dim)
+    y = MTF.from_variable(2, dim)
+
+    # This map's linear part is [[1, 1], [1, 1]], which is singular
+    f1 = x + y
+    f2 = x + y + x**2 # Add non-linear part
+    singular_map = TaylorMap([f1, f2])
+
+    with pytest.raises(ValueError, match="The linear part of the map is not invertible"):
+        singular_map.invert()
