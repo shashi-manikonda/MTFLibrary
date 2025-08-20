@@ -110,16 +110,16 @@ def test_mtf_truncate(setup_function):
     exponent_two = tuple(exponent_two)
     exponent_three = tuple(exponent_three)
 
-    coeffs = {exponent_zero: np.array([1.0]).reshape(1),
-              exponent_one: np.array([2.0]).reshape(1),
-              exponent_two: np.array([3.0]).reshape(1),
-              exponent_three: np.array([4.0]).reshape(1)}
+    coeffs = {exponent_zero: 1.0,
+              exponent_one: 2.0,
+              exponent_two: 3.0,
+              exponent_three: 4.0}
     mtf = MultivariateTaylorFunction(coefficients=coeffs, dimension=global_dim)
     truncated_mtf = mtf.truncate(2)
-    assert np.allclose(truncated_mtf.extract_coefficient(exponent_three), np.array([0.0]).reshape(1))
-    assert np.allclose(truncated_mtf.extract_coefficient(exponent_two), np.array([3.0]).reshape(1))
-    assert np.allclose(truncated_mtf.extract_coefficient(exponent_one), np.array([2.0]).reshape(1))
-    assert np.allclose(truncated_mtf.extract_coefficient(exponent_zero), np.array([1.0]).reshape(1))
+    assert np.allclose(truncated_mtf.extract_coefficient(exponent_three), 0.0)
+    assert np.allclose(truncated_mtf.extract_coefficient(exponent_two), 3.0)
+    assert np.allclose(truncated_mtf.extract_coefficient(exponent_one), 2.0)
+    assert np.allclose(truncated_mtf.extract_coefficient(exponent_zero), 1.0)
 
 def test_mtf_extract_coefficient(setup_function):
     global_dim, exponent_zero = setup_function
@@ -133,16 +133,16 @@ def test_mtf_extract_coefficient(setup_function):
             exponent_one_one_list[0] = 2 # If dimension is 1, (1, 1) becomes (2,)
         exponent_one_one = tuple(exponent_one_one_list)
 
-    mtf = MultivariateTaylorFunction(coefficients={exponent_one_one: np.array([2.5]).reshape(1), exponent_zero: np.array([1.0]).reshape(1)}, dimension=max(2, global_dim)) # Dimension is set here to at least 2 for the test
-    assert np.allclose(mtf.extract_coefficient(exponent_one_one), np.array([2.5]).reshape(1))
-    assert np.allclose(mtf.extract_coefficient(exponent_zero), np.array([1.0]).reshape(1))
+    mtf = MultivariateTaylorFunction(coefficients={exponent_one_one: 2.5, exponent_zero: 1.0}, dimension=max(2, global_dim)) # Dimension is set here to at least 2 for the test
+    assert np.allclose(mtf.extract_coefficient(exponent_one_one), 2.5)
+    assert np.allclose(mtf.extract_coefficient(exponent_zero), 1.0)
 
     exponent_two_zero = list(exponent_zero)
     if global_dim > 0:
         exponent_two_zero_list = list(exponent_two_zero)
         exponent_two_zero_list[0] = 2
         exponent_two_zero = tuple(exponent_two_zero_list)
-    assert np.allclose(mtf.extract_coefficient(exponent_two_zero), np.array([0.0]).reshape(1)) # Non-existent coefficient should be zero
+    assert np.allclose(mtf.extract_coefficient(exponent_two_zero), 0.0) # Non-existent coefficient should be zero
 
 def test_mtf_set_coefficient(setup_function):
     global_dim, exponent_zero = setup_function
@@ -153,9 +153,9 @@ def test_mtf_set_coefficient(setup_function):
 
     mtf = MultivariateTaylorFunction.from_constant(0.0)
     mtf.set_coefficient(exponent_one, 3.0)
-    assert np.allclose(mtf.extract_coefficient(exponent_one), np.array([3.0]).reshape(1))
+    assert np.allclose(mtf.extract_coefficient(exponent_one), 3.0)
     mtf.set_coefficient(exponent_one, 0.0) # Setting to zero
-    assert np.allclose(mtf.extract_coefficient(exponent_one), np.array([0.0]).reshape(1))
+    assert np.allclose(mtf.extract_coefficient(exponent_one), 0.0)
     with pytest.raises(TypeError):
         mtf.set_coefficient(list(exponent_one), 2.0) # Exponents must be tuple
     with pytest.raises(ValueError):
@@ -178,9 +178,9 @@ def test_mtf_get_max_coefficient(setup_function):
     exponent_one_zero = tuple(exponent_one_zero)
     exponent_zero_one = tuple(exponent_zero_one)
 
-    coeffs = {exponent_zero: np.array([1.0]).reshape(1),
-              exponent_one_zero: np.array([-2.0]).reshape(1),
-              exponent_zero_one: np.array([3.0]).reshape(1)}
+    coeffs = {exponent_zero: 1.0,
+              exponent_one_zero: -2.0,
+              exponent_zero_one: 3.0}
     mtf = MultivariateTaylorFunction(coefficients=coeffs, dimension=max(2, global_dim)) # Dimension at least 2 for the test
     assert pytest.approx(mtf.get_max_coefficient()) == 3.0
 
@@ -196,12 +196,12 @@ def test_mtf_get_min_coefficient(setup_function):
     exponent_zero_one = tuple(exponent_zero_one)
 
     etol = get_global_etol()
-    coeffs = {exponent_zero: np.array([0.1]).reshape(1),
-              exponent_one_zero: np.array([2.0]).reshape(1),
-              exponent_zero_one: np.array([3.0]).reshape(1)}
+    coeffs = {exponent_zero: 0.1,
+              exponent_one_zero: 2.0,
+              exponent_zero_one: 3.0}
     mtf = MultivariateTaylorFunction(coefficients=coeffs, dimension=max(2, global_dim)) # Dimension at least 2 for the test
     assert pytest.approx(mtf.get_min_coefficient(tolerance=0.5)) == 2.0 # Min non-negligible coefficient (above 0.5)
-    coeffs_negligible = {exponent_zero: np.array([etol]).reshape(1)}
+    coeffs_negligible = {exponent_zero: etol}
     mtf_negligible = MultivariateTaylorFunction(coefficients=coeffs_negligible, dimension=max(2, global_dim))
     assert pytest.approx(mtf_negligible.get_min_coefficient()) == 0.0 # All negligible, returns 0.0
 
@@ -222,17 +222,17 @@ def test_mtf_addition(setup_function):
         exponent_one[0] = 1
     exponent_one = tuple(exponent_one)
 
-    mtf1 = MultivariateTaylorFunction({exponent_zero: np.array([1.0]).reshape(1), exponent_one: np.array([2.0]).reshape(1)}, dimension=global_dim) # 1 + 2x
-    mtf2 = MultivariateTaylorFunction({exponent_zero: np.array([3.0]).reshape(1), exponent_one: np.array([-1.0]).reshape(1)}, dimension=global_dim) # 3 - x
+    mtf1 = MultivariateTaylorFunction({exponent_zero: 1.0, exponent_one: 2.0}, dimension=global_dim) # 1 + 2x
+    mtf2 = MultivariateTaylorFunction({exponent_zero: 3.0, exponent_one: -1.0}, dimension=global_dim) # 3 - x
     mtf_sum = mtf1 + mtf2 # (1+2x) + (3-x) = 4 + x
-    assert np.allclose(mtf_sum.extract_coefficient(exponent_zero), np.array([4.0]).reshape(1))
-    assert np.allclose(mtf_sum.extract_coefficient(exponent_one), np.array([1.0]).reshape(1))
+    assert np.allclose(mtf_sum.extract_coefficient(exponent_zero), 4.0)
+    assert np.allclose(mtf_sum.extract_coefficient(exponent_one), 1.0)
     mtf_sum_const = mtf1 + 2.0 # (1+2x) + 2 = 3 + 2x
-    assert np.allclose(mtf_sum_const.extract_coefficient(exponent_zero), np.array([3.0]).reshape(1))
-    assert np.allclose(mtf_sum_const.extract_coefficient(exponent_one), np.array([2.0]).reshape(1))
+    assert np.allclose(mtf_sum_const.extract_coefficient(exponent_zero), 3.0)
+    assert np.allclose(mtf_sum_const.extract_coefficient(exponent_one), 2.0)
     mtf_sum_rconst = 2.0 + mtf1 # 2 + (1+2x) = 3 + 2x (commutativity)
-    assert np.allclose(mtf_sum_rconst.extract_coefficient(exponent_zero), np.array([3.0]).reshape(1))
-    assert np.allclose(mtf_sum_rconst.extract_coefficient(exponent_one), np.array([2.0]).reshape(1))
+    assert np.allclose(mtf_sum_rconst.extract_coefficient(exponent_zero), 3.0)
+    assert np.allclose(mtf_sum_rconst.extract_coefficient(exponent_one), 2.0)
 
 def test_mtf_subtraction(setup_function):
     global_dim, exponent_zero = setup_function
@@ -241,17 +241,17 @@ def test_mtf_subtraction(setup_function):
         exponent_one[0] = 1
     exponent_one = tuple(exponent_one)
 
-    mtf1 = MultivariateTaylorFunction({exponent_zero: np.array([5.0]).reshape(1), exponent_one: np.array([3.0]).reshape(1)}, dimension=global_dim) # 5 + 3x
-    mtf2 = MultivariateTaylorFunction({exponent_zero: np.array([2.0]).reshape(1), exponent_one: np.array([1.0]).reshape(1)}, dimension=global_dim) # 2 + x
+    mtf1 = MultivariateTaylorFunction({exponent_zero: 5.0, exponent_one: 3.0}, dimension=global_dim) # 5 + 3x
+    mtf2 = MultivariateTaylorFunction({exponent_zero: 2.0, exponent_one: 1.0}, dimension=global_dim) # 2 + x
     mtf_diff = mtf1 - mtf2 # (5+3x) - (2+x) = 3 + 2x
-    assert np.allclose(mtf_diff.extract_coefficient(exponent_zero), np.array([3.0]).reshape(1))
-    assert np.allclose(mtf_diff.extract_coefficient(exponent_one), np.array([2.0]).reshape(1))
+    assert np.allclose(mtf_diff.extract_coefficient(exponent_zero), 3.0)
+    assert np.allclose(mtf_diff.extract_coefficient(exponent_one), 2.0)
     mtf_diff_const = mtf1 - 2.0 # (5+3x) - 2 = 3 + 3x
-    assert np.allclose(mtf_diff_const.extract_coefficient(exponent_zero), np.array([3.0]).reshape(1))
-    assert np.allclose(mtf_diff_const.extract_coefficient(exponent_one), np.array([3.0]).reshape(1))
+    assert np.allclose(mtf_diff_const.extract_coefficient(exponent_zero), 3.0)
+    assert np.allclose(mtf_diff_const.extract_coefficient(exponent_one), 3.0)
     mtf_diff_rconst = 4.0 - mtf1 # 4 - (5+3x) = -1 - 3x
-    assert np.allclose(mtf_diff_rconst.extract_coefficient(exponent_zero), np.array([-1.0]).reshape(1))
-    assert np.allclose(mtf_diff_rconst.extract_coefficient(exponent_one), np.array([-3.0]).reshape(1))
+    assert np.allclose(mtf_diff_rconst.extract_coefficient(exponent_zero), -1.0)
+    assert np.allclose(mtf_diff_rconst.extract_coefficient(exponent_one), -3.0)
 
 def test_mtf_multiplication(setup_function):
     global_dim, exponent_zero = setup_function
@@ -263,18 +263,18 @@ def test_mtf_multiplication(setup_function):
     exponent_one = tuple(exponent_one)
     exponent_two = tuple(exponent_two)
 
-    mtf1 = MultivariateTaylorFunction({exponent_zero: np.array([2.0]).reshape(1), exponent_one: np.array([1.0]).reshape(1)}, dimension=global_dim) # 2 + x
-    mtf2 = MultivariateTaylorFunction({exponent_zero: np.array([3.0]).reshape(1), exponent_one: np.array([-2.0]).reshape(1)}, dimension=global_dim) # 3 - 2x
+    mtf1 = MultivariateTaylorFunction({exponent_zero: 2.0, exponent_one: 1.0}, dimension=global_dim) # 2 + x
+    mtf2 = MultivariateTaylorFunction({exponent_zero: 3.0, exponent_one: -2.0}, dimension=global_dim) # 3 - 2x
     mtf_prod = mtf1 * mtf2 # (2+x) * (3-2x) = 6 - 4x + 3x - 2x^2 = 6 - x - 2x^2
-    assert np.allclose(mtf_prod.extract_coefficient(exponent_zero), np.array([6.0]).reshape(1))
-    assert np.allclose(mtf_prod.extract_coefficient(exponent_one), np.array([-1.0]).reshape(1))
-    assert np.allclose(mtf_prod.extract_coefficient(exponent_two), np.array([-2.0]).reshape(1))
+    assert np.allclose(mtf_prod.extract_coefficient(exponent_zero), 6.0)
+    assert np.allclose(mtf_prod.extract_coefficient(exponent_one), -1.0)
+    assert np.allclose(mtf_prod.extract_coefficient(exponent_two), -2.0)
     mtf_prod_const = mtf1 * 3.0 # (2+x) * 3 = 6 + 3x
-    assert np.allclose(mtf_prod_const.extract_coefficient(exponent_zero), np.array([6.0]).reshape(1))
-    assert np.allclose(mtf_prod_const.extract_coefficient(exponent_one), np.array([3.0]).reshape(1))
+    assert np.allclose(mtf_prod_const.extract_coefficient(exponent_zero), 6.0)
+    assert np.allclose(mtf_prod_const.extract_coefficient(exponent_one), 3.0)
     mtf_prod_rconst = 3.0 * mtf1 # 3 * (2+x) = 6 + 3x (commutativity)
-    assert np.allclose(mtf_prod_rconst.extract_coefficient(exponent_zero), np.array([6.0]).reshape(1))
-    assert np.allclose(mtf_prod_rconst.extract_coefficient(exponent_one), np.array([3.0]).reshape(1))
+    assert np.allclose(mtf_prod_rconst.extract_coefficient(exponent_zero), 6.0)
+    assert np.allclose(mtf_prod_rconst.extract_coefficient(exponent_one), 3.0)
 
 def test_mtf_power(setup_function):
     global_dim, exponent_zero = setup_function
@@ -289,19 +289,19 @@ def test_mtf_power(setup_function):
     exponent_two = tuple(exponent_two)
     exponent_three = tuple(exponent_three)
 
-    mtf = MultivariateTaylorFunction({exponent_zero: np.array([1.0]).reshape(1), exponent_one: np.array([1.0]).reshape(1)}, dimension=global_dim) # 1 + x
+    mtf = MultivariateTaylorFunction({exponent_zero: 1.0, exponent_one: 1.0}, dimension=global_dim) # 1 + x
     mtf_sq = mtf ** 2 # (1+x)^2 = 1 + 2x + x^2
-    assert np.allclose(mtf_sq.extract_coefficient(exponent_zero), np.array([1.0]).reshape(1))
-    assert np.allclose(mtf_sq.extract_coefficient(exponent_one), np.array([2.0]).reshape(1))
-    assert np.allclose(mtf_sq.extract_coefficient(exponent_two), np.array([1.0]).reshape(1))
+    assert np.allclose(mtf_sq.extract_coefficient(exponent_zero), 1.0)
+    assert np.allclose(mtf_sq.extract_coefficient(exponent_one), 2.0)
+    assert np.allclose(mtf_sq.extract_coefficient(exponent_two), 1.0)
     mtf_cube = mtf ** 3 # (1+x)^3 = 1 + 3x + 3x^2 + x^3, but truncated to order 2
-    assert np.allclose(mtf_cube.extract_coefficient(exponent_zero), np.array([1.0]).reshape(1))
-    assert np.allclose(mtf_cube.extract_coefficient(exponent_one), np.array([3.0]).reshape(1))
-    assert np.allclose(mtf_cube.extract_coefficient(exponent_two), np.array([3.0]).reshape(1))
+    assert np.allclose(mtf_cube.extract_coefficient(exponent_zero), 1.0)
+    assert np.allclose(mtf_cube.extract_coefficient(exponent_one), 3.0)
+    assert np.allclose(mtf_cube.extract_coefficient(exponent_two), 3.0)
     # pytest.approx might not be directly comparable with numpy arrays
     coeff_three = mtf_cube.extract_coefficient(exponent_three)
     if coeff_three is not None:
-        assert coeff_three == pytest.approx(np.array([1.0]).reshape(1))
+        assert coeff_three == pytest.approx(1.0)
     else:
         # If max_order is less than 3, the coefficient might not exist
         assert get_global_max_order() < 3
@@ -317,10 +317,10 @@ def test_mtf_negation(setup_function):
         exponent_one[0] = 1
     exponent_one = tuple(exponent_one)
 
-    mtf = MultivariateTaylorFunction({exponent_zero: np.array([2.0]).reshape(1), exponent_one: np.array([-1.0]).reshape(1)}, dimension=global_dim) # 2 - x
+    mtf = MultivariateTaylorFunction({exponent_zero: 2.0, exponent_one: -1.0}, dimension=global_dim) # 2 - x
     neg_mtf = -mtf # -(2 - x) = -2 + x
-    assert np.allclose(neg_mtf.extract_coefficient(exponent_zero), np.array([-2.0]).reshape(1))
-    assert np.allclose(neg_mtf.extract_coefficient(exponent_one), np.array([1.0]).reshape(1))
+    assert np.allclose(neg_mtf.extract_coefficient(exponent_zero), -2.0)
+    assert np.allclose(neg_mtf.extract_coefficient(exponent_one), 1.0)
 
 def test_mtf_eval_shape_consistency(setup_function):
     global_dim, exponent_zero = setup_function
@@ -329,7 +329,7 @@ def test_mtf_eval_shape_consistency(setup_function):
         exponent_one[0] = 1
     exponent_one = tuple(exponent_one)
 
-    mtf = MultivariateTaylorFunction({exponent_zero: np.array([2.0]).reshape(1), exponent_one: np.array([-1.0]).reshape(1)}, dimension=global_dim)
+    mtf = MultivariateTaylorFunction({exponent_zero: 2.0, exponent_one: -1.0}, dimension=global_dim)
     eval_point = [0.5] * global_dim if global_dim > 0 else [0.5]
     if global_dim > 1:
         eval_point = [0.5] + [0] * (global_dim - 1) # Evaluate with the first variable as 0.5
@@ -352,10 +352,10 @@ def test_cmtf_creation(setup_function):
         exponent_one[0] = 1
     exponent_one = tuple(exponent_one)
 
-    coeffs = {exponent_zero: np.array([1+1j]).reshape(1), exponent_one: np.array([2-1j]).reshape(1)}
+    coeffs = {exponent_zero: 1+1j, exponent_one: 2-1j}
     cmtf = ComplexMultivariateTaylorFunction(coefficients=coeffs, dimension=global_dim)
-    assert np.allclose(cmtf.extract_coefficient(exponent_zero), np.array([1+1j]).reshape(1))
-    assert np.allclose(cmtf.extract_coefficient(exponent_one), np.array([2-1j]).reshape(1))
+    assert np.allclose(cmtf.extract_coefficient(exponent_zero), 1+1j)
+    assert np.allclose(cmtf.extract_coefficient(exponent_one), 2-1j)
 
 def test_cmtf_variable_evaluation(setup_function):
     global_dim, exponent_zero = setup_function
@@ -382,16 +382,16 @@ def test_cmtf_truncate(setup_function):
     exponent_two = tuple(exponent_two)
     exponent_three = tuple(exponent_three)
 
-    coeffs = {exponent_zero: np.array([1+0j]).reshape(1),
-              exponent_one: np.array([2j]).reshape(1),
-              exponent_two: np.array([3-3j]).reshape(1),
-              exponent_three: np.array([4+4j]).reshape(1)}
+    coeffs = {exponent_zero: 1+0j,
+              exponent_one: 2j,
+              exponent_two: 3-3j,
+              exponent_three: 4+4j}
     cmtf = ComplexMultivariateTaylorFunction(coefficients=coeffs, dimension=global_dim)
     truncated_cmtf = cmtf.truncate(2)
-    assert np.allclose(truncated_cmtf.extract_coefficient(exponent_three), np.array([0.0j]).reshape(1))
-    assert np.allclose(truncated_cmtf.extract_coefficient(exponent_two), np.array([3-3j]).reshape(1))
-    assert np.allclose(truncated_cmtf.extract_coefficient(exponent_one), np.array([2j]).reshape(1))
-    assert np.allclose(truncated_cmtf.extract_coefficient(exponent_zero), np.array([1+0j]).reshape(1))
+    assert np.allclose(truncated_cmtf.extract_coefficient(exponent_three), 0.0j)
+    assert np.allclose(truncated_cmtf.extract_coefficient(exponent_two), 3-3j)
+    assert np.allclose(truncated_cmtf.extract_coefficient(exponent_one), 2j)
+    assert np.allclose(truncated_cmtf.extract_coefficient(exponent_zero), 1+0j)
 
 def test_cmtf_extract_coefficient(setup_function):
     global_dim, exponent_zero = setup_function
@@ -400,10 +400,10 @@ def test_cmtf_extract_coefficient(setup_function):
         exponent_one_zero[0] = 1
     exponent_one_zero = tuple(exponent_one_zero)
 
-    coeffs = {exponent_one_zero: np.array([1+1j]).reshape(1)}
+    coeffs = {exponent_one_zero: 1+1j}
     cmtf = ComplexMultivariateTaylorFunction(coefficients=coeffs, dimension=max(2, global_dim)) # Dimension at least 2 for the test
-    assert np.allclose(cmtf.extract_coefficient(exponent_one_zero), np.array([1+1j]).reshape(1))
-    assert np.allclose(cmtf.extract_coefficient(exponent_zero), np.array([0.0j]).reshape(1)) # Default complex zero
+    assert np.allclose(cmtf.extract_coefficient(exponent_one_zero), 1+1j)
+    assert np.allclose(cmtf.extract_coefficient(exponent_zero), 0.0j) # Default complex zero
 
 def test_cmtf_set_coefficient(setup_function):
     global_dim, exponent_zero = setup_function
@@ -414,9 +414,9 @@ def test_cmtf_set_coefficient(setup_function):
 
     cmtf = ComplexMultivariateTaylorFunction.from_constant(0.0j, MAX_DIMENSION)
     cmtf.set_coefficient(exponent_one, 2+2j)
-    assert np.allclose(cmtf.extract_coefficient(exponent_one), np.array([2+2j]).reshape(1))
+    assert np.allclose(cmtf.extract_coefficient(exponent_one), 2+2j)
     cmtf.set_coefficient(exponent_one, 0.0j) # Setting to zero
-    assert np.allclose(cmtf.extract_coefficient(exponent_one), np.array([0.0j]).reshape(1))
+    assert np.allclose(cmtf.extract_coefficient(exponent_one), 0.0j)
     with pytest.raises(TypeError):
         cmtf.set_coefficient(list(exponent_one), "invalid") # Value must be numeric
 
@@ -431,9 +431,9 @@ def test_cmtf_get_max_coefficient(setup_function):
     exponent_one_zero = tuple(exponent_one_zero)
     exponent_zero_one = tuple(exponent_zero_one)
 
-    coeffs = {exponent_zero: np.array([1+0j]).reshape(1),
-              exponent_one_zero: np.array([1j]).reshape(1),
-              exponent_zero_one: np.array([-2+0j]).reshape(1)}
+    coeffs = {exponent_zero: 1+0j,
+              exponent_one_zero: 1j,
+              exponent_zero_one: -2+0j}
     cmtf = ComplexMultivariateTaylorFunction(coefficients=coeffs, dimension=max(2, global_dim)) # Dimension at least 2 for the test
     assert pytest.approx(cmtf.get_max_coefficient()) == 2.0 # Max magnitude is 2.0
 
@@ -448,12 +448,12 @@ def test_cmtf_get_min_coefficient(setup_function):
     exponent_one_zero = tuple(exponent_one_zero)
     exponent_zero_one = tuple(exponent_zero_one)
 
-    coeffs = {exponent_zero: np.array([0.1j]).reshape(1),
-              exponent_one_zero: np.array([2+0j]).reshape(1),
-              exponent_zero_one: np.array([3j]).reshape(1)}
+    coeffs = {exponent_zero: 0.1j,
+              exponent_one_zero: 2+0j,
+              exponent_zero_one: 3j}
     cmtf = ComplexMultivariateTaylorFunction(coefficients=coeffs, dimension=max(2, global_dim)) # Dimension at least 2 for the test
     assert pytest.approx(cmtf.get_min_coefficient(tolerance=0.5)) == 2.0 # Min non-negligible magnitude (above 0.5)
-    coeffs_negligible = {exponent_zero: np.array([1e-10j]).reshape(1)}
+    coeffs_negligible = {exponent_zero: 1e-10j}
     cmtf_negligible = ComplexMultivariateTaylorFunction(coefficients=coeffs_negligible, dimension=max(2, global_dim))
     assert pytest.approx(cmtf_negligible.get_min_coefficient()) == 0.0 # All negligible, returns 0.0
 
@@ -464,10 +464,10 @@ def test_cmtf_conjugate(setup_function):
         exponent_one[0] = 1
     exponent_one = tuple(exponent_one)
 
-    cmtf = ComplexMultivariateTaylorFunction({exponent_zero: np.array([1+1j]).reshape(1), exponent_one: np.array([2-1j]).reshape(1)}, dimension=global_dim)
+    cmtf = ComplexMultivariateTaylorFunction({exponent_zero: 1+1j, exponent_one: 2-1j}, dimension=global_dim)
     conj_cmtf = cmtf.conjugate()
-    assert np.allclose(conj_cmtf.extract_coefficient(exponent_zero), np.array([1-1j]).reshape(1))
-    assert np.allclose(conj_cmtf.extract_coefficient(exponent_one), np.array([2+1j]).reshape(1))
+    assert np.allclose(conj_cmtf.extract_coefficient(exponent_zero), 1-1j)
+    assert np.allclose(conj_cmtf.extract_coefficient(exponent_one), 2+1j)
 
 def test_cmtf_real_part(setup_function):
     global_dim, exponent_zero = setup_function
@@ -476,11 +476,11 @@ def test_cmtf_real_part(setup_function):
         exponent_one[0] = 1
     exponent_one = tuple(exponent_one)
 
-    cmtf = ComplexMultivariateTaylorFunction({exponent_zero: np.array([1+1j]).reshape(1), exponent_one: np.array([2-1j]).reshape(1)}, dimension=global_dim)
+    cmtf = ComplexMultivariateTaylorFunction({exponent_zero: 1+1j, exponent_one: 2-1j}, dimension=global_dim)
     real_mtf = cmtf.real_part()
     assert isinstance(real_mtf, MultivariateTaylorFunctionBase)
-    assert np.allclose(real_mtf.extract_coefficient(exponent_zero), np.array([1.0]).reshape(1))
-    assert np.allclose(real_mtf.extract_coefficient(exponent_one), np.array([2.0]).reshape(1))
+    assert np.allclose(real_mtf.extract_coefficient(exponent_zero), 1.0)
+    assert np.allclose(real_mtf.extract_coefficient(exponent_one), 2.0)
 
 def test_cmtf_imag_part(setup_function):
     global_dim, exponent_zero = setup_function
@@ -489,11 +489,11 @@ def test_cmtf_imag_part(setup_function):
         exponent_one[0] = 1
     exponent_one = tuple(exponent_one)
 
-    cmtf = ComplexMultivariateTaylorFunction({exponent_zero: np.array([1+1j]).reshape(1), exponent_one: np.array([2-1j]).reshape(1)}, dimension=global_dim)
+    cmtf = ComplexMultivariateTaylorFunction({exponent_zero: 1+1j, exponent_one: 2-1j}, dimension=global_dim)
     imag_mtf = cmtf.imag_part()
     assert isinstance(imag_mtf, MultivariateTaylorFunctionBase)
-    assert np.allclose(imag_mtf.extract_coefficient(exponent_zero), np.array([1.0]).reshape(1))
-    assert np.allclose(imag_mtf.extract_coefficient(exponent_one), np.array([-1.0]).reshape(1))
+    assert np.allclose(imag_mtf.extract_coefficient(exponent_zero), 1.0)
+    assert np.allclose(imag_mtf.extract_coefficient(exponent_one), -1.0)
 
 def test_cmtf_magnitude_phase_not_implemented(setup_function):
     global_dim, exponent_zero = setup_function
@@ -511,17 +511,17 @@ def test_cmtf_addition(setup_function):
         exponent_one[0] = 1
     exponent_one = tuple(exponent_one)
 
-    cmtf1 = ComplexMultivariateTaylorFunction({exponent_zero: np.array([1+1j]).reshape(1), exponent_one: np.array([2-1j]).reshape(1)}, dimension=global_dim) # (1+j) + (2-j)x
-    cmtf2 = ComplexMultivariateTaylorFunction({exponent_zero: np.array([3-2j]).reshape(1), exponent_one: np.array([-1+0.5j]).reshape(1)}, dimension=global_dim) # (3-2j) + (-1+0.5j)x
+    cmtf1 = ComplexMultivariateTaylorFunction({exponent_zero: 1+1j, exponent_one: 2-1j}, dimension=global_dim) # (1+j) + (2-j)x
+    cmtf2 = ComplexMultivariateTaylorFunction({exponent_zero: 3-2j, exponent_one: -1+0.5j}, dimension=global_dim) # (3-2j) + (-1+0.5j)x
     cmtf_sum = cmtf1 + cmtf2 # (4-j) + (1-0.5j)x
-    assert np.allclose(cmtf_sum.extract_coefficient(exponent_zero), np.array([4-1j]).reshape(1))
-    assert np.allclose(cmtf_sum.extract_coefficient(exponent_one), np.array([1-0.5j]).reshape(1))
+    assert np.allclose(cmtf_sum.extract_coefficient(exponent_zero), 4-1j)
+    assert np.allclose(cmtf_sum.extract_coefficient(exponent_one), 1-0.5j)
     cmtf_sum_const = cmtf1 + (2+0j) # (3+j) + (2-j)x
-    assert np.allclose(cmtf_sum_const.extract_coefficient(exponent_zero), np.array([3+1j]).reshape(1))
-    assert np.allclose(cmtf_sum_const.extract_coefficient(exponent_one), np.array([2-1j]).reshape(1))
+    assert np.allclose(cmtf_sum_const.extract_coefficient(exponent_zero), 3+1j)
+    assert np.allclose(cmtf_sum_const.extract_coefficient(exponent_one), 2-1j)
     cmtf_sum_rconst = (2+0j) + cmtf1 # commutativity
-    assert np.allclose(cmtf_sum_rconst.extract_coefficient(exponent_zero), np.array([3+1j]).reshape(1))
-    assert np.allclose(cmtf_sum_rconst.extract_coefficient(exponent_one), np.array([2-1j]).reshape(1))
+    assert np.allclose(cmtf_sum_rconst.extract_coefficient(exponent_zero), 3+1j)
+    assert np.allclose(cmtf_sum_rconst.extract_coefficient(exponent_one), 2-1j)
 
 def test_cmtf_subtraction(setup_function):
     global_dim, exponent_zero = setup_function
@@ -530,17 +530,17 @@ def test_cmtf_subtraction(setup_function):
         exponent_one[0] = 1
     exponent_one = tuple(exponent_one)
 
-    cmtf1 = ComplexMultivariateTaylorFunction({exponent_zero: np.array([5+0j]).reshape(1), exponent_one: np.array([3+1j]).reshape(1)}, dimension=global_dim) # 5 + (3+j)x
-    cmtf2 = ComplexMultivariateTaylorFunction({exponent_zero: np.array([2+1j]).reshape(1), exponent_one: np.array([1-1j]).reshape(1)}, dimension=global_dim) # (2+j) + (1-j)x
+    cmtf1 = ComplexMultivariateTaylorFunction({exponent_zero: 5+0j, exponent_one: 3+1j}, dimension=global_dim) # 5 + (3+j)x
+    cmtf2 = ComplexMultivariateTaylorFunction({exponent_zero: 2+1j, exponent_one: 1-1j}, dimension=global_dim) # (2+j) + (1-j)x
     cmtf_diff = cmtf1 - cmtf2 # (3-j) + (2+2j)x
-    assert np.allclose(cmtf_diff.extract_coefficient(exponent_zero), np.array([3-1j]).reshape(1))
-    assert np.allclose(cmtf_diff.extract_coefficient(exponent_one), np.array([2+2j]).reshape(1))
+    assert np.allclose(cmtf_diff.extract_coefficient(exponent_zero), 3-1j)
+    assert np.allclose(cmtf_diff.extract_coefficient(exponent_one), 2+2j)
     cmtf_diff_const = cmtf1 - (2+0j) # (3+0j) + (3+1j)x
-    assert np.allclose(cmtf_diff_const.extract_coefficient(exponent_zero), np.array([3+0j]).reshape(1))
-    assert np.allclose(cmtf_diff_const.extract_coefficient(exponent_one), np.array([3+1j]).reshape(1))
+    assert np.allclose(cmtf_diff_const.extract_coefficient(exponent_zero), 3+0j)
+    assert np.allclose(cmtf_diff_const.extract_coefficient(exponent_one), 3+1j)
     cmtf_diff_rconst = (4+0j) - cmtf1 # (-1+0j) + (-3-1j)x
-    assert np.allclose(cmtf_diff_rconst.extract_coefficient(exponent_zero), np.array([-1+0j]).reshape(1))
-    assert np.allclose(cmtf_diff_rconst.extract_coefficient(exponent_one), np.array([-3-1j]).reshape(1))
+    assert np.allclose(cmtf_diff_rconst.extract_coefficient(exponent_zero), -1+0j)
+    assert np.allclose(cmtf_diff_rconst.extract_coefficient(exponent_one), -3-1j)
 
 def test_cmtf_multiplication(setup_function):
     global_dim, exponent_zero = setup_function
@@ -552,18 +552,18 @@ def test_cmtf_multiplication(setup_function):
     exponent_one = tuple(exponent_one)
     exponent_two = tuple(exponent_two)
 
-    cmtf1 = ComplexMultivariateTaylorFunction({exponent_zero: np.array([1+0j]).reshape(1), exponent_one: np.array([1j]).reshape(1)}, dimension=global_dim) # 1 + jx
-    cmtf2 = ComplexMultivariateTaylorFunction({exponent_zero: np.array([1j]).reshape(1), exponent_one: np.array([-1+0j]).reshape(1)}, dimension=global_dim) # j - x
+    cmtf1 = ComplexMultivariateTaylorFunction({exponent_zero: 1+0j, exponent_one: 1j}, dimension=global_dim) # 1 + jx
+    cmtf2 = ComplexMultivariateTaylorFunction({exponent_zero: 1j, exponent_one: -1+0j}, dimension=global_dim) # j - x
     cmtf_prod = cmtf1 * cmtf2 # j - x -x + (-j)x^2 = j - 2x -jx^2
-    assert np.allclose(cmtf_prod.extract_coefficient(exponent_zero), np.array([1j]).reshape(1))
-    assert np.allclose(cmtf_prod.extract_coefficient(exponent_one), np.array([-2+0j]).reshape(1))
-    assert np.allclose(cmtf_prod.extract_coefficient(exponent_two), np.array([-1j]).reshape(1))
+    assert np.allclose(cmtf_prod.extract_coefficient(exponent_zero), 1j)
+    assert np.allclose(cmtf_prod.extract_coefficient(exponent_one), -2+0j)
+    assert np.allclose(cmtf_prod.extract_coefficient(exponent_two), -1j)
     cmtf_prod_const = cmtf1 * (2+0j) # (2+0j) + (2j)x
-    assert np.allclose(cmtf_prod_const.extract_coefficient(exponent_zero), np.array([2+0j]).reshape(1))
-    assert np.allclose(cmtf_prod_const.extract_coefficient(exponent_one), np.array([2j]).reshape(1))
+    assert np.allclose(cmtf_prod_const.extract_coefficient(exponent_zero), 2+0j)
+    assert np.allclose(cmtf_prod_const.extract_coefficient(exponent_one), 2j)
     cmtf_prod_rconst = (2+0j) * cmtf1 # commutativity
-    assert np.allclose(cmtf_prod_rconst.extract_coefficient(exponent_zero), np.array([2+0j]).reshape(1))
-    assert np.allclose(cmtf_prod_rconst.extract_coefficient(exponent_one), np.array([2j]).reshape(1))
+    assert np.allclose(cmtf_prod_rconst.extract_coefficient(exponent_zero), 2+0j)
+    assert np.allclose(cmtf_prod_rconst.extract_coefficient(exponent_one), 2j)
 
 def test_cmtf_power(setup_function):
     global_dim, exponent_zero = setup_function
@@ -578,15 +578,15 @@ def test_cmtf_power(setup_function):
     exponent_two = tuple(exponent_two)
     exponent_three = tuple(exponent_three)
 
-    cmtf = ComplexMultivariateTaylorFunction({exponent_zero: np.array([1+0j]).reshape(1), exponent_one: np.array([1j]).reshape(1)}, dimension=global_dim) # 1 + jx
+    cmtf = ComplexMultivariateTaylorFunction({exponent_zero: 1+0j, exponent_one: 1j}, dimension=global_dim) # 1 + jx
     cmtf_sq = cmtf ** 2 # (1+jx)^2 = 1 + 2jx - x^2
-    assert np.allclose(cmtf_sq.extract_coefficient(exponent_zero), np.array([1+0j]).reshape(1))
-    assert np.allclose(cmtf_sq.extract_coefficient(exponent_one), np.array([2j]).reshape(1))
-    assert np.allclose(cmtf_sq.extract_coefficient(exponent_two), np.array([-1+0j]).reshape(1))
+    assert np.allclose(cmtf_sq.extract_coefficient(exponent_zero), 1+0j)
+    assert np.allclose(cmtf_sq.extract_coefficient(exponent_one), 2j)
+    assert np.allclose(cmtf_sq.extract_coefficient(exponent_two), -1+0j)
     cmtf_cube = cmtf ** 3 # (1+jx)^3 = 1 + 3jx -3x^2 -jx^3, truncated to order 2
-    assert np.allclose(cmtf_cube.extract_coefficient(exponent_zero), np.array([1+0j]).reshape(1))
-    assert np.allclose(cmtf_cube.extract_coefficient(exponent_one), np.array([3j]).reshape(1))
-    assert np.allclose(cmtf_cube.extract_coefficient(exponent_two), np.array([-3+0j]).reshape(1))
+    assert np.allclose(cmtf_cube.extract_coefficient(exponent_zero), 1+0j)
+    assert np.allclose(cmtf_cube.extract_coefficient(exponent_one), 3j)
+    assert np.allclose(cmtf_cube.extract_coefficient(exponent_two), -3+0j)
     # The MAX_ORDER check might be too specific, consider checking against a reasonable order
     # assert cmtf_cube.extract_coefficient((MAX_ORDER+1,)) == pytest.approx(np.array([0.0j]).reshape(1)) # Truncated
 
@@ -597,10 +597,10 @@ def test_cmtf_negation(setup_function):
         exponent_one[0] = 1
     exponent_one = tuple(exponent_one)
 
-    cmtf = ComplexMultivariateTaylorFunction({exponent_zero: np.array([2+0j]).reshape(1), exponent_one: np.array([-1+1j]).reshape(1)}, dimension=global_dim) # 2 + (-1+j)x
+    cmtf = ComplexMultivariateTaylorFunction({exponent_zero: 2+0j, exponent_one: -1+1j}, dimension=global_dim) # 2 + (-1+j)x
     neg_cmtf = -cmtf # -2 + (1-j)x
-    assert np.allclose(neg_cmtf.extract_coefficient(exponent_zero), np.array([-2+0j]).reshape(1))
-    assert np.allclose(neg_cmtf.extract_coefficient(exponent_one), np.array([1-1j]).reshape(1))
+    assert np.allclose(neg_cmtf.extract_coefficient(exponent_zero), -2+0j)
+    assert np.allclose(neg_cmtf.extract_coefficient(exponent_one), 1-1j)
 
 def test_cmtf_eval_shape_consistency(setup_function):
     global_dim, exponent_zero = setup_function
@@ -609,7 +609,7 @@ def test_cmtf_eval_shape_consistency(setup_function):
         exponent_one[0] = 1
     exponent_one = tuple(exponent_one)
 
-    cmtf = ComplexMultivariateTaylorFunction({exponent_zero: np.array([2+0j]).reshape(1), exponent_one: np.array([-1+1j]).reshape(1)}, dimension=global_dim)
+    cmtf = ComplexMultivariateTaylorFunction({exponent_zero: 2+0j, exponent_one: -1+1j}, dimension=global_dim)
     eval_point = [0.5] * global_dim if global_dim > 0 else [0.5]
     if global_dim > 1:
         eval_point = [0.5] + [0] * (global_dim - 1) # Evaluate with the first variable as 0.5
@@ -743,9 +743,9 @@ def test_mtf_equality(setup_function):
         exponent_one[0] = 1
     exponent_one = tuple(exponent_one)
 
-    mtf1 = MultivariateTaylorFunction({exponent_zero: np.array([1.0]).reshape(1), exponent_one: np.array([2.0]).reshape(1)}, dimension=global_dim)
-    mtf2 = MultivariateTaylorFunction({exponent_zero: np.array([1.0]).reshape(1), exponent_one: np.array([2.0]).reshape(1)}, dimension=global_dim)
-    mtf3 = MultivariateTaylorFunction({exponent_zero: np.array([1.0]).reshape(1), exponent_one: np.array([3.0]).reshape(1)}, dimension=global_dim)
+    mtf1 = MultivariateTaylorFunction({exponent_zero: 1.0, exponent_one: 2.0}, dimension=global_dim)
+    mtf2 = MultivariateTaylorFunction({exponent_zero: 1.0, exponent_one: 2.0}, dimension=global_dim)
+    mtf3 = MultivariateTaylorFunction({exponent_zero: 1.0, exponent_one: 3.0}, dimension=global_dim)
     assert mtf1 == mtf2
     assert mtf1 != mtf3
 
@@ -756,9 +756,9 @@ def test_cmtf_equality(setup_function):
         exponent_one[0] = 1
     exponent_one = tuple(exponent_one)
 
-    cmtf1 = ComplexMultivariateTaylorFunction({exponent_zero: np.array([1+1j]).reshape(1), exponent_one: np.array([2-1j]).reshape(1)}, dimension=global_dim)
-    cmtf2 = ComplexMultivariateTaylorFunction({exponent_zero: np.array([1+1j]).reshape(1), exponent_one: np.array([2-1j]).reshape(1)}, dimension=global_dim)
-    cmtf3 = ComplexMultivariateTaylorFunction({exponent_zero: np.array([1+1j]).reshape(1), exponent_one: np.array([3-1j]).reshape(1)}, dimension=global_dim)
+    cmtf1 = ComplexMultivariateTaylorFunction({exponent_zero: 1+1j, exponent_one: 2-1j}, dimension=global_dim)
+    cmtf2 = ComplexMultivariateTaylorFunction({exponent_zero: 1+1j, exponent_one: 2-1j}, dimension=global_dim)
+    cmtf3 = ComplexMultivariateTaylorFunction({exponent_zero: 1+1j, exponent_one: 3-1j}, dimension=global_dim)
     assert cmtf1 == cmtf2
     assert cmtf1 != cmtf3
 
@@ -770,7 +770,7 @@ def test_mtf_pickle_unpickle(setup_function):
     if global_dim > 0:
         exponent_one[0] = 1
     exponent_one = tuple(exponent_one)
-    mtf_obj = MultivariateTaylorFunction({exponent_zero: np.array([1.0]).reshape(1), exponent_one: np.array([2.0]).reshape(1)}, global_dim)
+    mtf_obj = MultivariateTaylorFunction({exponent_zero: 1.0, exponent_one: 2.0}, global_dim)
     pickled_mtf = pickle.dumps(mtf_obj)
     unpickled_mtf = pickle.loads(pickled_mtf)
     assert unpickled_mtf == mtf_obj
@@ -782,7 +782,7 @@ def test_cmtf_pickle_unpickle(setup_function):
     if global_dim > 0:
         exponent_one[0] = 1
     exponent_one = tuple(exponent_one)
-    cmtf = ComplexMultivariateTaylorFunction({exponent_zero: np.array([1+1j]).reshape(1), exponent_one: np.array([2-1j]).reshape(1)}, dimension=global_dim)
+    cmtf = ComplexMultivariateTaylorFunction({exponent_zero: 1+1j, exponent_one: 2-1j}, dimension=global_dim)
     pickled_cmtf = pickle.dumps(cmtf)
     unpickled_cmtf = pickle.loads(pickled_cmtf)
     assert unpickled_cmtf == cmtf
