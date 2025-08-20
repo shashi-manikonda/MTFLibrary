@@ -189,7 +189,8 @@ class MultivariateTaylorFunctionBase:
         """Creates an MTF representing a constant value."""
         if dimension is None:
             dimension=get_global_max_dimension()
-        coeffs = {(0,) * dimension: np.array([float(constant_value)]).reshape(1)}
+        # Ensure the value is a scalar float, not a numpy array
+        coeffs = {(0,) * dimension: float(constant_value)}
         return cls(coefficients=coeffs, dimension=dimension, implementation=implementation)
 
     @classmethod
@@ -199,7 +200,8 @@ class MultivariateTaylorFunctionBase:
             raise ValueError(f"Variable index must be between 1 and {dimension}, inclusive.")
         exponent = [0] * dimension
         exponent[var_index - 1] = 1
-        coeffs = {tuple(exponent): np.array([1.0]).reshape(1)}
+        # Use a scalar float for the coefficient
+        coeffs = {tuple(exponent): 1.0}
         return cls(coefficients=coeffs, dimension=dimension, var_name=f"x_{var_index}", implementation=implementation)
 
     def __call__(self, evaluation_point):
@@ -719,19 +721,30 @@ class MultivariateTaylorFunctionBase:
             return False
         if self.dimension != other.dimension:
             return False
-        if self.coeffs.shape[0] != other.coeffs.shape[0]:
+
+        # Create cleaned versions of both MTFs for comparison
+        # This handles cases where one MTF is empty and the other is a zero constant
+        self_cleaned = self.copy()
+        self_cleaned._cleanup_after_operation()
+        other_cleaned = other.copy()
+        other_cleaned._cleanup_after_operation()
+
+        # If both are empty after cleanup, they are equal
+        if self_cleaned.coeffs.shape[0] == 0 and other_cleaned.coeffs.shape[0] == 0:
+            return True
+
+        # If number of terms is different after cleanup, they are not equal
+        if self_cleaned.coeffs.shape[0] != other_cleaned.coeffs.shape[0]:
             return False
 
-        # A more efficient comparison assuming a canonical representation
-        # (sorted exponents)
-        if not np.array_equal(self.exponents, other.exponents):
-            # If exponents are not identical, we need a more robust check
-            # Fallback to the dictionary method for non-canonical forms
-            self_map = {tuple(exp): coeff for exp, coeff in zip(self.exponents, self.coeffs)}
-            other_map = {tuple(exp): coeff for exp, coeff in zip(other.exponents, other.coeffs)}
+        # If number of terms is the same, compare the arrays
+        if not np.array_equal(self_cleaned.exponents, other_cleaned.exponents):
+            # Fallback for non-canonical but equivalent forms (should be rare now)
+            self_map = {tuple(exp): coeff for exp, coeff in zip(self_cleaned.exponents, self_cleaned.coeffs)}
+            other_map = {tuple(exp): coeff for exp, coeff in zip(other_cleaned.exponents, other_cleaned.coeffs)}
             return self_map == other_map
 
-        return np.allclose(self.coeffs, other.coeffs)
+        return np.allclose(self_cleaned.coeffs, other_cleaned.coeffs)
 
     def __ne__(self, other):
         """Defines inequality (!=) for MultivariateTaylorFunction objects."""
