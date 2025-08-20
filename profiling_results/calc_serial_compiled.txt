@@ -1,0 +1,116 @@
+         115803721 function calls (114589721 primitive calls) in 232.882 seconds
+
+   Ordered by: cumulative time
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.000    0.000  232.882  232.882 /app/src/applications/em/biot_savart.py:182(serial_biot_savart)
+        1    0.113    0.113  232.882  232.882 /app/src/applications/em/biot_savart.py:49(numpy_biot_savart)
+        1    0.595    0.595  232.758  232.758 /app/src/applications/em/biot_savart.py:14(_numpy_biot_savart_core)
+   559400    9.331    0.000  105.456    0.000 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/lib/_arraysetops_impl.py:145(unique)
+   620300    8.829    0.000   89.011    0.000 /app/src/mtflib/taylor_function.py:290(__mul__)
+320000/200000    2.332    0.000   85.632    0.000 /app/src/mtflib/taylor_function.py:347(__pow__)
+  1559700    2.651    0.000   76.650    0.000 /app/src/mtflib/MTFExtended.py:21(__init__)
+  1559700    8.455    0.000   73.998    0.000 /app/src/mtflib/taylor_function.py:122(__init__)
+299400/199400    4.667    0.000   67.522    0.000 /app/src/mtflib/taylor_function.py:203(__add__)
+4458202/4060602   11.847    0.000   60.015    0.000 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/_core/fromnumeric.py:69(_wrapreduction)
+  1599700   19.275    0.000   53.854    0.000 /app/src/mtflib/taylor_function.py:468(truncate_inplace)
+2619202/2420402    5.000    0.000   52.033    0.000 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/_core/fromnumeric.py:2338(sum)
+   559400   20.923    0.000   48.971    0.000 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/lib/_arraysetops_impl.py:348(_unique1d)
+4818202/4420602   20.131    0.000   47.449    0.000 {method 'reduce' of 'numpy.ufunc' objects}
+   140000    1.821    0.000   45.335    0.000 /app/src/mtflib/taylor_function.py:249(__sub__)
+    40000    1.049    0.000   42.330    0.001 /app/src/mtflib/taylor_function.py:534(compose_one_dim)
+        1    0.447    0.447   40.488   40.488 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/_core/numeric.py:1556(cross)
+    20000    0.131    0.000   35.789    0.002 /app/src/mtflib/taylor_function.py:392(__rtruediv__)
+    20000    0.674    0.000   34.648    0.002 /app/src/mtflib/taylor_function.py:400(_inv_mtf_internal)
+   380000    1.840    0.000   31.606    0.000 /app/src/mtflib/taylor_function.py:166(from_constant)
+    20000    0.270    0.000   30.623    0.002 /app/src/mtflib/taylor_function.py:841(isqrt_taylor)
+    20000    0.472    0.000   26.840    0.001 /app/src/mtflib/taylor_function.py:855(isqrt_taylor_1D_expansion)
+    60000    0.140    0.000   26.289    0.000 /app/src/mtflib/taylor_function.py:286(__rsub__)
+  1118803    7.487    0.000   26.228    0.000 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/_core/numeric.py:1482(moveaxis)
+   559400    2.779    0.000   18.902    0.000 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/lib/_arraysetops_impl.py:333(reshape_uniq)
+  2237607   10.130    0.000   15.064    0.000 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/_core/numeric.py:1420(normalize_axis_tuple)
+   559400    8.488    0.000   10.486    0.000 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/_core/_internal.py:450(_promote_fields)
+   559400    1.180    0.000    9.507    0.000 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/_core/fromnumeric.py:3328(prod)
+  1279600    2.029    0.000    9.312    0.000 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/_core/fromnumeric.py:3052(max)
+   420000    0.669    0.000    7.138    0.000 {built-in method builtins.any}
+   559400    0.991    0.000    6.937    0.000 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/_core/fromnumeric.py:2879(cumsum)
+  1080000    2.195    0.000    6.469    0.000 /app/src/mtflib/taylor_function.py:146(<genexpr>)
+   619400    6.169    0.000    6.340    0.000 /app/src/mtflib/taylor_function.py:659(_cleanup_after_operation)
+  1118800    4.721    0.000    6.110    0.000 {method 'view' of 'numpy.ndarray' objects}
+   559400    0.881    0.000    5.946    0.000 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/_core/fromnumeric.py:51(_wrapfunc)
+   559400    5.789    0.000    5.789    0.000 {method 'argsort' of 'numpy.ndarray' objects}
+  1160000    2.562    0.000    5.242    0.000 /app/src/mtflib/taylor_function.py:526(is_zero_mtf)
+  1259400    4.874    0.000    4.874    0.000 {method 'flatten' of 'numpy.ndarray' objects}
+ 12914411    4.132    0.000    4.786    0.000 {built-in method builtins.isinstance}
+   559400    4.758    0.000    4.758    0.000 {method 'cumsum' of 'numpy.ndarray' objects}
+  1739400    3.489    0.000    4.398    0.000 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/lib/_type_check_impl.py:270(iscomplexobj)
+    60000    0.977    0.000    3.913    0.000 /app/src/mtflib/taylor_function.py:492(truncate)
+    60300    0.037    0.000    3.576    0.000 /app/src/mtflib/taylor_function.py:335(__rmul__)
+   279400    2.013    0.000    3.555    0.000 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/_core/shape_base.py:220(vstack)
+    60000    0.297    0.000    3.091    0.000 /app/src/mtflib/taylor_function.py:375(__neg__)
+  1400004    2.885    0.000    2.885    0.000 {built-in method numpy.array}
+    60000    0.421    0.000    2.709    0.000 /app/src/mtflib/taylor_function.py:379(__truediv__)
+   360000    0.587    0.000    2.684    0.000 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/_core/fromnumeric.py:2589(all)
+  4475214    1.875    0.000    2.636    0.000 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/_core/numeric.py:1469(<genexpr>)
+ 12487722    2.549    0.000    2.549    0.000 {built-in method builtins.len}
+  1938801    2.357    0.000    2.357    0.000 {method 'reshape' of 'numpy.ndarray' objects}
+  1538803    2.274    0.000    2.274    0.000 {built-in method builtins.sorted}
+  1118800    2.231    0.000    2.231    0.000 {built-in method builtins.getattr}
+   360000    0.836    0.000    2.097    0.000 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/_core/fromnumeric.py:89(_wrapreduction_any_all)
+  5238202    2.066    0.000    2.066    0.000 {method 'items' of 'dict' objects}
+  1678801    1.658    0.000    1.658    0.000 {built-in method numpy.empty}
+  1118800    1.388    0.000    1.388    0.000 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/_core/_internal.py:539(_view_is_safe)
+   279400    0.911    0.000    1.358    0.000 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/_core/shape_base.py:80(atleast_2d)
+  1118803    1.128    0.000    1.128    0.000 {method 'transpose' of 'numpy.ndarray' objects}
+  2936400    1.099    0.000    1.099    0.000 {method 'append' of 'list' objects}
+    20000    0.426    0.000    0.770    0.000 /app/src/mtflib/taylor_function.py:775(_split_constant_polynomial_part)
+  2237610    0.761    0.000    0.761    0.000 {built-in method numpy.lib.array_utils.normalize_axis_index}
+  2237601    0.711    0.000    0.711    0.000 {built-in method numpy.promote_types}
+   320000    0.169    0.000    0.654    0.000 <frozen abc>:117(__instancecheck__)
+   279400    0.219    0.000    0.648    0.000 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/_core/shape_base.py:216(_vhstack_dispatcher)
+  2619202    0.589    0.000    0.589    0.000 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/_core/fromnumeric.py:2333(_sum_dispatcher)
+  1118803    0.562    0.000    0.562    0.000 {method 'insert' of 'list' objects}
+    20000    0.280    0.000    0.548    0.000 /app/src/mtflib/taylor_function.py:583(extract_coefficient)
+  2237606    0.521    0.000    0.521    0.000 {built-in method _operator.index}
+   320000    0.362    0.000    0.484    0.000 {built-in method _abc._abc_instancecheck}
+  1739400    0.476    0.000    0.476    0.000 {built-in method builtins.issubclass}
+   280300    0.436    0.000    0.436    0.000 {method 'copy' of 'numpy.ndarray' objects}
+   520002    0.433    0.000    0.433    0.000 {built-in method numpy.asarray}
+   279400    0.254    0.000    0.428    0.000 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/_core/shape_base.py:208(_arrays_for_stack_dispatcher)
+  1677601    0.419    0.000    0.419    0.000 {built-in method numpy.asanyarray}
+  1859400    0.397    0.000    0.397    0.000 /app/src/mtflib/taylor_function.py:94(get_global_etol)
+  1639700    0.393    0.000    0.393    0.000 /app/src/mtflib/taylor_function.py:71(get_global_max_order)
+  1739400    0.366    0.000    0.366    0.000 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/lib/_type_check_impl.py:171(_is_type_dispatcher)
+   559400    0.275    0.000    0.363    0.000 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/lib/_arraysetops_impl.py:131(_unpack_tuple)
+   540000    0.299    0.000    0.299    0.000 {method 'item' of 'numpy.ndarray' objects}
+  1279600    0.276    0.000    0.276    0.000 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/_core/fromnumeric.py:3047(_max_dispatcher)
+  1118803    0.233    0.000    0.233    0.000 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/_core/numeric.py:1478(_moveaxis_dispatcher)
+   559400    0.220    0.000    0.220    0.000 {built-in method numpy.ascontiguousarray}
+   420000    0.208    0.000    0.208    0.000 {method 'keys' of 'dict' objects}
+   279400    0.175    0.000    0.175    0.000 {built-in method builtins.hasattr}
+   559400    0.161    0.000    0.161    0.000 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/_core/fromnumeric.py:2875(_cumsum_dispatcher)
+   420001    0.159    0.000    0.159    0.000 {built-in method builtins.iter}
+   559400    0.147    0.000    0.147    0.000 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/_core/multiarray.py:927(bincount)
+   559400    0.143    0.000    0.143    0.000 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/_core/fromnumeric.py:3323(_prod_dispatcher)
+   420002    0.130    0.000    0.130    0.000 {built-in method builtins.next}
+   558800    0.125    0.000    0.125    0.000 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/_core/multiarray.py:188(concatenate)
+    60001    0.033    0.000    0.122    0.000 <frozen abc>:121(__subclasscheck__)
+   559400    0.108    0.000    0.108    0.000 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/lib/_arraysetops_impl.py:139(_unique_dispatcher)
+   360000    0.107    0.000    0.107    0.000 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/_core/fromnumeric.py:2584(_all_dispatcher)
+   140000    0.095    0.000    0.095    0.000 /app/src/mtflib/taylor_function.py:110(_generate_exponent)
+    60001    0.090    0.000    0.090    0.000 {built-in method _abc._abc_subclasscheck}
+   279400    0.053    0.000    0.053    0.000 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/_core/shape_base.py:76(_atleast_2d_dispatcher)
+    20000    0.033    0.000    0.033    0.000 {built-in method builtins.min}
+    20000    0.030    0.000    0.030    0.000 {built-in method numpy.zeros}
+    40000    0.018    0.000    0.027    0.000 /app/src/mtflib/taylor_function.py:712(convert_to_mtf)
+    40000    0.027    0.000    0.027    0.000 {method 'get' of 'dict' objects}
+    40000    0.021    0.000    0.021    0.000 {built-in method builtins.abs}
+    20000    0.017    0.000    0.017    0.000 {built-in method math.sqrt}
+    40001    0.010    0.000    0.010    0.000 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/_core/multiarray.py:391(where)
+    20000    0.005    0.000    0.008    0.000 /app/src/mtflib/taylor_function.py:673(__eq__)
+    20000    0.005    0.000    0.005    0.000 /app/src/mtflib/taylor_function.py:78(get_global_max_dimension)
+        2    0.001    0.000    0.001    0.000 {method 'astype' of 'numpy.ndarray' objects}
+        1    0.000    0.000    0.000    0.000 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/lib/_shape_base_impl.py:518(expand_dims)
+        1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
+        1    0.000    0.000    0.000    0.000 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/lib/_shape_base_impl.py:514(_expand_dims_dispatcher)
+        1    0.000    0.000    0.000    0.000 /home/jules/.pyenv/versions/3.12.11/lib/python3.12/site-packages/numpy/_core/numeric.py:1552(_cross_dispatcher)
