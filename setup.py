@@ -40,6 +40,14 @@ setup(
     packages=find_packages(where='src'),
     install_requires=['numpy', 'pandas'],
     setup_requires=['cython', 'numpy', 'pybind11'],
+    extras_require={
+        'test': [
+            'pytest',
+            'matplotlib',
+            'nbconvert',
+            'ipykernel',
+        ]
+    },
     ext_modules=cythonize(extensions),
     classifiers=[
         'Development Status :: 4 - Beta',
