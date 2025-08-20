@@ -58,9 +58,9 @@ def test_var_creation(setup_function):
     if global_dim > 0:
         exponent_one[0] = 1
     coeff_x1 = x_var.extract_coefficient(tuple(exponent_one))
-    assert np.allclose(coeff_x1, np.array([1.0]).reshape(1))
+    assert np.allclose(coeff_x1, 1.0)
     coeff_constant = x_var.extract_coefficient(exponent_zero)
-    assert np.allclose(coeff_constant, np.array([0.0]).reshape(1))
+    assert np.allclose(coeff_constant, 0.0)
     with pytest.raises(ValueError):
         Var(0)
     with pytest.raises(ValueError):
@@ -75,13 +75,13 @@ def test_var_creation(setup_function):
 def test_mtf_constant_creation(setup_function):
     global_dim, exponent_zero = setup_function
     const_mtf = MultivariateTaylorFunction.from_constant(5.0)
-    assert np.allclose(const_mtf.eval([0] * global_dim), np.array([5.0]).reshape(1))
-    assert np.allclose(const_mtf.extract_coefficient(exponent_zero), np.array([5.0]).reshape(1))
+    assert np.allclose(const_mtf.eval([0] * global_dim), 5.0)
+    assert np.allclose(const_mtf.extract_coefficient(exponent_zero), 5.0)
 
     exponent_one = list(exponent_zero)
     if global_dim > 0:
         exponent_one[0] = 1
-    assert np.allclose(const_mtf.extract_coefficient(tuple(exponent_one)), np.array([0.0]).reshape(1))
+    assert np.allclose(const_mtf.extract_coefficient(tuple(exponent_one)), 0.0)
 
 def test_mtf_variable_evaluation(setup_function):
     global_dim, exponent_zero = setup_function
@@ -94,8 +94,8 @@ def test_mtf_variable_evaluation(setup_function):
 
     x1_var = Var(1)
     x2_var = Var(2)
-    assert np.allclose(x1_var.eval(evaluation_point_x1), np.array([2.0]).reshape(1))
-    assert np.allclose(x2_var.eval(evaluation_point_x2), np.array([3.0]).reshape(1))
+    assert np.allclose(x1_var.eval(evaluation_point_x1), 2.0)
+    assert np.allclose(x2_var.eval(evaluation_point_x2), 3.0)
 
 def test_mtf_truncate(setup_function):
     global_dim, exponent_zero = setup_function
@@ -367,7 +367,7 @@ def test_cmtf_variable_evaluation(setup_function):
         evaluation_point_x2[1] = 0.0
 
     x1_var_c = ComplexMultivariateTaylorFunction.from_variable(1, dimension=global_dim)
-    assert np.allclose(x1_var_c.eval(evaluation_point_x1), np.array([0.5+0.0j]).reshape(1))
+    assert np.allclose(x1_var_c.eval(evaluation_point_x1), 0.5+0.0j)
 
 def test_cmtf_truncate(setup_function):
     global_dim, exponent_zero = setup_function
@@ -588,7 +588,7 @@ def test_cmtf_power(setup_function):
     assert np.allclose(cmtf_cube.extract_coefficient(exponent_one), 3j)
     assert np.allclose(cmtf_cube.extract_coefficient(exponent_two), -3+0j)
     # The MAX_ORDER check might be too specific, consider checking against a reasonable order
-    # assert cmtf_cube.extract_coefficient((MAX_ORDER+1,)) == pytest.approx(np.array([0.0j]).reshape(1)) # Truncated
+    # assert cmtf_cube.extract_coefficient((MAX_ORDER+1,)) == pytest.approx(0.0j) # Truncated
 
 def test_cmtf_negation(setup_function):
     global_dim, exponent_zero = setup_function
@@ -634,9 +634,9 @@ def test_convert_to_mtf(setup_function):
 
     mtf = convert_to_mtf(5.0)
     assert isinstance(mtf, MultivariateTaylorFunction) or isinstance(mtf, MultivariateTaylorFunctionBase)
-    assert np.allclose(mtf.eval([0] * global_dim), np.array([5.0]).reshape(1))
-    assert np.allclose(mtf.extract_coefficient(exponent_zero), np.array([5.0]).reshape(1))
-    assert np.allclose(mtf.extract_coefficient(exponent_one), np.array([0.0]).reshape(1))
+    assert np.allclose(mtf.eval([0] * global_dim), 5.0)
+    assert np.allclose(mtf.extract_coefficient(exponent_zero), 5.0)
+    assert np.allclose(mtf.extract_coefficient(exponent_one), 0.0)
 
     # cmtf = convert_to_mtf(2+1j)
     # assert isinstance(cmtf, ComplexMultivariateTaylorFunction)
@@ -650,7 +650,7 @@ def test_convert_to_mtf(setup_function):
     eval_point = [0] * global_dim
     if global_dim > 0:
         eval_point[0] = 1.0
-    assert np.allclose(x_var_mtf.eval(eval_point), np.array([1.0]).reshape(1))
+    assert np.allclose(x_var_mtf.eval(eval_point), 1.0)
 
     existing_mtf = MultivariateTaylorFunction.from_constant(3.0)
     converted_mtf = convert_to_mtf(existing_mtf)
@@ -661,15 +661,15 @@ def test_convert_to_mtf(setup_function):
 
     numpy_scalar = np.float64(7.0)
     mtf_np_scalar = convert_to_mtf(numpy_scalar)
-    assert np.allclose(mtf_np_scalar.eval([0] * global_dim), np.array([7.0]).reshape(1))
-    assert np.allclose(mtf_np_scalar.extract_coefficient(exponent_zero), np.array([7.0]).reshape(1))
-    assert np.allclose(mtf_np_scalar.extract_coefficient(exponent_one), np.array([0.0]).reshape(1))
+    assert np.allclose(mtf_np_scalar.eval([0] * global_dim), 7.0)
+    assert np.allclose(mtf_np_scalar.extract_coefficient(exponent_zero), 7.0)
+    assert np.allclose(mtf_np_scalar.extract_coefficient(exponent_one), 0.0)
 
     numpy_0d_array = np.array(9.0)
     mtf_np_0d = convert_to_mtf(numpy_0d_array)
-    assert np.allclose(mtf_np_0d.eval([0] * global_dim), np.array([9.0]).reshape(1))
-    assert np.allclose(mtf_np_0d.extract_coefficient(exponent_zero), np.array([9.0]).reshape(1))
-    assert np.allclose(mtf_np_0d.extract_coefficient(exponent_one), np.array([0.0]).reshape(1))
+    assert np.allclose(mtf_np_0d.eval([0] * global_dim), 9.0)
+    assert np.allclose(mtf_np_0d.extract_coefficient(exponent_zero), 9.0)
+    assert np.allclose(mtf_np_0d.extract_coefficient(exponent_one), 0.0)
 
 
 # --- Elementary Functions Tests ---
@@ -732,7 +732,7 @@ def test_elementary_functions_scalar(setup_function, func, func_name):
     if func_name in ['sqrt_taylor', 'log_taylor', 'arcsin_taylor', 'arccos_taylor', 'arctanh_taylor'] and np.isnan(expected_val):
         pytest.xfail(f"{func_name} not defined at scalar_input={scalar_input}")
     else:
-        assert np.allclose(scalar_eval_result, np.array([expected_val]))
+        assert np.allclose(scalar_eval_result, expected_val)
 
 # --- Additional Tests ---
 
