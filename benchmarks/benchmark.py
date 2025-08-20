@@ -22,6 +22,10 @@ DEFAULT_ORDER = 10
 DEFAULT_DIMENSION = 4
 DEFAULT_NUM_TERMS = 20
 DEFAULT_ETOL = 1e-12
+ADD_ITERATIONS = 100
+MUL_ITERATIONS = 10
+POW_ITERATIONS = 10
+POW_EXPONENT = 3
 
 def generate_random_mtf(dimension, max_order, num_terms, implementation='python'):
     """
@@ -68,24 +72,24 @@ def benchmark_arithmetic(mtf1, mtf2, implementation='python'):
 
     # Benchmark Addition
     start_time = time.time()
-    for _ in range(100):
+    for _ in range(ADD_ITERATIONS):
         _ = mtf1 + mtf2
     end_time = time.time()
-    print(f"Time for 100 additions: {end_time - start_time:.6f} seconds")
+    print(f"Time for {ADD_ITERATIONS} additions: {end_time - start_time:.6f} seconds")
 
     # Benchmark Multiplication
     start_time = time.time()
-    for _ in range(10):
+    for _ in range(MUL_ITERATIONS):
         _ = mtf1 * mtf2
     end_time = time.time()
-    print(f"Time for 10 multiplications: {end_time - start_time:.6f} seconds")
+    print(f"Time for {MUL_ITERATIONS} multiplications: {end_time - start_time:.6f} seconds")
 
     # Benchmark Power
     start_time = time.time()
-    for _ in range(10):
-        _ = mtf1 ** 3
+    for _ in range(POW_ITERATIONS):
+        _ = mtf1 ** POW_EXPONENT
     end_time = time.time()
-    print(f"Time for 10 power operations (n=3): {end_time - start_time:.6f} seconds")
+    print(f"Time for {POW_ITERATIONS} power operations (n={POW_EXPONENT}): {end_time - start_time:.6f} seconds")
 
 def run_benchmarks(args):
     """Run all the benchmarks based on the provided arguments."""
