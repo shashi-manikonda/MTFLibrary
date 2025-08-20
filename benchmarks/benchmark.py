@@ -18,14 +18,15 @@ import pstats
 import random
 
 # --- Default Benchmark Configuration ---
-DEFAULT_ORDER = 10
-DEFAULT_DIMENSION = 4
-DEFAULT_NUM_TERMS = 20
-DEFAULT_ETOL = 1e-12
-ADD_ITERATIONS = 100
-MUL_ITERATIONS = 10
-POW_ITERATIONS = 10
-POW_EXPONENT = 3
+DEFAULT_ORDER = 10           # Options: any positive integer
+DEFAULT_DIMENSION = 4        # Options: any positive integer
+DEFAULT_NUM_TERMS = 20       # Options: any positive integer
+DEFAULT_ETOL = 1e-12         # Options: any small positive float
+DEFAULT_IMPLEMENTATION = 'cpp' # Options: 'python', 'cython', 'cpp'
+ADD_ITERATIONS = 100         # Options: any positive integer
+MUL_ITERATIONS = 10          # Options: any positive integer
+POW_ITERATIONS = 10          # Options: any positive integer
+POW_EXPONENT = 3             # Options: any integer
 
 def generate_random_mtf(dimension, max_order, num_terms, implementation='python'):
     """
@@ -111,7 +112,7 @@ def main():
     parser.add_argument('--order', type=int, default=DEFAULT_ORDER, help='Maximum order of Taylor series.')
     parser.add_argument('--dimension', type=int, default=DEFAULT_DIMENSION, help='Number of variables.')
     parser.add_argument('--num-terms', type=int, default=DEFAULT_NUM_TERMS, help='Number of non-zero terms in the random MTFs.')
-    parser.add_argument('--implementation', type=str, default='python', choices=['python', 'cython', 'cpp'], help='Implementation to benchmark.')
+    parser.add_argument('--implementation', type=str, default=DEFAULT_IMPLEMENTATION, choices=['python', 'cython', 'cpp'], help='Implementation to benchmark.')
     parser.add_argument('--profile', action='store_true', help='Enable cProfile profiling.')
 
     args = parser.parse_args()
