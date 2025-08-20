@@ -126,7 +126,7 @@ def _create_default_coefficient_array():
 
 class MultivariateTaylorFunctionBase:
     """Represents a multivariate Taylor function."""
-    def __init__(self, coefficients, dimension=None, var_name=None, implementation='python'):
+    def __init__(self, coefficients, dimension=None, var_name=None, implementation='cpp'):
         """
         Initializes a MultivariateTaylorFunction object.
         """

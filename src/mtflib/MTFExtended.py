@@ -18,7 +18,7 @@ class MultivariateTaylorFunction(MultivariateTaylorFunctionBase):
     Extended MultivariateTaylorFunction class with NumPy ufunc support.
     Inherits from MultivariateTaylorFunctionBase and implements __array_ufunc__.
     """
-    def __init__(self, coefficients, dimension=None, var_name=None, implementation='python'):
+    def __init__(self, coefficients, dimension=None, var_name=None, implementation='cpp'):
         # Base class initialization
         super().__init__(coefficients, dimension, var_name, implementation)
 
@@ -98,7 +98,7 @@ Create a Alias for MultivariateTaylorFunction class for ease of calling and use
 MTF = MultivariateTaylorFunction
 
 
-def Var(var_index, implementation='python'):
+def Var(var_index, implementation='cpp'):
     """
     Represents an independent variable as an MultivariateTaylorFunction object.
 
