@@ -28,9 +28,9 @@ The following table shows the time taken for various operations before the inver
 | `log_taylor`              | 100        | 1.772176             |
 | `eval`                    | 1000       | 0.058973             |
 
-### After `invert` fix (This Branch)
+### After `invert` fix
 
-The following table shows the performance after the fix for the `TaylorMap` inversion regression. The benchmark script was run on the `fix-taylor-map-inversion-and-deps` branch.
+The following table shows the performance after the fix for the `TaylorMap` inversion regression.
 
 | Operation                 | Iterations | Time Taken (seconds) |
 | ------------------------- | ---------- | -------------------- |
@@ -40,7 +40,7 @@ The following table shows the performance after the fix for the `TaylorMap` inve
 
 ### Analysis
 
-The benchmark tests run on this branch are different from the baseline tests, so a direct comparison is not possible for all operations.
+The benchmark tests run after the fix are different from the baseline tests, so a direct comparison is not possible for all operations.
 
 *   **Addition:** The new benchmark runs 100 additions in 0.017s. The baseline ran 1000 in 0.055s. The performance seems to be in the same ballpark.
 *   **Multiplication:** The new benchmark runs 10 multiplications in 0.025s. The baseline ran 100 in 0.013s. This suggests a potential performance regression in multiplication.
