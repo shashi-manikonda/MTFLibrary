@@ -31,10 +31,8 @@ def test_map_inversion_from_demo():
     identity_map = TaylorMap([x, y])
 
     # 6. Check that the components are equal
-    # We need to truncate both to the working order for a fair comparison
-    max_order = mtflib.get_global_max_order()
-    composition_trunc = composition.truncate(max_order)
-    identity_trunc = identity_map.truncate(max_order)
-
-    assert composition_trunc.get_component(0) == identity_trunc.get_component(0)
-    assert composition_trunc.get_component(1) == identity_trunc.get_component(1)
+    # The __eq__ method for TaylorMap components handles necessary cleanup and
+    # tolerance, so we can compare them directly without truncation. This provides
+    # a stricter test that would have caught the regression.
+    assert composition.get_component(0) == identity_map.get_component(0)
+    assert composition.get_component(1) == identity_map.get_component(1)
