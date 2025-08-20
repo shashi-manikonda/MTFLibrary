@@ -117,14 +117,14 @@ def sin_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFun
 
     for n_order in range(1, max_precomputed_order + 1, 2):
         coefficient_val = precomputed_coeffs[n_order]
-        sin_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = np.array([coefficient_val]).reshape(1)
+        sin_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = coefficient_val
 
     if order > elementary_coefficients.MAX_PRECOMPUTED_ORDER:
         print(f"Warning: Requested order {order} exceeds precomputed order {elementary_coefficients.MAX_PRECOMPUTED_ORDER}. "
               "Calculations may be slower for higher orders.")
         for n_order in range(elementary_coefficients.MAX_PRECOMPUTED_ORDER + 1, order + 1, 2): # Calculate dynamically for higher orders
             coefficient_val = (-1)**((n_order - 1) // 2) / math.factorial(n_order)
-            sin_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = np.array([coefficient_val]).reshape(1)
+            sin_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = coefficient_val
 
     sin_taylor_1d_mtf = type(input_mtf)(
         coefficients=sin_taylor_1d_coefficients, dimension=taylor_dimension_1d
@@ -148,14 +148,14 @@ def cos_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFun
 
     for n_order in range(0, max_precomputed_order + 1, 2):
         coefficient_val = precomputed_coeffs[n_order]
-        cos_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = np.array([coefficient_val]).reshape(1)
+        cos_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = coefficient_val
 
     if order > elementary_coefficients.MAX_PRECOMPUTED_ORDER:
         print(f"Warning: Requested order {order} exceeds precomputed order {elementary_coefficients.MAX_PRECOMPUTED_ORDER}. "
               "Calculations may be slower for higher orders.")
         for n_order in range(elementary_coefficients.MAX_PRECOMPUTED_ORDER + 1, order + 1, 2): # Calculate dynamically for higher orders
             coefficient_val = (-1)**(n_order // 2) / math.factorial(n_order)
-            cos_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = np.array([coefficient_val]).reshape(1)
+            cos_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = coefficient_val
 
     cos_taylor_1d_mtf = type(input_mtf)(
         coefficients=cos_taylor_1d_coefficients, dimension=taylor_dimension_1d
@@ -204,14 +204,14 @@ def exp_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFun
 
     for n_order in range(0, max_precomputed_order + 1):
         coefficient_val = precomputed_coeffs[n_order]
-        exp_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = np.array([coefficient_val]).reshape(1)
+        exp_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = coefficient_val
 
     if order > elementary_coefficients.MAX_PRECOMPUTED_ORDER:
         print(f"Warning: Requested order {order} exceeds precomputed order {elementary_coefficients.MAX_PRECOMPUTED_ORDER}. "
               "Calculations may be slower for higher orders.")
         for n_order in range(elementary_coefficients.MAX_PRECOMPUTED_ORDER + 1, order + 1): # Calculate dynamically for higher orders
             coefficient_val = 1.0 / math.factorial(n_order)
-            exp_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = np.array([coefficient_val]).reshape(1)
+            exp_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = coefficient_val
 
     exp_taylor_1d_mtf = type(input_mtf)(
         coefficients=exp_taylor_1d_coefficients, dimension=taylor_dimension_1d
@@ -273,7 +273,7 @@ def log_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylorFu
 
     for n_order in range(0, max_precomputed_order + 1):
         coefficient_val = precomputed_coeffs[n_order]
-        log_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = np.array([coefficient_val]).reshape(1)
+        log_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = coefficient_val
 
     if order > elementary_coefficients.MAX_PRECOMPUTED_ORDER:
         print(f"Warning: Requested order {order} exceeds precomputed order {elementary_coefficients.MAX_PRECOMPUTED_ORDER}. "
@@ -283,7 +283,7 @@ def log_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylorFu
                 coefficient_val = 0.0
             elif n_order >= 1:
                 coefficient_val = ((-1)**(n_order - 1)) / n_order
-            log_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = np.array([coefficient_val]).reshape(1)
+            log_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = coefficient_val
 
 
     log_taylor_1d_mtf = type(input_mtf)(
@@ -325,7 +325,7 @@ def arctan_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylo
 
     for n_order in range(0, max_precomputed_order + 1):
         coefficient_val = precomputed_coeffs[n_order]
-        arctan_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = np.array([coefficient_val]).reshape(1)
+        arctan_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = coefficient_val
 
     if order > elementary_coefficients.MAX_PRECOMPUTED_ORDER:
         print(f"Warning: Requested order {order} exceeds precomputed order {elementary_coefficients.MAX_PRECOMPUTED_ORDER}. "
@@ -338,7 +338,7 @@ def arctan_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylo
                 coefficient_val = ((-1)**term_index) / n_order
             else:
                 coefficient_val = 0.0
-            arctan_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = np.array([coefficient_val]).reshape(1)
+            arctan_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = coefficient_val
 
 
     arctan_taylor_1d_mtf = type(input_mtf)(
@@ -395,10 +395,10 @@ def sinh_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFu
     for n_order in range(0, max_precomputed_order + 1):
         if n_order % 2 != 0 and n_order <= max_precomputed_order:
             coefficient_val = precomputed_coeffs[n_order]
-            sinh_taylor_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = np.array([coefficient_val]).reshape(1)
+            sinh_taylor_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = coefficient_val
         elif n_order % 2 == 0:
             coefficient_val = precomputed_coeffs[n_order] # Should be 0.0, already precomputed.
-            sinh_taylor_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = np.array([coefficient_val]).reshape(1)
+            sinh_taylor_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = coefficient_val
 
     if order > elementary_coefficients.MAX_PRECOMPUTED_ORDER:
         print(f"Warning: Requested order {order} exceeds precomputed order {elementary_coefficients.MAX_PRECOMPUTED_ORDER}. "
@@ -406,10 +406,10 @@ def sinh_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFu
         for n_order in range(elementary_coefficients.MAX_PRECOMPUTED_ORDER + 1, order + 1): # Calculate dynamically for higher orders
             if n_order % 2 != 0 and n_order <= order:  # Odd orders for sinh
                 coefficient_val = 1 / math.factorial(n_order)
-                sinh_taylor_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = np.array([coefficient_val]).reshape(1)
+                sinh_taylor_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = coefficient_val
             elif n_order % 2 == 0: # Even orders for sinh are 0
                 coefficient_val = 0.0
-                sinh_taylor_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = np.array([coefficient_val]).reshape(1)
+                sinh_taylor_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = coefficient_val
 
 
     sinh_taylor_1d_mtf = type(input_mtf)(
@@ -436,10 +436,10 @@ def cosh_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFu
     for n_order in range(0, max_precomputed_order + 1):
         if n_order % 2 == 0 and n_order <= max_precomputed_order:
             coefficient_val = precomputed_coeffs[n_order]
-            cosh_taylor_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = np.array([coefficient_val]).reshape(1)
+            cosh_taylor_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = coefficient_val
         elif n_order % 2 != 0:
             coefficient_val = precomputed_coeffs[n_order] # Should be 0.0, already precomputed.
-            cosh_taylor_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = np.array([coefficient_val]).reshape(1)
+            cosh_taylor_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = coefficient_val
 
 
     cosh_taylor_1d_mtf = type(input_mtf)(
@@ -491,7 +491,7 @@ def arctanh_taylor_1D_expansion(variable, order: int = None) -> MultivariateTayl
 
     for n_order in range(0, max_precomputed_order + 1):
         coefficient_val = precomputed_coeffs[n_order]
-        arctanh_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = np.array([coefficient_val]).reshape(1)
+        arctanh_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = coefficient_val
 
 
     if order > elementary_coefficients.MAX_PRECOMPUTED_ORDER:
@@ -504,7 +504,7 @@ def arctanh_taylor_1D_expansion(variable, order: int = None) -> MultivariateTayl
                 coefficient_val = 1.0 / float(n_order)
             else:
                 coefficient_val = 0.0
-            arctanh_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = np.array([coefficient_val]).reshape(1)
+            arctanh_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = coefficient_val
 
 
     arctanh_taylor_1d_mtf = type(input_mtf)(
