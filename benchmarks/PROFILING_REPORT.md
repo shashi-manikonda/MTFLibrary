@@ -1,5 +1,7 @@
 # Performance Profiling Report for `mtflib` Electromagnetism Demos
 
+**Note for `fix-taylor-map-inversion-and-deps` branch:** The profiling scripts for the electromagnetism demos did not all run correctly in the testing environment for this branch. As such, this report has not been updated with new profiling data. The analysis below is from a previous version of the code and should be used as a general reference for the performance characteristics of the library. The `PERFORMANCE.md` file contains updated benchmarks for core arithmetic operations.
+
 ## 1. Executive Summary
 
 This report details the performance analysis of the electromagnetism (EM) demo scripts within the `mtflib` library. The primary goal was to identify performance bottlenecks by separating the core Biot-Savart law calculations from the plotting and visualization routines, and to compare the performance of the pure Python implementation against the compiled (C++/Cython) backend.

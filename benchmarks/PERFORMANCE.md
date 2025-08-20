@@ -1,6 +1,6 @@
-# mtflib Performance Baseline
+# mtflib Performance Report
 
-This document records the baseline performance of the `mtflib` before any optimizations have been applied. The metrics were gathered by running the `benchmark.py` script.
+This document records the performance of the `mtflib` library.
 
 ## System Configuration
 
@@ -10,9 +10,11 @@ This document records the baseline performance of the `mtflib` before any optimi
     *   `MAX_ORDER`: 10
     *   `MAX_DIMENSION`: 4
 
-## Baseline Performance Metrics
+## Performance Metrics
 
-The following table shows the time taken for various operations. The times are an average of several runs.
+### Baseline (Before `invert` fix)
+
+The following table shows the time taken for various operations before the inversion bug was fixed. The times are an average of several runs.
 
 | Operation                 | Iterations | Time Taken (seconds) |
 | ------------------------- | ---------- | -------------------- |
@@ -26,11 +28,24 @@ The following table shows the time taken for various operations. The times are a
 | `log_taylor`              | 100        | 1.772176             |
 | `eval`                    | 1000       | 0.058973             |
 
-## Profiling Summary
+### After `invert` fix (This Branch)
 
-Profiling was conducted using `cProfile`. The results confirm that the performance bottlenecks are concentrated in a few key areas:
+The following table shows the performance after the fix for the `TaylorMap` inversion regression. The benchmark script was run on the `fix-taylor-map-inversion-and-deps` branch.
 
-*   **`__mul__` (Multiplication):** This is the single most time-consuming function. It is called thousands of times, especially during function composition. The pure Python implementation with dictionary lookups is highly inefficient.
-*   **`compose_one_dim` (Function Composition):** This is the second major bottleneck. Its high cumulative time is a result of it repeatedly calling `__pow__`, which in turn calls `__mul__`. All elementary functions (`sin`, `exp`, etc.) rely on this function, making its optimization critical.
+| Operation                 | Iterations | Time Taken (seconds) |
+| ------------------------- | ---------- | -------------------- |
+| Addition                  | 100        | 0.018253             |
+| Multiplication            | 10         | 0.020110             |
+| Power (n=3)               | 10         | 1.944781             |
 
-The optimization plan will focus on rewriting these two functions and their underlying data structures in Cython to achieve significant performance gains.
+### Analysis
+
+The benchmark tests run on this branch are different from the baseline tests, so a direct comparison is not possible for all operations.
+
+*   **Addition:** The new benchmark runs 100 additions in 0.018s. The baseline ran 1000 in 0.055s. The performance seems to be in the same ballpark.
+*   **Multiplication:** The new benchmark runs 10 multiplications in 0.020s. The baseline ran 100 in 0.013s. This suggests a potential performance regression in multiplication. However, the number of iterations is very small, so this could be due to noise.
+*   **Power:** The new benchmark runs 10 power operations in 1.94s. The baseline ran 100 in 0.060s. This is a significant regression.
+
+The changes in this branch were primarily in the `invert` and `compose` methods. It is possible that the added `truncate` call in `compose` has a significant performance impact, as `compose` is used by many other functions, including `__pow__`.
+
+Given that the primary goal of this task was to fix a correctness bug, and not to optimize performance, these regressions might be acceptable. However, they should be noted. The `PROFILING_REPORT.md` file has more detailed analysis of the performance bottlenecks in the library.
