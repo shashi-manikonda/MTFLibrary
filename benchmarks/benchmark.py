@@ -16,6 +16,7 @@ import argparse
 import cProfile
 import pstats
 import random
+import os
 
 # --- Default Benchmark Configuration ---
 DEFAULT_ORDER = 10           # Options: any positive integer
@@ -112,7 +113,7 @@ def main():
     parser.add_argument('--order', type=int, default=DEFAULT_ORDER, help='Maximum order of Taylor series.')
     parser.add_argument('--dimension', type=int, default=DEFAULT_DIMENSION, help='Number of variables.')
     parser.add_argument('--num-terms', type=int, default=DEFAULT_NUM_TERMS, help='Number of non-zero terms in the random MTFs.')
-    parser.add_argument('--implementation', type=str, default=DEFAULT_IMPLEMENTATION, choices=['python', 'cython', 'cpp'], help='Implementation to benchmark.')
+    parser.add_argument('--implementation', type=str, default=DEFAULT_IMPLEMENTATION, choices=['python', 'cpp'], help='Implementation to benchmark.')
     parser.add_argument('--profile', action='store_true', help='Enable cProfile profiling.')
 
     args = parser.parse_args()
@@ -124,7 +125,10 @@ def main():
         run_benchmarks(args)
 
         profiler.disable()
-        stats_file = f"profile_results_{args.implementation}_order{args.order}_dim{args.dimension}_terms{args.num_terms}.prof"
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        profiling_dir = os.path.join(script_dir, "profiling_results")
+        os.makedirs(profiling_dir, exist_ok=True)
+        stats_file = os.path.join(profiling_dir, f"profile_results_{args.implementation}_order{args.order}_dim{args.dimension}_terms{args.num_terms}.prof")
         profiler.dump_stats(stats_file)
         print(f"\nProfiling results saved to {stats_file}")
         print(f"To view stats, run: python -m pstats {stats_file}")

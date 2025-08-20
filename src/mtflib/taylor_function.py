@@ -130,7 +130,7 @@ class MultivariateTaylorFunctionBase:
                              or a tuple of (exponents, coeffs) numpy arrays.
         :param dimension: The number of variables in the function.
         :param var_name: The name of the variable (optional).
-        :param implementation: The backend to use for calculations ('python', 'cpp', or 'cython').
+        :param implementation: The backend to use for calculations ('python' or 'cpp').
         """
         self.var_name = var_name
         if implementation == 'cpp' and not _CPP_BACKEND_AVAILABLE:
