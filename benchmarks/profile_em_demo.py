@@ -9,7 +9,7 @@ import time
 import matplotlib.pyplot as plt
 
 # Add the project root to the Python path to ensure imports work correctly
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from mtflib import initialize_mtf_globals, Var
 from applications.em.current_ring import current_ring
