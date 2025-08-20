@@ -1,0 +1,19 @@
+Setting up benchmark environment...
+Initializing MTF globals with: _GLOBAL_MAX_ORDER=10, _GLOBAL_MAX_DIMENSION=4
+Loading/Precomputing Taylor coefficients up to order 10
+Global precomputed coefficients loading/generation complete.
+Size of precomputed_coefficients dictionary in memory: 464 bytes, 0.45 KB, 0.00 MB
+MTF globals initialized: _GLOBAL_MAX_ORDER=10, _GLOBAL_MAX_DIMENSION=4, _INITIALIZED=True
+Max coefficient count (order=10, nvars=4): 1001
+Precomputed coefficients loaded and ready for use.
+Benchmark Configuration: Order=10, Dimension=4, Terms=20, Implementation=cpp
+
+Generating random MTFs for benchmarking...
+MTF generation complete.
+
+--- Benchmarking Arithmetic Operations (Implementation: cpp) ---
+Time for 100 additions: 0.014047 seconds
+Time for 10 multiplications: 0.016433 seconds
+Time for 10 power operations (n=3): 1.505432 seconds
+
+Benchmark run complete.

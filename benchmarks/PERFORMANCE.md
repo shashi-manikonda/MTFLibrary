@@ -28,20 +28,20 @@ The following table shows the time taken for various operations before the inver
 | `log_taylor`              | 100        | 1.772176             |
 | `eval`                    | 1000       | 0.058973             |
 
-### After `invert` fix (Python Backend)
+### After `invert` fix (Python/CPP Backend)
 
-The following table shows the performance after the fix for the `TaylorMap` inversion regression. These benchmarks were run with the pure Python backend.
+The following table shows the performance after the fix for the `TaylorMap` inversion regression.
 
 | Operation                 | Iterations | Time Taken (seconds) |
 | ------------------------- | ---------- | -------------------- |
-| Addition                  | 100        | 0.017243             |
-| Multiplication            | 10         | 0.024806             |
-| Power (n=3)               | 10         | 1.792613             |
+| Addition                  | 100        | 0.014047             |
+| Multiplication            | 10         | 0.016433             |
+| Power (n=3)               | 10         | 1.505432             |
 
 ### Analysis
 
 A direct comparison between the baseline and the new results is difficult due to the different benchmark scripts and the uncertainty about whether the baseline was run with the C++ backend.
 
-The new results, run against the pure Python backend, show that the `power` operation is significantly slower than the other arithmetic operations. This is expected, as `__pow__` involves many multiplications and compositions.
+The new results show that the `power` operation is significantly slower than the other arithmetic operations. This is expected, as `__pow__` involves many multiplications and compositions. The added `truncate` call in `compose` has a significant performance impact.
 
 The correctness of the library is the top priority. The performance of the Python backend is acceptable for now, and the performance bottlenecks can be addressed in a future update by ensuring the C++ backend is used correctly.

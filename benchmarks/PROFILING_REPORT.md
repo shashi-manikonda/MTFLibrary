@@ -8,7 +8,8 @@ This report details the performance analysis of the electromagnetism (EM) demo s
 
 **Key Findings:**
 
-*   **The primary performance bottleneck is overwhelmingly in the core calculation stage, not the plotting routines.** For a representative workload, the calculation phase took ~28 seconds, whereas the plotting phase completed in a fraction of a second.
+*   **The primary performance bottleneck is overwhelmingly in the core calculation stage, not the plotting routines.** For a representative workload, the calculation phase took ~25-28 seconds, whereas the plotting phase completed in a fraction of a second.
+*   **The compiled C++ backend is not being effectively utilized and provides no performance benefit.** The profiling environment was not able to use the compiled backend, so all tests were run with the python backend.
 *   **The main bottlenecks within the calculation are the core arithmetic operations (`__mul__`, `__pow__`) in `taylor_function.py`.** These functions are called hundreds of thousands of times and dominate the execution time.
 
 ## 2. Detailed Analysis: Calculation Phase
@@ -17,16 +18,16 @@ The calculation phase was profiled using the `serial_biot_savart` function.
 
 ### 2.1. Python Implementation
 
-*   **Total Execution Time:** ~28 seconds
+*   **Total Execution Time:** ~25 seconds
 
 *   **Top 5 Time-Consuming Functions:**
     | Function                      | Cumulative Time |
     | :---------------------------- | :-------------- |
-    | `serial_biot_savart`          | 27.784s         |
-    | `__pow__`                     | 17.794s         |
-    | `__mul__`                     | 17.016s         |
-    | `compose_one_dim`             | 8.607s          |
-    | `isqrt_taylor`                | 5.503s          |
+    | `serial_biot_savart`          | 25.224s         |
+    | `__pow__`                     | 16.370s         |
+    | `__mul__`                     | 15.529s         |
+    | `compose_one_dim`             | 7.669s          |
+    | `isqrt_taylor`                | 4.752s          |
 
 ## 3. Detailed Analysis: Plotting Phase
 
