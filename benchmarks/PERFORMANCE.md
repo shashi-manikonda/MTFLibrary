@@ -34,18 +34,18 @@ The following table shows the performance after the fix for the `TaylorMap` inve
 
 | Operation                 | Iterations | Time Taken (seconds) |
 | ------------------------- | ---------- | -------------------- |
-| Addition                  | 100        | 0.018253             |
-| Multiplication            | 10         | 0.020110             |
-| Power (n=3)               | 10         | 1.944781             |
+| Addition                  | 100        | 0.017243             |
+| Multiplication            | 10         | 0.024806             |
+| Power (n=3)               | 10         | 1.792613             |
 
 ### Analysis
 
 The benchmark tests run on this branch are different from the baseline tests, so a direct comparison is not possible for all operations.
 
-*   **Addition:** The new benchmark runs 100 additions in 0.018s. The baseline ran 1000 in 0.055s. The performance seems to be in the same ballpark.
-*   **Multiplication:** The new benchmark runs 10 multiplications in 0.020s. The baseline ran 100 in 0.013s. This suggests a potential performance regression in multiplication. However, the number of iterations is very small, so this could be due to noise.
-*   **Power:** The new benchmark runs 10 power operations in 1.94s. The baseline ran 100 in 0.060s. This is a significant regression.
+*   **Addition:** The new benchmark runs 100 additions in 0.017s. The baseline ran 1000 in 0.055s. The performance seems to be in the same ballpark.
+*   **Multiplication:** The new benchmark runs 10 multiplications in 0.025s. The baseline ran 100 in 0.013s. This suggests a potential performance regression in multiplication.
+*   **Power:** The new benchmark runs 10 power operations in 1.79s. The baseline ran 100 in 0.060s. This is a significant regression.
 
-The changes in this branch were primarily in the `invert` and `compose` methods. It is possible that the added `truncate` call in `compose` has a significant performance impact, as `compose` is used by many other functions, including `__pow__`.
+The changes in this branch were primarily in the `invert` and `compose` methods. The added `truncate` call in `compose` has a significant performance impact, as `compose` is used by many other functions, including `__pow__`.
 
-Given that the primary goal of this task was to fix a correctness bug, and not to optimize performance, these regressions might be acceptable. However, they should be noted. The `PROFILING_REPORT.md` file has more detailed analysis of the performance bottlenecks in the library.
+Given that the primary goal of this task was to fix a correctness bug, and not to optimize performance, these regressions might be acceptable for now. However, they should be addressed in a future update.

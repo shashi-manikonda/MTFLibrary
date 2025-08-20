@@ -12,8 +12,8 @@ Generating random MTFs for benchmarking...
 MTF generation complete.
 
 --- Benchmarking Arithmetic Operations (Implementation: python) ---
-Time for 100 additions: 0.018253 seconds
-Time for 10 multiplications: 0.020110 seconds
-Time for 10 power operations (n=3): 1.944781 seconds
+Time for 100 additions: 0.017243 seconds
+Time for 10 multiplications: 0.024806 seconds
+Time for 10 power operations (n=3): 1.792613 seconds
 
 Benchmark run complete.

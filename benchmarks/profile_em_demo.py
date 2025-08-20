@@ -26,7 +26,9 @@ except ImportError:
     mpi_installed = False
 
 # --- Global Settings ---
-PROFILER_OUTPUT_DIR = "profiling_results"
+# Get the directory where the script is located
+script_dir = os.path.dirname(os.path.abspath(__file__))
+PROFILER_OUTPUT_DIR = os.path.join(script_dir, "profiling_results")
 os.makedirs(PROFILER_OUTPUT_DIR, exist_ok=True)
 
 def setup_helmholtz_coil(num_segments=20):
