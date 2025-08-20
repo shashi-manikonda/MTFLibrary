@@ -92,7 +92,7 @@ class TaylorMap:
 
             new_components.append(composed_component)
 
-        return TaylorMap(new_components)
+        return TaylorMap(new_components).truncate(mtf_lib.get_global_max_order())
 
     def get_component(self, index: int) -> MTF:
         """
@@ -308,7 +308,7 @@ class TaylorMap:
         F_inv = beta_inv # Initial guess
 
         max_order = mtf_lib.get_global_max_order()
-        for _ in range(max_order):
+        for _ in range(max_order - 1):
             composition_G_F_inv = G.compose(F_inv).truncate(max_order)
             inner_map = identity_map - composition_G_F_inv
             F_inv = beta_inv.compose(inner_map).truncate(max_order)
