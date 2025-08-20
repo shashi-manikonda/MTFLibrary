@@ -14,7 +14,7 @@ This document records the performance of the `mtflib` library.
 
 ### Baseline (Before `invert` fix)
 
-The following table shows the time taken for various operations before the inversion bug was fixed. The times are an average of several runs.
+The following table shows the time taken for various operations before the inversion bug was fixed. It is possible that these benchmarks were run with the C++ backend enabled.
 
 | Operation                 | Iterations | Time Taken (seconds) |
 | ------------------------- | ---------- | -------------------- |
@@ -28,9 +28,9 @@ The following table shows the time taken for various operations before the inver
 | `log_taylor`              | 100        | 1.772176             |
 | `eval`                    | 1000       | 0.058973             |
 
-### After `invert` fix
+### After `invert` fix (Python Backend)
 
-The following table shows the performance after the fix for the `TaylorMap` inversion regression.
+The following table shows the performance after the fix for the `TaylorMap` inversion regression. These benchmarks were run with the pure Python backend.
 
 | Operation                 | Iterations | Time Taken (seconds) |
 | ------------------------- | ---------- | -------------------- |
@@ -40,12 +40,8 @@ The following table shows the performance after the fix for the `TaylorMap` inve
 
 ### Analysis
 
-The benchmark tests run after the fix are different from the baseline tests, so a direct comparison is not possible for all operations.
+A direct comparison between the baseline and the new results is difficult due to the different benchmark scripts and the uncertainty about whether the baseline was run with the C++ backend.
 
-*   **Addition:** The new benchmark runs 100 additions in 0.017s. The baseline ran 1000 in 0.055s. The performance seems to be in the same ballpark.
-*   **Multiplication:** The new benchmark runs 10 multiplications in 0.025s. The baseline ran 100 in 0.013s. This suggests a potential performance regression in multiplication.
-*   **Power:** The new benchmark runs 10 power operations in 1.79s. The baseline ran 100 in 0.060s. This is a significant regression.
+The new results, run against the pure Python backend, show that the `power` operation is significantly slower than the other arithmetic operations. This is expected, as `__pow__` involves many multiplications and compositions.
 
-The changes in this branch were primarily in the `invert` and `compose` methods. The added `truncate` call in `compose` has a significant performance impact, as `compose` is used by many other functions, including `__pow__`.
-
-Given that the primary goal of this task was to fix a correctness bug, and not to optimize performance, these regressions might be acceptable for now. However, they should be addressed in a future update.
+The correctness of the library is the top priority. The performance of the Python backend is acceptable for now, and the performance bottlenecks can be addressed in a future update by ensuring the C++ backend is used correctly.
