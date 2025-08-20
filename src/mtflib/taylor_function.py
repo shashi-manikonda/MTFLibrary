@@ -120,15 +120,17 @@ def _generate_exponent(order, var_index, dimension):
     exponent[var_index] = order
     return tuple(exponent)
 
-def _create_default_coefficient_array():
-    """Creates a default coefficient array."""
-    return np.array([0.0]).reshape(1)
-
 class MultivariateTaylorFunctionBase:
     """Represents a multivariate Taylor function."""
     def __init__(self, coefficients, dimension=None, var_name=None, implementation='cpp'):
         """
         Initializes a MultivariateTaylorFunction object.
+
+        :param coefficients: A dictionary mapping exponent tuples to coefficient values,
+                             or a tuple of (exponents, coeffs) numpy arrays.
+        :param dimension: The number of variables in the function.
+        :param var_name: The name of the variable (optional).
+        :param implementation: The backend to use for calculations ('python', 'cpp', or 'cython').
         """
         self.var_name = var_name
         if implementation == 'cpp' and not _CPP_BACKEND_AVAILABLE:
@@ -217,11 +219,10 @@ class MultivariateTaylorFunctionBase:
         if self.coeffs.size == 0:
             return np.array([0.0]).reshape(1)
 
-        # We can directly use self.exponents and self.coeffs
-        powers_matrix = evaluation_point[np.newaxis, :] ** self.exponents
-        term_values = self.coeffs * np.prod(powers_matrix, axis=1)
-        result = np.sum(term_values).reshape(1,)
-        return result
+        # Optimized evaluation using np.power and np.einsum
+        term_values = np.prod(np.power(evaluation_point, self.exponents), axis=1)
+        result = np.einsum('i,i->', self.coeffs, term_values)
+        return np.array([result])
 
     def __add__(self, other):
         """Defines addition (+) for MultivariateTaylorFunction objects."""
@@ -485,7 +486,7 @@ class MultivariateTaylorFunctionBase:
         dim_exponents = new_exponents[:, var_index - 1]
 
         # Calculate the multipliers for each term
-        multipliers = value ** dim_exponents
+        multipliers = np.power(value, dim_exponents)
 
         # Apply the multipliers
         new_coeffs *= multipliers
@@ -493,19 +494,9 @@ class MultivariateTaylorFunctionBase:
         # Zero out the exponents for the substituted variable
         new_exponents[:, var_index - 1] = 0
 
-        # Now we have a new set of exponents and coefficients, but there might be duplicates in exponents.
-        # We need to sum the coefficients for duplicate exponents. This is the same logic as in the optimized __add__.
-        is_complex = np.iscomplexobj(new_coeffs)
-        summed_coeffs_dict = defaultdict(complex) if is_complex else defaultdict(float)
-        for i, exp_tuple in enumerate(map(tuple, new_exponents)):
-            summed_coeffs_dict[exp_tuple] += new_coeffs[i]
-
-        if not summed_coeffs_dict:
-            unique_exponents = np.empty((0, self.dimension), dtype=np.int32)
-            summed_coeffs = np.empty((0,), dtype=np.complex128 if is_complex else np.float64)
-        else:
-            unique_exponents = np.array(list(summed_coeffs_dict.keys()), dtype=np.int32)
-            summed_coeffs = np.array(list(summed_coeffs_dict.values()), dtype=np.complex128 if is_complex else np.float64)
+        # Use np.unique to group the new exponents and sum the corresponding coefficients
+        unique_exponents, inverse_indices = np.unique(new_exponents, axis=0, return_inverse=True)
+        summed_coeffs = np.bincount(inverse_indices, weights=new_coeffs)
 
         return type(self)((unique_exponents, summed_coeffs), self.dimension, implementation=self.implementation)
 
@@ -575,6 +566,17 @@ class MultivariateTaylorFunctionBase:
             return True
         return np.all(np.abs(mtf.coeffs) < zero_tolerance)
 
+    def _calculate_composed_term(self, self_exp_order, self_coeff, other_mtf):
+        """Helper function to calculate a single term in the composition."""
+        if self_exp_order == 0:
+            return self_coeff
+
+        term_mtf = other_mtf ** self_exp_order
+        if self.is_zero_mtf(term_mtf):
+            return None
+
+        return term_mtf * self_coeff
+
     def compose_one_dim(self, other_mtf):
         """Performs function composition: self(other_mtf(x))."""
         if self.dimension != 1:
@@ -592,15 +594,9 @@ class MultivariateTaylorFunctionBase:
             self_exp_order = self.exponents[i, 0]
             self_coeff = self.coeffs[i]
 
-            if self_exp_order == 0:
-                composed_mtf += self_coeff
-            else:
-                term_mtf = other_mtf ** self_exp_order
-                if self.is_zero_mtf(term_mtf):
-                    continue
-
-                term_mtf_scaled = term_mtf * self_coeff
-                composed_mtf += term_mtf_scaled
+            composed_term = self._calculate_composed_term(self_exp_order, self_coeff, other_mtf)
+            if composed_term is not None:
+                composed_mtf += composed_term
 
         composed_mtf.truncate_inplace()
         return composed_mtf
@@ -784,50 +780,6 @@ def convert_to_mtf(input_val, dimension=None):
     else:
         raise TypeError(f"Unsupported input type: {type(input_val)}. Cannot convert to MTF/CMTF.")
 
-# def get_tabular_string(mtf_instance, order=None, variable_names=None):
-#     print('-- ## will be removed ## --')
-
-
-# def get_tabular_string(mtf_instance, order=None, variable_names=None):
-#     """Returns tabular string representation of MTF or CMTF instance."""
-#     coefficients = mtf_instance.coefficients
-#     dimension = mtf_instance.dimension
-#     if order is None:
-#         if hasattr(mtf_instance, 'get_global_max_order'):
-#             order = mtf_instance.get_global_max_order()
-#         else:
-#             order = get_global_max_order()
-#     if variable_names is None:
-#         variable_names = [f'x_{i+1}' for i in range(dimension)]
-#     headers = ["I", "Coefficient", "Order", "Exponents"]
-#     rows = []
-#     term_index = 1
-#     etol = get_global_etol()
-#     for exponents, coeff in sorted(coefficients.items(), key=lambda item: sum(item[0])):
-#         if sum(exponents) <= order and np.any(np.abs(coeff) > etol):
-#             exponent_str = " ".join(map(str, exponents))
-#             if np.iscomplexobj(coeff):
-#                 coeff_str = f"{coeff[0].real:.8f}{coeff[0].imag:+8f}j"
-#             else:
-#                 coeff_str = f"{coeff[0]:+16.16e}"
-#             rows.append([f"{term_index: <4}", coeff_str, str(sum(exponents)), exponent_str])
-#             term_index += 1
-#     if not rows:
-#         return "MultivariateTaylorFunction (truncated or zero)"
-#     column_widths = []
-#     current_header_index = 0
-#     for header in headers:
-#         if header == "I":
-#             column_widths.append(4 + 2)
-#         else:
-#             column_widths.append(max(len(header), max(len(row[current_header_index]) for row in rows)) + 2)
-#         current_header_index += 1
-#     header_row = "| " + "| ".join(headers[i].ljust(column_widths[i]-2) for i in range(len(headers))) + "|"
-#     separator = "|" + "|".join("-" * (w-1) for w in column_widths) + "|"
-#     table_str = header_row + "\n" + separator + "\n"
-#     for row in rows:
-#         table_str += "| " + "| ".join(row[i].ljust(column_widths[i]-2) for i in range(len(headers))) + "|\n"
-#     return '\n' + table_str
 
 
 def _split_constant_polynomial_part(input_mtf: MultivariateTaylorFunctionBase) -> tuple[float, MultivariateTaylorFunctionBase]:
