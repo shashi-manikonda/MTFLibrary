@@ -176,7 +176,10 @@ class MultivariateTaylorFunction:
 
                 for i, (exp, coeff) in enumerate(coefficients.items()):
                     self.exponents[i] = exp
-                    self.coeffs[i] = coeff
+                    if isinstance(coeff, np.ndarray):
+                        self.coeffs[i] = coeff.item()
+                    else:
+                        self.coeffs[i] = coeff
 
                 # Sort both arrays based on exponents
                 sorted_indices = np.lexsort(self.exponents.T)
