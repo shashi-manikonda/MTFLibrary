@@ -12,12 +12,10 @@ Refactored for reduced redundancy and using precomputed coefficients.
 import math
 import numpy as np
 from collections import defaultdict
-from .taylor_function import (get_global_max_order, set_global_max_order,
-    convert_to_mtf, MultivariateTaylorFunctionBase, _split_constant_polynomial_part,
+from .taylor_function import (MultivariateTaylorFunction, convert_to_mtf, _split_constant_polynomial_part,
     sqrt_taylor, isqrt_taylor)
 from .complex_taylor_function import ComplexMultivariateTaylorFunction
 from . import elementary_coefficients  # Import the new module with loaded coefficients
-# from .MTFExtended import MultivariateTaylorFunction
 
 def _generate_exponent(order_val: int, var_index: int, dimension: int) -> tuple:
     """Helper: Generates exponent tuples."""
@@ -26,34 +24,12 @@ def _generate_exponent(order_val: int, var_index: int, dimension: int) -> tuple:
         exponent_tuple[var_index] = order_val
     return tuple(exponent_tuple)
 
-
-def _split_constant_polynomial_part(input_mtf: MultivariateTaylorFunctionBase) -> tuple[float, MultivariateTaylorFunctionBase]:
-    """Helper: Splits MTF into constant and polynomial parts."""
-    dimension = input_mtf.dimension
-    const_exp = np.zeros(dimension, dtype=np.int32)
-
-    match = np.all(input_mtf.exponents == const_exp, axis=1)
-    const_idx = np.where(match)[0]
-
-    if const_idx.size > 0:
-        constant_term_C_value = input_mtf.coeffs[const_idx[0]]
-        poly_mask = ~match
-        poly_exponents = input_mtf.exponents[poly_mask]
-        poly_coeffs = input_mtf.coeffs[poly_mask]
-        polynomial_part_mtf = type(input_mtf)((poly_exponents, poly_coeffs), dimension)
-    else:
-        constant_term_C_value = 0.0
-        polynomial_part_mtf = input_mtf
-
-    return constant_term_C_value, polynomial_part_mtf
-
-
 def _apply_constant_factoring(
-    input_mtf: MultivariateTaylorFunctionBase,
+    input_mtf: MultivariateTaylorFunction,
     constant_factor_function,
     expansion_function_around_zero,
     combine_operation
-) -> MultivariateTaylorFunctionBase:
+) -> MultivariateTaylorFunction:
     """Helper: Applies constant factoring for Taylor expansion."""
     constant_term_C_value, polynomial_part_mtf = _split_constant_polynomial_part(input_mtf)
     constant_factor_value = constant_factor_function(constant_term_C_value)
@@ -70,10 +46,10 @@ def _apply_constant_factoring(
 
     return result_mtf
 
-def sin_taylor(variable, order: int = None) -> MultivariateTaylorFunctionBase:
+def sin_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """Taylor expansion of sin(x) using constant factoring."""
     if order is None:
-        order = get_global_max_order()
+        order = MultivariateTaylorFunction.get_max_order()
     input_mtf = convert_to_mtf(variable)
     constant_term_C_value, polynomial_part_mtf = _split_constant_polynomial_part(input_mtf)
     constant_sin_C = math.sin(constant_term_C_value)
@@ -86,10 +62,10 @@ def sin_taylor(variable, order: int = None) -> MultivariateTaylorFunctionBase:
     return result_mtf.truncate(order)
 
 
-def cos_taylor(variable, order: int = None) -> MultivariateTaylorFunctionBase:
+def cos_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """Taylor expansion of cos(x) using constant factoring."""
     if order is None:
-        order = get_global_max_order()
+        order = MultivariateTaylorFunction.get_max_order()
     input_mtf = convert_to_mtf(variable)
     constant_term_C_value, polynomial_part_mtf = _split_constant_polynomial_part(input_mtf)
     constant_cos_C = math.cos(constant_term_C_value)
@@ -101,10 +77,10 @@ def cos_taylor(variable, order: int = None) -> MultivariateTaylorFunctionBase:
     result_mtf = term1_mtf - term2_mtf
     return result_mtf.truncate(order)
 
-def sin_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFunctionBase:
+def sin_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFunction:
     """Helper: Taylor expansion of sin(u) around zero, precomputed coefficients."""
     if order is None:
-        order = get_global_max_order()
+        order = MultivariateTaylorFunction.get_max_order()
     input_mtf = convert_to_mtf(variable)
     sin_taylor_1d_coefficients = {}
     taylor_dimension_1d = 1
@@ -132,10 +108,10 @@ def sin_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFun
     composed_mtf = sin_taylor_1d_mtf.compose_one_dim(input_mtf)
     return composed_mtf.truncate(order)
 
-def cos_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFunctionBase:
+def cos_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFunction:
     """Helper: Taylor expansion of cos(u) around zero, precomputed coefficients."""
     if order is None:
-        order = get_global_max_order()
+        order = MultivariateTaylorFunction.get_max_order()
     input_mtf = convert_to_mtf(variable)
     cos_taylor_1d_coefficients = {}
     taylor_dimension_1d = 1
@@ -164,20 +140,20 @@ def cos_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFun
     return composed_mtf.truncate(order)
 
 
-def tan_taylor(variable, order: int = None) -> MultivariateTaylorFunctionBase:
+def tan_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """Taylor expansion of tan(x) using tan(x) = sin(x) / cos(x)."""
     if order is None:
-        order = get_global_max_order()
+        order = MultivariateTaylorFunction.get_max_order()
     sin_mtf = sin_taylor(variable, order=order)
     cos_mtf = cos_taylor(variable, order=order)
     tan_mtf = sin_mtf / cos_mtf
     return tan_mtf.truncate(order)
 
 
-def exp_taylor(variable, order: int = None) -> MultivariateTaylorFunctionBase:
+def exp_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """Taylor expansion of exp(x) using constant factoring."""
     if order is None:
-        order = get_global_max_order()
+        order = MultivariateTaylorFunction.get_max_order()
     input_mtf = convert_to_mtf(variable)
     return _apply_constant_factoring(
         input_mtf,
@@ -187,10 +163,10 @@ def exp_taylor(variable, order: int = None) -> MultivariateTaylorFunctionBase:
     ).truncate(order)
 
 
-def exp_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFunctionBase:
+def exp_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFunction:
     """Helper: Taylor expansion of exp(u) around zero, precomputed coefficients."""
     if order is None:
-        order = get_global_max_order()
+        order = MultivariateTaylorFunction.get_max_order()
     input_mtf = convert_to_mtf(variable)
     exp_taylor_1d_coefficients = {}
     taylor_dimension_1d = 1
@@ -220,20 +196,20 @@ def exp_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFun
     return composed_mtf.truncate(order)
 
 
-def gaussian_taylor(variable, order: int = None) -> MultivariateTaylorFunctionBase:
+def gaussian_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """Taylor expansion of Gaussian exp(-x^2) around zero."""
     if order is None:
-        order = get_global_max_order()
+        order = MultivariateTaylorFunction.get_max_order()
     input_mtf = convert_to_mtf(variable)
     return exp_taylor(-(input_mtf**2), order=order)
 
 
 
 
-def log_taylor(variable, order: int = None) -> MultivariateTaylorFunctionBase:
+def log_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """Taylor expansion of log(x) using constant factoring."""
     if order is None:
-        order = get_global_max_order()
+        order = MultivariateTaylorFunction.get_max_order()
     input_mtf = convert_to_mtf(variable)
 
     constant_term_C_value, polynomial_part_B_mtf = _split_constant_polynomial_part(input_mtf)
@@ -257,10 +233,10 @@ def log_taylor(variable, order: int = None) -> MultivariateTaylorFunctionBase:
     return result_mtf.truncate(order)
 
 
-def log_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylorFunctionBase:
+def log_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylorFunction:
     """Helper: 1D Taylor expansion of log(1+u) around zero, precomputed coefficients."""
     if order is None:
-        order = get_global_max_order()
+        order = MultivariateTaylorFunction.get_max_order()
     input_mtf = convert_to_mtf(variable)
     log_taylor_1d_coefficients = {}
     taylor_dimension_1d = 1
@@ -293,26 +269,26 @@ def log_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylorFu
     return composed_mtf.truncate(order)
 
 
-def arctan_taylor(variable, order: int = None) -> MultivariateTaylorFunctionBase:
+def arctan_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """Taylor expansion of arctan(x) using constant factoring."""
     if order is None:
-        order = get_global_max_order()
+        order = MultivariateTaylorFunction.get_max_order()
     input_mtf = convert_to_mtf(variable)
 
     constant_term_C_value, polynomial_part_B_mtf = _split_constant_polynomial_part(input_mtf)
 
     constant_arctan_C = math.atan(constant_term_C_value)
-    denominator_mtf = 1.0 + (constant_term_C_value**2) + (constant_term_C_value * polynomial_part_B_mtf)
+    denominator_mtf = MultivariateTaylorFunction.from_constant(1.0 + constant_term_C_value**2) + (float(constant_term_C_value) * polynomial_part_B_mtf)
     argument_mtf = polynomial_part_B_mtf / denominator_mtf
     arctan_argument_mtf = arctan_taylor_1D_expansion(argument_mtf, order=order)
     result_mtf = constant_arctan_C + arctan_argument_mtf
     return result_mtf.truncate(order)
 
 
-def arctan_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylorFunctionBase:
+def arctan_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylorFunction:
     """Helper: 1D Taylor expansion of arctan(u) around zero, precomputed coefficients."""
     if order is None:
-        order = get_global_max_order()
+        order = MultivariateTaylorFunction.get_max_order()
     input_mtf = convert_to_mtf(variable)
     arctan_taylor_1d_coefficients = {}
     taylor_dimension_1d = 1
@@ -347,10 +323,10 @@ def arctan_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylo
     composed_mtf = arctan_taylor_1d_mtf.compose_one_dim(input_mtf)
     return composed_mtf.truncate(order)
 
-def sinh_taylor(variable, order: int = None) -> MultivariateTaylorFunctionBase:
+def sinh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """Taylor expansion of sinh(x) using constant factoring."""
     if order is None:
-        order = get_global_max_order()
+        order = MultivariateTaylorFunction.get_max_order()
     input_mtf = convert_to_mtf(variable)
     constant_term_C_value, polynomial_part_mtf = _split_constant_polynomial_part(input_mtf)
     constant_sinh_C = math.sinh(constant_term_C_value)
@@ -363,10 +339,10 @@ def sinh_taylor(variable, order: int = None) -> MultivariateTaylorFunctionBase:
     return result_mtf.truncate(order)
 
 
-def cosh_taylor(variable, order: int = None) -> MultivariateTaylorFunctionBase:
+def cosh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """Taylor expansion of cosh(x) using constant factoring."""
     if order is None:
-        order = get_global_max_order()
+        order = MultivariateTaylorFunction.get_max_order()
     input_mtf = convert_to_mtf(variable)
     constant_term_C_value, polynomial_part_mtf = _split_constant_polynomial_part(input_mtf)
     constant_cosh_C = math.cosh(constant_term_C_value)
@@ -378,10 +354,10 @@ def cosh_taylor(variable, order: int = None) -> MultivariateTaylorFunctionBase:
     result_mtf = term1_mtf + term2_mtf
     return result_mtf.truncate(order)
 
-def sinh_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFunctionBase:
+def sinh_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFunction:
     """Helper: Taylor expansion of sinh(u) around zero, precomputed coefficients."""
     if order is None:
-        order = get_global_max_order()
+        order = MultivariateTaylorFunction.get_max_order()
     input_mtf = convert_to_mtf(variable)
     sinh_taylor_coefficients = {}
     taylor_dimension_1d = 1
@@ -419,10 +395,10 @@ def sinh_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFu
     return composed_mtf.truncate(order)
 
 
-def cosh_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFunctionBase:
+def cosh_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFunction:
     """Helper: Taylor expansion of cosh(u) around zero, precomputed coefficients."""
     if order is None:
-        order = get_global_max_order()
+        order = MultivariateTaylorFunction.get_max_order()
     input_mtf = convert_to_mtf(variable)
     cosh_taylor_coefficients = {}
     taylor_dimension_1d = 1
@@ -449,35 +425,35 @@ def cosh_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFu
     return composed_mtf.truncate(order)
 
 
-def tanh_taylor(variable, order: int = None) -> MultivariateTaylorFunctionBase:
+def tanh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """Taylor expansion of tanh(x) using tanh(x) = sinh(x) / cosh(x)."""
     if order is None:
-        order = get_global_max_order()
+        order = MultivariateTaylorFunction.get_max_order()
     sinh_mtf = sinh_taylor(variable, order=order)
     cosh_mtf = cosh_taylor(variable, order=order)
     tanh_mtf = sinh_mtf / cosh_mtf
     return tanh_mtf.truncate(order)
 
-def arctanh_taylor(variable, order: int = None) -> MultivariateTaylorFunctionBase:
+def arctanh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """Taylor expansion of arctanh(x) using constant factoring."""
     if order is None:
-        order = get_global_max_order()
+        order = MultivariateTaylorFunction.get_max_order()
     input_mtf = convert_to_mtf(variable)
 
     constant_term_C_value, polynomial_part_B_mtf = _split_constant_polynomial_part(input_mtf) # Corrected variable name here and below
     constant_arctanh_C = math.atanh(constant_term_C_value) # Note: math.atanh for scalar input
 
-    denominator_mtf = 1.0 - (constant_term_C_value**2) - (constant_term_C_value * polynomial_part_B_mtf) # Corrected for arctanh
+    denominator_mtf = MultivariateTaylorFunction.from_constant(1.0 - constant_term_C_value**2) - (float(constant_term_C_value) * polynomial_part_B_mtf) # Corrected for arctanh
     argument_mtf = polynomial_part_B_mtf / denominator_mtf
     arctanh_argument_mtf = arctanh_taylor_1D_expansion(argument_mtf, order=order)
     result_mtf = constant_arctanh_C + arctanh_argument_mtf # Correct scalar addition
     return result_mtf.truncate(order)
 
 
-def arctanh_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylorFunctionBase:
+def arctanh_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylorFunction:
     """Helper: 1D Taylor expansion of arctanh(u) around zero, precomputed coefficients."""
     if order is None:
-        order = get_global_max_order()
+        order = MultivariateTaylorFunction.get_max_order()
     input_mtf = convert_to_mtf(variable)
     arctanh_taylor_1d_coefficients = {}
     taylor_dimension_1d = 1
@@ -513,12 +489,12 @@ def arctanh_taylor_1D_expansion(variable, order: int = None) -> MultivariateTayl
     composed_mtf = arctanh_taylor_1d_mtf.compose_one_dim(input_mtf)
     return composed_mtf.truncate(order)
 
-def arcsin_taylor(variable, order: int = None) -> MultivariateTaylorFunctionBase:
+def arcsin_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """
     Taylor expansion of arcsine function, using arctan_taylor and relation arcsin(x) = arctan(x/sqrt(1-x^2)).
     """
     if order is None:
-        order = get_global_max_order()
+        order = MultivariateTaylorFunction.get_max_order()
     x_mtf = convert_to_mtf(variable)
     x_squared_mtf = x_mtf * x_mtf
     one_minus_x_squared_mtf = 1.0 - x_squared_mtf
@@ -527,12 +503,12 @@ def arcsin_taylor(variable, order: int = None) -> MultivariateTaylorFunctionBase
     arcsin_mtf = arctan_taylor(argument_mtf, order=order)
     return arcsin_mtf.truncate(order)
 
-def arccos_taylor(variable, order: int = None) -> MultivariateTaylorFunctionBase:
+def arccos_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """
     Taylor expansion of arccosine function using the relation arccos(x) = pi/2 - arcsin(x).
     """
     if order is None:
-        order = get_global_max_order()
+        order = MultivariateTaylorFunction.get_max_order()
     arcsin_mtf = arcsin_taylor(variable, order=order)  # Get arcsin_taylor expansion
     pi_over_2_constant = np.pi / 2.0
     arccos_mtf = convert_to_mtf(pi_over_2_constant) - arcsin_mtf  # Perform MTF subtraction
@@ -559,7 +535,7 @@ def integrate(mtf_instance, integration_variable_index, lower_limit=None, upper_
             - If lower_limit and upper_limit are None: Returns indefinite integral MTF.
             - If limits are provided: Returns definite integral MTF (as a Taylor function).
     """
-    if not isinstance(mtf_instance, (MultivariateTaylorFunctionBase, ComplexMultivariateTaylorFunction)):
+    if not isinstance(mtf_instance, (MultivariateTaylorFunction, ComplexMultivariateTaylorFunction)):
         raise TypeError("mtf_instance must be a MultivariateTaylorFunction or ComplexMultivariateTaylorFunction.")
     if not isinstance(integration_variable_index, int):
         raise ValueError("integration_variable_index must be an integer dimension index (1-based).")
@@ -574,8 +550,12 @@ def integrate(mtf_instance, integration_variable_index, lower_limit=None, upper_
     if upper_limit is not None and not isinstance(upper_limit, (int, float)):
         raise TypeError("upper_limit must be a number (int or float).")
 
-    original_max_order = get_global_max_order()
-    set_global_max_order(original_max_order + 1)  # Step 1: Increment computation order by one.
+    # Handle empty mtf_instance
+    if mtf_instance.exponents.size == 0:
+        return type(mtf_instance)((np.empty((0, mtf_instance.dimension), dtype=np.int32), np.empty((0,), dtype=mtf_instance.coeffs.dtype)), mtf_instance.dimension)
+
+    original_max_order = MultivariateTaylorFunction.get_max_order()
+    MultivariateTaylorFunction.set_max_order(original_max_order + 1)  # Step 1: Increment computation order by one.
 
     new_exponents = mtf_instance.exponents.copy()
     new_coeffs = mtf_instance.coeffs.copy()
@@ -595,11 +575,11 @@ def integrate(mtf_instance, integration_variable_index, lower_limit=None, upper_
         definite_integral_mtf_full_order = upper_limit_mtf - lower_limit_mtf
 
         # Step 5: reduce order by one and truncate
-        set_global_max_order(original_max_order) # reduce order by one (restore original)
+        MultivariateTaylorFunction.set_max_order(original_max_order) # reduce order by one (restore original)
         definite_integral_mtf = definite_integral_mtf_full_order.truncate() # truncate
         return definite_integral_mtf # Definite integral as MTF
     else:
-        set_global_max_order(original_max_order)
+        MultivariateTaylorFunction.set_max_order(original_max_order)
         return indefinite_integral_mtf
 
 def derivative(mtf_instance, deriv_dim):
@@ -607,19 +587,19 @@ def derivative(mtf_instance, deriv_dim):
     Calculates the derivative of a MultivariateTaylorFunction with respect to a specified dimension.
 
     Args:
-        mtf_instance (MultivariateTaylorFunctionBase): The MultivariateTaylorFunction to differentiate.
+        mtf_instance (MultivariateTaylorFunction): The MultivariateTaylorFunction to differentiate.
         deriv_dim (int): The dimension index (1-based) with respect to which to differentiate.
                          Values should be from 1 to mtf_instance.dimension.
 
     Returns:
-        MultivariateTaylorFunctionBase: A new MTF representing the derivative.
+        MultivariateTaylorFunction: A new MTF representing the derivative.
 
     Raises:
-        TypeError: if mtf_instance is not a MultivariateTaylorFunctionBase.
+        TypeError: if mtf_instance is not a MultivariateTaylorFunction.
         ValueError: if deriv_dim is not a valid dimension index for the MTF.
     """
-    if not isinstance(mtf_instance, MultivariateTaylorFunctionBase):
-        raise TypeError("mtf_instance must be a MultivariateTaylorFunctionBase object.")
+    if not isinstance(mtf_instance, MultivariateTaylorFunction):
+        raise TypeError("mtf_instance must be a MultivariateTaylorFunction object.")
     if not isinstance(deriv_dim, int) or deriv_dim < 1 or deriv_dim > mtf_instance.dimension:
         raise ValueError(f"deriv_dim must be an integer between 1 and {mtf_instance.dimension} inclusive.")
 

@@ -1,13 +1,18 @@
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+
 import numpy as np
-from mtflib import *
-from applications.em.biot_savart import mpi_biot_savart, serial_biot_savart
-from applications.em.current_ring import current_ring
+from mtflib import (MultivariateTaylorFunction, Var, convert_to_mtf,
+                    integrate, mtfarray, sqrt_taylor)
+from demos.applications.em.biot_savart import mpi_biot_savart, serial_biot_savart
+from demos.applications.em.current_ring import current_ring
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 # --- Global MTF Settings ---
-initialize_mtf_globals(max_order=6, max_dimension=4)
-set_global_etol(1e-16)
+MultivariateTaylorFunction.initialize_mtf(max_order=6, max_dimension=4)
+MultivariateTaylorFunction.set_etol(1e-16)
 
 # --- Define Variables for MTF ---
 x = Var(1)
@@ -39,7 +44,7 @@ else:
 # --- Example Field Points ---
 num_field_points_axis = 3
 z_axis_coords = np.linspace(-2, 2, num_field_points_axis)
-field_points_axis = np.array([[x*0, y*0, zc+z] for zc in z_axis_coords], dtype=object)
+field_points_axis = np.array([[x*0, y*0, convert_to_mtf(zc)+z] for zc in z_axis_coords], dtype=object)
 
 # --- Example 1: Current Ring with Specified Center and Axis (element input) ---
 print("\n--- Example 1: Current Ring with Specified Center and Axis (Element Input) ---")

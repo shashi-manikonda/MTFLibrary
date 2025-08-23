@@ -1,8 +1,10 @@
+import sys
+sys.path.append('.')
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from mtflib.taylor_function import MultivariateTaylorFunctionBase
-from .biot_savart import serial_biot_savart
+from src.mtflib import MultivariateTaylorFunction
+from demos.applications.em.biot_savart import serial_biot_savart
 
 class Coil:
     """
@@ -14,12 +16,12 @@ class Coil:
         Initializes a Coil object. Can accept MTF objects or NumPy arrays.
         """
         if isinstance(segment_mtfs, np.ndarray) and np.issubdtype(segment_mtfs.dtype, np.number):
-            self.segment_mtfs = [[MultivariateTaylorFunctionBase.from_constant(component) for component in vector] for vector in segment_mtfs]
+            self.segment_mtfs = [[MultivariateTaylorFunction.from_constant(component) for component in vector] for vector in segment_mtfs]
         else:
             self.segment_mtfs = segment_mtfs
 
         if isinstance(direction_vectors, np.ndarray) and np.issubdtype(direction_vectors.dtype, np.number):
-            self.direction_vectors = [[MultivariateTaylorFunctionBase.from_constant(component) for component in vector] for vector in direction_vectors]
+            self.direction_vectors = [[MultivariateTaylorFunction.from_constant(component) for component in vector] for vector in direction_vectors]
         else:
             self.direction_vectors = direction_vectors
 
@@ -113,7 +115,7 @@ def plot_field_on_line(coils, start_point, end_point, component='magnitude', num
     ax_3d.plot(line_points[:, 0], line_points[:, 1], line_points[:, 2], 'r--', label='Observation Line')
 
     # Calculate total B-field
-    total_B_field = [MultivariateTaylorFunctionBase.from_constant(0.0) for _ in range(3)]
+    total_B_field = [MultivariateTaylorFunction.from_constant(0.0) for _ in range(3)]
     for coil in coils:
         field_points_mtf = np.array([[x, y, z] for x, y, z in line_points], dtype=object)
         B_field_coil = serial_biot_savart(coil.segment_mtfs, coil.element_lengths, coil.direction_vectors, field_points_mtf, order=eval_order)

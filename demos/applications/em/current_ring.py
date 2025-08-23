@@ -1,7 +1,6 @@
 import numpy as np
-from mtflib.taylor_function import initialize_mtf_globals, set_global_etol, convert_to_mtf
+from mtflib import MultivariateTaylorFunction, Var, convert_to_mtf
 from mtflib.elementary_functions import cos_taylor, sin_taylor, exp_taylor, gaussian_taylor, sqrt_taylor, log_taylor, arctan_taylor, sinh_taylor, cosh_taylor, tanh_taylor, arcsin_taylor, arccos_taylor, arctanh_taylor
-from mtflib.MTFExtended import Var
 
 def current_ring(ring_radius, num_segments_ring, ring_center_point, ring_axis_direction, return_mtf=True):
     """

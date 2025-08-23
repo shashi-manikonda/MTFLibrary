@@ -2,17 +2,17 @@
 import pytest
 import numpy as np
 import mtflib
-from applications.em import biot_savart
-from applications.em import current_ring
-from mtflib import initialize_mtf_globals, set_global_etol
+from demos.applications.em import biot_savart
+from demos.applications.em import current_ring
+from mtflib import MultivariateTaylorFunction
 
 @pytest.fixture(scope="function", autouse=True)
 def setup_function():
     """Initialize MTF globals for each test in this module."""
-    initialize_mtf_globals(max_order=5, max_dimension=4)
-    set_global_etol(1e-12)
+    MultivariateTaylorFunction.initialize_mtf(max_order=5, max_dimension=4)
+    MultivariateTaylorFunction.set_etol(1e-12)
     yield
-    mtflib.taylor_function._INITIALIZED = False
+    mtflib.taylor_function.MultivariateTaylorFunction._INITIALIZED = False
 
 
 def test_numpy_biot_savart_single_loop():

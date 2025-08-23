@@ -1,32 +1,32 @@
 import pytest
 import numpy as np
 import mtflib
-from mtflib import TaylorMap, MTF
+from mtflib import TaylorMap, MultivariateTaylorFunction
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_mtf_module():
     """Initializes mtflib globals for the test module."""
-    if not mtflib.get_mtf_initialized_status():
-        mtflib.initialize_mtf_globals(max_order=5, max_dimension=3)
+    if not mtflib.MultivariateTaylorFunction.get_mtf_initialized_status():
+        mtflib.MultivariateTaylorFunction.initialize_mtf(max_order=5, max_dimension=3)
 
 @pytest.fixture
 def sample_maps():
     """Creates some sample TaylorMap objects for testing."""
     # Map 1: R^2 -> R^2, F(x,y) = [1+x, 2+y]
-    f1 = MTF.from_variable(1, 2) + 1
-    f2 = MTF.from_variable(2, 2) + 2
+    f1 = MultivariateTaylorFunction.from_variable(1, 2) + 1
+    f2 = MultivariateTaylorFunction.from_variable(2, 2) + 2
     map1 = TaylorMap([f1, f2])
 
     # Map 2: R^2 -> R^2, G(x,y) = [x*y, x+y]
-    x = MTF.from_variable(1, 2)
-    y = MTF.from_variable(2, 2)
+    x = MultivariateTaylorFunction.from_variable(1, 2)
+    y = MultivariateTaylorFunction.from_variable(2, 2)
     g1 = x * y
     g2 = x + y
     map2 = TaylorMap([g1, g2])
 
     # Map 3: R^2 -> R^3, H(x,y) = [x, y, x+y]
-    h1 = MTF.from_variable(1, 2)
-    h2 = MTF.from_variable(2, 2)
+    h1 = MultivariateTaylorFunction.from_variable(1, 2)
+    h2 = MultivariateTaylorFunction.from_variable(2, 2)
     h3 = h1 + h2
     map3 = TaylorMap([h1, h2, h3])
 
@@ -37,15 +37,15 @@ def test_constructor(sample_maps):
     assert isinstance(map1, TaylorMap)
     assert map1.map_dim == 2
     assert len(map1.components) == 2
-    assert isinstance(map1.get_component(0), MTF)
+    assert isinstance(map1.get_component(0), MultivariateTaylorFunction)
 
 def test_addition(sample_maps):
     map1, map2, _ = sample_maps
     result = map1 + map2
 
     # Expected: [1+x+xy, 2+y+x+y] = [1+x+xy, 2+x+2y]
-    x = MTF.from_variable(1, 2)
-    y = MTF.from_variable(2, 2)
+    x = MultivariateTaylorFunction.from_variable(1, 2)
+    y = MultivariateTaylorFunction.from_variable(2, 2)
 
     expected_c1 = 1 + x + x*y
     expected_c2 = 2 + y + x + y
@@ -61,14 +61,14 @@ def test_addition_dim_mismatch(sample_maps):
 
 def test_composition():
     # F: R^2 -> R^2, F(x,y) = [x+y, x-y]
-    x = MTF.from_variable(1, 2)
-    y = MTF.from_variable(2, 2)
+    x = MultivariateTaylorFunction.from_variable(1, 2)
+    y = MultivariateTaylorFunction.from_variable(2, 2)
     f1 = x + y
     f2 = x - y
     mapF = TaylorMap([f1, f2])
 
     # G: R^1 -> R^2, G(t) = [t^2, 2t]
-    t = MTF.from_variable(1, 1)
+    t = MultivariateTaylorFunction.from_variable(1, 1)
     g1 = t**2
     g2 = 2*t
     mapG = TaylorMap([g1, g2])
@@ -100,8 +100,8 @@ def test_trace(sample_maps):
     assert map1.trace() == 2.0
 
     # Test map2 separately to avoid fixture pollution issues
-    x = MTF.from_variable(1, 2)
-    y = MTF.from_variable(2, 2)
+    x = MultivariateTaylorFunction.from_variable(1, 2)
+    y = MultivariateTaylorFunction.from_variable(2, 2)
     map2 = TaylorMap([x * y, x + y])
 
     # G(x,y) = [xy, x+y]
@@ -133,8 +133,8 @@ def test_substitute_partial(sample_maps):
     result_map = map1.substitute({1: 3})
 
     # Expected: F(3,y) = [4, 2+y]
-    y = MTF.from_variable(2, 2)
-    expected_c1 = MTF.from_constant(4.0, dimension=2)
+    y = MultivariateTaylorFunction.from_variable(2, 2)
+    expected_c1 = MultivariateTaylorFunction.from_constant(4.0, dimension=2)
     expected_c2 = 2 + y
 
     assert isinstance(result_map, TaylorMap)
@@ -156,14 +156,14 @@ def test_variable_creation_bug():
     This test is to isolate a suspected bug where creating a variable
     might be incorrectly adding a constant term.
     """
-    y = MTF.from_variable(2, 2)
+    y = MultivariateTaylorFunction.from_variable(2, 2)
 
     # A variable should not have a constant term.
     # The constant term corresponds to an exponent tuple of all zeros.
     constant_term = y.extract_coefficient(tuple([0, 0])).item()
     assert constant_term == 0.0, "A variable created with from_variable should not have a constant term."
 
-    x = MTF.from_variable(1, 2)
+    x = MultivariateTaylorFunction.from_variable(1, 2)
     prod = x * y
 
     # The product of x and y should be xy. It should not contain a linear x term.
@@ -176,8 +176,8 @@ def test_trace_standalone():
     A standalone test for the trace of a specific map to isolate
     potential fixture-related bugs.
     """
-    x = MTF.from_variable(1, 2)
-    y = MTF.from_variable(2, 2)
+    x = MultivariateTaylorFunction.from_variable(1, 2)
+    y = MultivariateTaylorFunction.from_variable(2, 2)
 
     g1 = x * y
     g2 = x + y
@@ -191,8 +191,8 @@ def test_subtraction(sample_maps):
     map1, map2, _ = sample_maps
     result = map1 - map2
 
-    x = MTF.from_variable(1, 2)
-    y = MTF.from_variable(2, 2)
+    x = MultivariateTaylorFunction.from_variable(1, 2)
+    y = MultivariateTaylorFunction.from_variable(2, 2)
 
     expected_c1 = (1 + x) - (x*y)
     expected_c2 = (2 + y) - (x+y)
@@ -205,8 +205,8 @@ def test_multiplication(sample_maps):
     map1, map2, _ = sample_maps
     result = map1 * map2
 
-    x = MTF.from_variable(1, 2)
-    y = MTF.from_variable(2, 2)
+    x = MultivariateTaylorFunction.from_variable(1, 2)
+    y = MultivariateTaylorFunction.from_variable(2, 2)
 
     expected_c1 = (1 + x) * (x*y)
     expected_c2 = (2 + y) * (x+y)
@@ -230,7 +230,7 @@ def test_component_management(sample_maps):
 
     assert map1.map_dim == 2
 
-    new_component = MTF.from_constant(5.0, dimension=2)
+    new_component = MultivariateTaylorFunction.from_constant(5.0, dimension=2)
     map1.add_component(new_component)
     assert map1.map_dim == 3
     assert map1.get_component(2) == new_component
@@ -245,11 +245,11 @@ def test_truncate(sample_maps):
 
     truncated_map = map2.truncate(1)
 
-    x = MTF.from_variable(1, 2)
-    y = MTF.from_variable(2, 2)
+    x = MultivariateTaylorFunction.from_variable(1, 2)
+    y = MultivariateTaylorFunction.from_variable(2, 2)
 
     # The first component (x*y, order 2) should be zero after truncating to order 1.
-    expected_c1 = MTF.from_constant(0.0, dimension=2)
+    expected_c1 = MultivariateTaylorFunction.from_constant(0.0, dimension=2)
     # The second component (x+y, order 1) should be unchanged.
     expected_c2 = x + y
 
@@ -264,8 +264,8 @@ def test_map_sensitivity(sample_maps):
     sensitive_map = map1.map_sensitivity(scaling_factors)
 
     # Expected: [1 + 10x, 2 + 100y]
-    x = MTF.from_variable(1, 2)
-    y = MTF.from_variable(2, 2)
+    x = MultivariateTaylorFunction.from_variable(1, 2)
+    y = MultivariateTaylorFunction.from_variable(2, 2)
     expected_c1 = 1 + 10*x
     expected_c2 = 2 + 100*y
 
@@ -282,7 +282,7 @@ def test_empty_map():
     result = empty_map + other_empty
     assert result.map_dim == 0
 
-    x = MTF.from_variable(1, 2)
+    x = MultivariateTaylorFunction.from_variable(1, 2)
     map_non_empty = TaylorMap([x])
 
     result1 = empty_map.compose(map_non_empty)
@@ -298,8 +298,8 @@ def test_inversion():
     F(x,y) = [x + y^2, y - x^2]
     """
     dim = 2
-    x = MTF.from_variable(1, dim)
-    y = MTF.from_variable(2, dim)
+    x = MultivariateTaylorFunction.from_variable(1, dim)
+    y = MultivariateTaylorFunction.from_variable(2, dim)
 
     # Define the map F
     f1 = x + y**2
@@ -317,7 +317,7 @@ def test_inversion():
 
     # The composition should be equal to the identity map up to the working order.
     # A direct equality check is sufficient if both are truncated to the same order.
-    max_order = mtflib.get_global_max_order()
+    max_order = mtflib.MultivariateTaylorFunction.get_max_order()
     truncated_composition = composition.truncate(max_order)
     truncated_identity = identity_map.truncate(max_order)
 
@@ -346,8 +346,8 @@ def test_invert_singular():
     Tests that a ValueError is raised for a map with a singular linear part.
     """
     dim = 2
-    x = MTF.from_variable(1, dim)
-    y = MTF.from_variable(2, dim)
+    x = MultivariateTaylorFunction.from_variable(1, dim)
+    y = MultivariateTaylorFunction.from_variable(2, dim)
 
     # This map's linear part is [[1, 1], [1, 1]], which is singular
     f1 = x + y

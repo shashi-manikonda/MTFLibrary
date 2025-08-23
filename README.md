@@ -38,10 +38,10 @@ Here's a quick example to get you started with `mtflib`:
 
 ```python
 import numpy as np
-from mtflib import initialize_mtf_globals, Var, sin_taylor
+from mtflib import MultivariateTaylorFunction, Var, sin_taylor
 
 # 1. Initialize global settings (must be done once)
-initialize_mtf_globals(max_order=5, max_dimension=2)
+MultivariateTaylorFunction.initialize_mtf_globals(max_order=5, max_dimension=2)
 
 # 2. Define symbolic variables
 x = Var(1)
@@ -93,7 +93,7 @@ print(f"Exact value: {exact_value}")
 
   - **Multivariate Taylor Functions (MTFs):**
       - Robustly represents MTFs with real and complex coefficients.
-      - Supports arbitrary order and dimension (limited by global settings).
+      - Supports arbitrary order and dimension, configured via class-level settings on the `MultivariateTaylorFunction` class.
       - Efficient storage and manipulation of Taylor coefficients using NumPy arrays.
   - **Comprehensive Mathematical Operations:**
       - **Arithmetic:** Addition, subtraction, multiplication, division, negation.
@@ -127,7 +127,7 @@ print(f"Exact value: {exact_value}")
       - Example scripts and unit tests provided to demonstrate usage.
   - **Efficiency and Performance:**
       - Leverages NumPy for optimized numerical operations and efficient storage of Taylor coefficients.
-      - **Global Coefficient Cleanup Control:** `mtflib` now automatically removes negligible coefficients after arithmetic operations to improve performance and keep Taylor series representations concise. This feature is enabled by default and can be controlled via the `set_truncate_after_operation(enable: bool)` function.
+      - **Coefficient Cleanup Control:** `mtflib` now automatically removes negligible coefficients after arithmetic operations to improve performance and keep Taylor series representations concise. This feature is enabled by default and can be controlled via the `MultivariateTaylorFunction.set_truncate_after_operation(enable: bool)` class method.
       - MPI-parallel implementation of Biot-Savart law for large-scale electromagnetic computations, utilizing `mpi_biot_savart`.
   - **Testability and Reliability:**
       - Includes a comprehensive suite of unit tests to ensure the correctness and reliability of MTF operations and elementary functions.
@@ -143,3 +143,11 @@ To help you get started with `mtflib`, we have included several demo files that 
 - Using the electromagnetism extension for field computations
 
 You can find the demo files in the `demos` directory of this repository.
+
+## Future Development
+This library is under active development. Here are some of the planned features and extensions:
+* **More Elementary Functions:** We plan to add support for more elementary functions, such as the gamma function, beta function, and error function.
+* **Sparse Jacobian for Map Inversion:** The current implementation of map inversion in `TaylorMap` uses a dense NumPy array for the Jacobian matrix. For high-dimensional maps, this can be inefficient. We plan to add support for sparse matrices to improve performance in these cases.
+* **Advanced Solvers for Map Inversion:** The current map inversion algorithm uses a simple fixed-point iteration. We plan to implement more sophisticated solvers, such as Newton's method, to provide faster and more robust convergence.
+* **Code Generation:** To further improve performance in critical applications, we are exploring the possibility of adding a feature to generate optimized C++ or Fortran code from the Taylor series representation.
+* **Enhanced Visualization Tools:** We plan to expand the visualization capabilities of the library, including more plot types and interactive visualizations.

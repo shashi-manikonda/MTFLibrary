@@ -2,10 +2,9 @@
 import numpy as np
 from collections import defaultdict
 import math
-from .elementary_coefficients import load_precomputed_coefficients
-import time
 import numbers
 import pandas as pd
+from functools import reduce
 
 from . import elementary_coefficients
 
@@ -16,113 +15,119 @@ try:
 except ImportError:
     _CPP_BACKEND_AVAILABLE = False
 
-
-_GLOBAL_MAX_ORDER = None
-_GLOBAL_MAX_DIMENSION = None
-_INITIALIZED = False
-_DEFAULT_ETOL = 1e-16
-_TRUNCATE_AFTER_OPERATION = True
-precomputed_coefficients = {}
-
-def get_max_coefficient_count(max_order=None, max_dimension=None):
-    """Calculates max coefficient count for given order/dimension."""
-    effective_max_order = max_order if max_order is not None else _GLOBAL_MAX_ORDER
-    effective_max_dimension = max_dimension if max_dimension is not None else _GLOBAL_MAX_DIMENSION
-    if effective_max_order is None or effective_max_dimension is None:
-        raise ValueError("Global max_order or max_dimension not initialized and no defaults provided.")
-    return math.comb(effective_max_order + effective_max_dimension, effective_max_dimension)
-
-def initialize_mtf_globals(max_order=None, max_dimension=None):
-    """Initializes global settings and loads precomputed coefficients. Must be called once."""
-    global _GLOBAL_MAX_ORDER, _GLOBAL_MAX_DIMENSION, _INITIALIZED, precomputed_coefficients
-    if _INITIALIZED:
-        raise RuntimeError("MTF globals already initialized. Cannot re-initialize.")
-    if max_order is not None:
-        if not isinstance(max_order, int) or max_order <= 0:
-            raise ValueError("max_order must be a positive integer.")
-        _GLOBAL_MAX_ORDER = max_order
-    if max_dimension is not None:
-        if not isinstance(max_dimension, int) or max_dimension <= 0:
-            raise ValueError("max_dimension must be a positive integer.")
-        _GLOBAL_MAX_DIMENSION = max_dimension
-    print(f"Initializing MTF globals with: _GLOBAL_MAX_ORDER={_GLOBAL_MAX_ORDER}, _GLOBAL_MAX_DIMENSION={_GLOBAL_MAX_DIMENSION}")
-    precomputed_coefficients_dict = load_precomputed_coefficients(max_order_config=_GLOBAL_MAX_ORDER)
-    precomputed_coefficients = precomputed_coefficients_dict
-    _INITIALIZED = True
-    print(f"MTF globals initialized: _GLOBAL_MAX_ORDER={_GLOBAL_MAX_ORDER}, _GLOBAL_MAX_DIMENSION={_GLOBAL_MAX_DIMENSION}, _INITIALIZED={_INITIALIZED}")
-    print(f"Max coefficient count (order={_GLOBAL_MAX_ORDER}, nvars={_GLOBAL_MAX_DIMENSION}): {get_max_coefficient_count()}")
-    print(f"Precomputed coefficients loaded and ready for use.")
-
-
-# Add this function to expose the precomputed coefficients
-def get_precomputed_coefficients():
-    """Returns the precomputed Taylor coefficients for elementary functions."""
-    global precomputed_coefficients, _INITIALIZED
-    if not _INITIALIZED:
-        raise RuntimeError("MTF Globals are not initialized.")
-    return precomputed_coefficients
-
-def get_mtf_initialized_status():
-    """Returns initialization status of MTF globals."""
-    return _INITIALIZED
-
-def set_global_max_order(order):
-    """Sets the global maximum order for Taylor series."""
-    global _GLOBAL_MAX_ORDER, _INITIALIZED
-    if not _INITIALIZED:
-        raise RuntimeError("MTF Globals must be initialized before setting max order.")
-    if not isinstance(order, int) or order < 0:
-        raise ValueError("Order must be a non-negative integer.")
-    _GLOBAL_MAX_ORDER = order
-
-def get_global_max_order():
-    """Returns the global maximum order for Taylor series."""
-    global _GLOBAL_MAX_ORDER, _INITIALIZED
-    if not _INITIALIZED:
-        raise RuntimeError("MTF Globals are not initialized.")
-    return _GLOBAL_MAX_ORDER
-
-def get_global_max_dimension():
-    """Returns the global maximum dimension (number of variables)."""
-    global _GLOBAL_MAX_DIMENSION, _INITIALIZED
-    if not _INITIALIZED:
-        raise RuntimeError("MTF Globals are not initialized.")
-    return _GLOBAL_MAX_DIMENSION
-
-def set_global_etol(etol):
-    """Sets the global error tolerance (etol) for `mtflib`."""
-    global _DEFAULT_ETOL, _INITIALIZED
-    if not _INITIALIZED:
-        raise RuntimeError("MTF Globals must be initialized before setting error tolerance.")
-    if not isinstance(etol, float) or etol <= 0:
-        raise ValueError("Error tolerance (etol) must be a positive float.")
-    _DEFAULT_ETOL = etol
-
-def get_global_etol():
-    """Returns the global error tolerance (etol)."""
-    global _DEFAULT_ETOL, _INITIALIZED
-    if not _INITIALIZED:
-        raise RuntimeError("MTF Globals are not initialized.")
-    return _DEFAULT_ETOL
-
-def set_truncate_after_operation(enable: bool):
-    """
-    Sets the global flag to enable or disable automatic coefficient cleanup.
-    """
-    global _TRUNCATE_AFTER_OPERATION
-    if not isinstance(enable, bool):
-        raise ValueError("Input 'enable' must be a boolean value (True or False).")
-    _TRUNCATE_AFTER_OPERATION = enable
-
 def _generate_exponent(order, var_index, dimension):
     """Generates an exponent tuple for a monomial term."""
     exponent = [0] * dimension
     exponent[var_index] = order
     return tuple(exponent)
 
-class MultivariateTaylorFunctionBase:
+class MultivariateTaylorFunction:
     """Represents a multivariate Taylor function."""
-    def __init__(self, coefficients, dimension=None, var_name=None, implementation='cpp'):
+    _MAX_ORDER = None
+    _MAX_DIMENSION = None
+    _INITIALIZED = False
+    _ETOL = 1e-16
+    _TRUNCATE_AFTER_OPERATION = True
+    _PRECOMPUTED_COEFFICIENTS = {}
+    _IMPLEMENTATION = 'python'
+
+    @classmethod
+    def initialize_mtf(cls, max_order=None, max_dimension=None, implementation='python'):
+        """Initializes global settings and loads precomputed coefficients. Must be called once."""
+        if cls._INITIALIZED:
+            print("MTF globals already initialized. Re-initializing with new settings.")
+        if max_order is not None:
+            if not isinstance(max_order, int) or max_order <= 0:
+                raise ValueError("max_order must be a positive integer.")
+            cls._MAX_ORDER = max_order
+        if max_dimension is not None:
+            if not isinstance(max_dimension, int) or max_dimension <= 0:
+                raise ValueError("max_dimension must be a positive integer.")
+            cls._MAX_DIMENSION = max_dimension
+
+        if implementation == 'cpp' and not _CPP_BACKEND_AVAILABLE:
+            cls._IMPLEMENTATION = 'python'
+        else:
+            cls._IMPLEMENTATION = implementation
+
+        print(f"Initializing MTF globals with: _MAX_ORDER={cls._MAX_ORDER}, _MAX_DIMENSION={cls._MAX_DIMENSION}")
+        cls._PRECOMPUTED_COEFFICIENTS = elementary_coefficients.load_precomputed_coefficients(max_order_config=cls._MAX_ORDER)
+        cls._INITIALIZED = True
+        print(f"MTF globals initialized: _MAX_ORDER={cls._MAX_ORDER}, _MAX_DIMENSION={cls._MAX_DIMENSION}, _INITIALIZED={cls._INITIALIZED}")
+        print(f"Max coefficient count (order={cls._MAX_ORDER}, nvars={cls._MAX_DIMENSION}): {cls.get_max_coefficient_count()}")
+        print(f"Precomputed coefficients loaded and ready for use.")
+
+    @classmethod
+    def get_max_coefficient_count(cls, max_order=None, max_dimension=None):
+        """Calculates max coefficient count for given order/dimension."""
+        effective_max_order = max_order if max_order is not None else cls._MAX_ORDER
+        effective_max_dimension = max_dimension if max_dimension is not None else cls._MAX_DIMENSION
+        if effective_max_order is None or effective_max_dimension is None:
+            raise ValueError("Global max_order or max_dimension not initialized and no defaults provided.")
+        return math.comb(effective_max_order + effective_max_dimension, effective_max_dimension)
+
+    @classmethod
+    def get_precomputed_coefficients(cls):
+        """Returns the precomputed Taylor coefficients for elementary functions."""
+        if not cls._INITIALIZED:
+            raise RuntimeError("MTF Globals are not initialized.")
+        return cls._PRECOMPUTED_COEFFICIENTS
+
+    @classmethod
+    def get_mtf_initialized_status(cls):
+        """Returns initialization status of MTF globals."""
+        return cls._INITIALIZED
+
+    @classmethod
+    def set_max_order(cls, order):
+        """Sets the global maximum order for Taylor series."""
+        if not cls._INITIALIZED:
+            raise RuntimeError("MTF Globals must be initialized before setting max order.")
+        if not isinstance(order, int) or order < 0:
+            raise ValueError("Order must be a non-negative integer.")
+        cls._MAX_ORDER = order
+
+    @classmethod
+    def get_max_order(cls):
+        """Returns the global maximum order for Taylor series."""
+        if not cls._INITIALIZED:
+            raise RuntimeError("MTF Globals are not initialized.")
+        return cls._MAX_ORDER
+
+    @classmethod
+    def get_max_dimension(cls):
+        """Returns the global maximum dimension (number of variables)."""
+        if not cls._INITIALIZED:
+            raise RuntimeError("MTF Globals are not initialized.")
+        return cls._MAX_DIMENSION
+
+    @classmethod
+    def set_etol(cls, etol):
+        """Sets the global error tolerance (etol) for `mtflib`."""
+        if not cls._INITIALIZED:
+            raise RuntimeError("MTF Globals must be initialized before setting error tolerance.")
+        if not isinstance(etol, float) or etol <= 0:
+            raise ValueError("Error tolerance (etol) must be a positive float.")
+        cls._ETOL = etol
+
+    @classmethod
+    def get_etol(cls):
+        """Returns the global error tolerance (etol)."""
+        if not cls._INITIALIZED:
+            raise RuntimeError("MTF Globals are not initialized.")
+        return cls._ETOL
+
+    @classmethod
+    def set_truncate_after_operation(cls, enable: bool):
+        """
+        Sets the global flag to enable or disable automatic coefficient cleanup.
+        """
+        if not isinstance(enable, bool):
+            raise ValueError("Input 'enable' must be a boolean value (True or False).")
+        cls._TRUNCATE_AFTER_OPERATION = enable
+
+
+    def __init__(self, coefficients, dimension=None, var_name=None):
         """
         Initializes a MultivariateTaylorFunction object.
 
@@ -130,20 +135,14 @@ class MultivariateTaylorFunctionBase:
                              or a tuple of (exponents, coeffs) numpy arrays.
         :param dimension: The number of variables in the function.
         :param var_name: The name of the variable (optional).
-        :param implementation: The backend to use for calculations ('python' or 'cpp').
         """
         self.var_name = var_name
-        if implementation == 'cpp' and not _CPP_BACKEND_AVAILABLE:
-            # Fallback to python if cpp is not available
-            self.implementation = 'python'
-        else:
-            self.implementation = implementation
 
         # Fast path for tuple of (exponents, coeffs)
         if isinstance(coefficients, tuple) and len(coefficients) == 2 and isinstance(coefficients[0], np.ndarray) and isinstance(coefficients[1], np.ndarray):
             self.exponents, self.coeffs = coefficients
             if dimension is None:
-                self.dimension = self.exponents.shape[1] if self.exponents.size > 0 else get_global_max_dimension()
+                self.dimension = self.exponents.shape[1] if self.exponents.size > 0 else self.get_max_dimension()
             else:
                 self.dimension = dimension
 
@@ -155,7 +154,7 @@ class MultivariateTaylorFunctionBase:
         # Path for dictionary
         elif isinstance(coefficients, dict):
             if not coefficients:
-                self.dimension = dimension if dimension is not None else get_global_max_dimension()
+                self.dimension = dimension if dimension is not None else self.get_max_dimension()
                 self.exponents = np.empty((0, self.dimension), dtype=np.int32)
                 self.coeffs = np.empty((0,), dtype=np.float64)
             else:
@@ -187,16 +186,16 @@ class MultivariateTaylorFunctionBase:
             raise TypeError("Unsupported type for 'coefficients'. Must be a dict or a tuple of (exponents, coeffs) arrays.")
 
     @classmethod
-    def from_constant(cls, constant_value, dimension=None, implementation='python'):
+    def from_constant(cls, constant_value, dimension=None):
         """Creates an MTF representing a constant value."""
         if dimension is None:
-            dimension=get_global_max_dimension()
+            dimension=cls.get_max_dimension()
         # Ensure the value is a scalar float, not a numpy array
         coeffs = {(0,) * dimension: float(constant_value)}
-        return cls(coefficients=coeffs, dimension=dimension, implementation=implementation)
+        return cls(coefficients=coeffs, dimension=dimension)
 
     @classmethod
-    def from_variable(cls, var_index, dimension, implementation='python'):
+    def from_variable(cls, var_index, dimension):
         """Creates an MTF representing a single variable."""
         if not (1 <= var_index <= dimension):
             raise ValueError(f"Variable index must be between 1 and {dimension}, inclusive.")
@@ -204,7 +203,7 @@ class MultivariateTaylorFunctionBase:
         exponent[var_index - 1] = 1
         # Use a scalar float for the coefficient
         coeffs = {tuple(exponent): 1.0}
-        return cls(coefficients=coeffs, dimension=dimension, var_name=f"x_{var_index}", implementation=implementation)
+        return cls(coefficients=coeffs, dimension=dimension, var_name=f"x_{var_index}")
 
     def __call__(self, evaluation_point):
         """Alias for `eval()`."""
@@ -229,23 +228,23 @@ class MultivariateTaylorFunctionBase:
         if isinstance(other, (int, float, complex, np.number)):
             if isinstance(other, complex):
                 from .complex_taylor_function import ComplexMultivariateTaylorFunction
-                const_mtf = ComplexMultivariateTaylorFunction.from_constant(other, dimension=self.dimension, implementation=self.implementation)
+                const_mtf = ComplexMultivariateTaylorFunction.from_constant(other, dimension=self.dimension)
                 return self + const_mtf
             else: # int or float
-                const_mtf = type(self).from_constant(other, dimension=self.dimension, implementation=self.implementation)
+                const_mtf = type(self).from_constant(other, dimension=self.dimension)
                 return self + const_mtf
 
-        if not isinstance(other, MultivariateTaylorFunctionBase):
+        if not isinstance(other, MultivariateTaylorFunction):
             return NotImplemented
 
         if self.dimension != other.dimension:
             raise ValueError("MTF dimensions must match for addition.")
 
         # C++ Backend Dispatch
-        if self.implementation == 'cpp' and _CPP_BACKEND_AVAILABLE and not (np.iscomplexobj(self.coeffs) or np.iscomplexobj(other.coeffs)):
+        if self._IMPLEMENTATION == 'cpp' and not (np.iscomplexobj(self.coeffs) or np.iscomplexobj(other.coeffs)):
             new_exps, new_coeffs = mtf_cpp.add_mtf_cpp(self.exponents, self.coeffs, other.exponents, other.coeffs)
-            result_mtf = type(self)((new_exps, new_coeffs), self.dimension, implementation='cpp')
-            if _TRUNCATE_AFTER_OPERATION:
+            result_mtf = type(self)((new_exps, new_coeffs), self.dimension)
+            if self._TRUNCATE_AFTER_OPERATION:
                 result_mtf._cleanup_after_operation()
             return result_mtf
 
@@ -268,8 +267,8 @@ class MultivariateTaylorFunctionBase:
             unique_exponents = np.array(list(summed_coeffs_dict.keys()), dtype=np.int32)
             summed_coeffs = np.array(list(summed_coeffs_dict.values()), dtype=np.complex128 if is_complex else np.float64)
 
-        result_mtf = type(self)((unique_exponents, summed_coeffs), self.dimension, implementation=self.implementation)
-        if _TRUNCATE_AFTER_OPERATION:
+        result_mtf = type(self)((unique_exponents, summed_coeffs), self.dimension)
+        if self._TRUNCATE_AFTER_OPERATION:
             result_mtf._cleanup_after_operation()
         return result_mtf
 
@@ -282,18 +281,18 @@ class MultivariateTaylorFunctionBase:
         if isinstance(other, (int, float, complex, np.number)):
             return self + (-other)
 
-        if not isinstance(other, MultivariateTaylorFunctionBase):
+        if not isinstance(other, MultivariateTaylorFunction):
             return NotImplemented
 
         if self.dimension != other.dimension:
             raise ValueError("MTF dimensions must match for subtraction.")
 
         # C++ Backend Dispatch
-        if self.implementation == 'cpp' and _CPP_BACKEND_AVAILABLE and not (np.iscomplexobj(self.coeffs) or np.iscomplexobj(other.coeffs)):
+        if self._IMPLEMENTATION == 'cpp' and not (np.iscomplexobj(self.coeffs) or np.iscomplexobj(other.coeffs)):
             # C++ add can handle subtraction by negating the second operand's coeffs
             new_exps, new_coeffs = mtf_cpp.add_mtf_cpp(self.exponents, self.coeffs, other.exponents, -other.coeffs)
-            result_mtf = type(self)((new_exps, new_coeffs), self.dimension, implementation='cpp')
-            if _TRUNCATE_AFTER_OPERATION:
+            result_mtf = type(self)((new_exps, new_coeffs), self.dimension)
+            if self._TRUNCATE_AFTER_OPERATION:
                 result_mtf._cleanup_after_operation()
             return result_mtf
 
@@ -316,8 +315,8 @@ class MultivariateTaylorFunctionBase:
             unique_exponents = np.array(list(summed_coeffs_dict.keys()), dtype=np.int32)
             summed_coeffs = np.array(list(summed_coeffs_dict.values()), dtype=np.complex128 if is_complex else np.float64)
 
-        result_mtf = type(self)((unique_exponents, summed_coeffs), self.dimension, implementation=self.implementation)
-        if _TRUNCATE_AFTER_OPERATION:
+        result_mtf = type(self)((unique_exponents, summed_coeffs), self.dimension)
+        if self._TRUNCATE_AFTER_OPERATION:
             result_mtf._cleanup_after_operation()
         return result_mtf
 
@@ -331,9 +330,9 @@ class MultivariateTaylorFunctionBase:
             # Scalar multiplication
             if self.coeffs.size == 0:
                 return self.copy()
-            return type(self)((self.exponents.copy(), self.coeffs * other), self.dimension, implementation=self.implementation)
+            return type(self)((self.exponents.copy(), self.coeffs * other), self.dimension)
 
-        if not isinstance(other, MultivariateTaylorFunctionBase):
+        if not isinstance(other, MultivariateTaylorFunction):
             return NotImplemented
 
         if self.dimension != other.dimension:
@@ -344,10 +343,10 @@ class MultivariateTaylorFunctionBase:
             return type(self)((np.empty((0, self.dimension), dtype=np.int32), np.empty((0,), dtype=dtype)), self.dimension)
 
         # C++ Backend Dispatch
-        if self.implementation == 'cpp' and _CPP_BACKEND_AVAILABLE and not (np.iscomplexobj(self.coeffs) or np.iscomplexobj(other.coeffs)):
+        if self._IMPLEMENTATION == 'cpp' and not (np.iscomplexobj(self.coeffs) or np.iscomplexobj(other.coeffs)):
             new_exps, new_coeffs = mtf_cpp.multiply_mtf_cpp(self.exponents, self.coeffs, other.exponents, other.coeffs)
-            result_mtf = type(self)((new_exps, new_coeffs), self.dimension, implementation='cpp')
-            if _TRUNCATE_AFTER_OPERATION:
+            result_mtf = type(self)((new_exps, new_coeffs), self.dimension)
+            if self._TRUNCATE_AFTER_OPERATION:
                 result_mtf._cleanup_after_operation()
             return result_mtf
 
@@ -371,8 +370,8 @@ class MultivariateTaylorFunctionBase:
             unique_exponents = np.array(list(summed_coeffs_dict.keys()), dtype=np.int32)
             summed_coeffs = np.array(list(summed_coeffs_dict.values()), dtype=np.complex128 if is_complex else np.float64)
 
-        result_mtf = type(self)((unique_exponents, summed_coeffs), self.dimension, implementation=self.implementation)
-        if _TRUNCATE_AFTER_OPERATION:
+        result_mtf = type(self)((unique_exponents, summed_coeffs), self.dimension)
+        if self._TRUNCATE_AFTER_OPERATION:
             result_mtf._cleanup_after_operation()
         return result_mtf
 
@@ -397,12 +396,12 @@ class MultivariateTaylorFunctionBase:
                 else:
                     raise ValueError("Power must be a non-negative integer, 0.5, or -0.5.")
             if power == 0:
-                return type(self).from_constant(1.0, dimension=self.dimension, implementation=self.implementation)
+                return type(self).from_constant(1.0, dimension=self.dimension)
             if power == 1:
                 return self
 
             # Optimized power using binary exponentiation (exponentiation by squaring)
-            result = type(self).from_constant(1.0, dimension=self.dimension, implementation=self.implementation)
+            result = type(self).from_constant(1.0, dimension=self.dimension)
             base = self
             while power > 0:
                 if power % 2 == 1:
@@ -427,12 +426,12 @@ class MultivariateTaylorFunctionBase:
 
     def __truediv__(self, other):
         """Defines division (/) for MultivariateTaylorFunction objects."""
-        if isinstance(other, MultivariateTaylorFunctionBase):
+        if isinstance(other, MultivariateTaylorFunction):
             inverse_other_mtf = self._inv_mtf_internal(other)
             return self * inverse_other_mtf
         elif isinstance(other, (int, float, np.number)):
-            result_mtf = type(self)((self.exponents.copy(), self.coeffs / other), self.dimension, implementation=self.implementation)
-            if _TRUNCATE_AFTER_OPERATION:
+            result_mtf = type(self)((self.exponents.copy(), self.coeffs / other), self.dimension)
+            if self._TRUNCATE_AFTER_OPERATION:
                 result_mtf._cleanup_after_operation()
             return result_mtf
         else:
@@ -449,13 +448,13 @@ class MultivariateTaylorFunctionBase:
     def _inv_mtf_internal(self, mtf_instance, order=None):
         """Internal method to calculate Taylor expansion of 1/mtf_instance."""
         if order is None:
-            order = get_global_max_order()
+            order = self.get_max_order()
         constant_term_coeff = mtf_instance.extract_coefficient(tuple([0] * mtf_instance.dimension))
         c0 = constant_term_coeff.item()
-        if abs(c0) < get_global_etol():
+        if abs(c0) < self.get_etol():
             raise ValueError("Cannot invert MTF with zero constant term (or very close to zero).")
         rescaled_mtf = mtf_instance / c0
-        inverse_coefficients = precomputed_coefficients.get('inverse')
+        inverse_coefficients = self.get_precomputed_coefficients().get('inverse')
         if inverse_coefficients is None:
             raise RuntimeError("Precomputed 'inverse' coefficients not loaded.")
         coeffs_to_use = inverse_coefficients[:order+1]
@@ -465,7 +464,7 @@ class MultivariateTaylorFunctionBase:
             coeff_items.append((exponent_tuple, coeff_val))
         inverse_series_1d_mtf = type(self)(coefficients=dict(coeff_items), dimension=1)
         composed_mtf = inverse_series_1d_mtf.compose_one_dim(
-            rescaled_mtf - type(self).from_constant(1.0, dimension=rescaled_mtf.dimension, implementation=rescaled_mtf.implementation)
+            rescaled_mtf - type(self).from_constant(1.0, dimension=rescaled_mtf.dimension)
         )
         final_mtf = composed_mtf / c0
         truncated_mtf = final_mtf.truncate(order)
@@ -498,17 +497,16 @@ class MultivariateTaylorFunctionBase:
         unique_exponents, inverse_indices = np.unique(new_exponents, axis=0, return_inverse=True)
         summed_coeffs = np.bincount(inverse_indices, weights=new_coeffs)
 
-        return type(self)((unique_exponents, summed_coeffs), self.dimension, implementation=self.implementation)
+        return type(self)((unique_exponents, summed_coeffs), self.dimension)
 
     def truncate_inplace(self, order=None):
         """Truncates the MTF *in place* to a specified order."""
         if order is None:
-            order = get_global_max_order()
+            order = self.get_max_order()
         elif not isinstance(order, int) or order < 0:
             raise ValueError("Order must be a non-negative integer.")
 
         if self.exponents.shape[0] == 0:
-            # self._max_order = 0
             return self
 
         term_orders = np.sum(self.exponents, axis=1)
@@ -517,18 +515,13 @@ class MultivariateTaylorFunctionBase:
         self.exponents = self.exponents[keep_mask]
         self.coeffs = self.coeffs[keep_mask]
 
-        # if self.coeffs.shape[0] > 0:
-        #     self._max_order = np.max(np.sum(self.exponents, axis=1))
-        # else:
-        #     self._max_order = 0
-
         return self
 
     def truncate(self, order=None):
         """Truncates the MultivariateTaylorFunction to a specified order."""
-        etol = get_global_etol()
+        etol = self.get_etol()
         if order is None:
-            order = get_global_max_order()
+            order = self.get_max_order()
         elif not isinstance(order, int) or order < 0:
             raise ValueError("Order must be a non-negative integer.")
 
@@ -545,7 +538,7 @@ class MultivariateTaylorFunctionBase:
         new_exponents = self.exponents[keep_mask]
         new_coeffs = self.coeffs[keep_mask]
 
-        return type(self)((new_exponents, new_coeffs), self.dimension, implementation=self.implementation)
+        return type(self)((new_exponents, new_coeffs), self.dimension)
 
     def substitute_variable_inplace(self, var_dimension, value):
         """Substitutes a variable in the MTF with a numerical value IN-PLACE."""
@@ -561,7 +554,7 @@ class MultivariateTaylorFunctionBase:
     def is_zero_mtf(self, mtf, zero_tolerance=None):
         """Checks if an MTF is effectively zero."""
         if zero_tolerance is None:
-            zero_tolerance = get_global_etol()
+            zero_tolerance = self.get_etol()
         if mtf.coeffs.size == 0:
             return True
         return np.all(np.abs(mtf.coeffs) < zero_tolerance)
@@ -582,14 +575,11 @@ class MultivariateTaylorFunctionBase:
         if self.dimension != 1:
             raise ValueError("Composition is only supported for 1D MTF as the outer function.")
 
-        # The result starts as a zero MTF, with the dimension of the inner function
         composed_mtf = type(other_mtf)(
             (np.empty((0, other_mtf.dimension), dtype=np.int32), np.empty((0,), dtype=self.coeffs.dtype)),
-            other_mtf.dimension,
-            implementation=other_mtf.implementation
+            other_mtf.dimension
         )
 
-        # Iterate through the terms of the outer function (self)
         for i in range(self.coeffs.size):
             self_exp_order = self.exponents[i, 0]
             self_coeff = self.coeffs[i]
@@ -623,6 +613,8 @@ class MultivariateTaylorFunctionBase:
 
     def extract_coefficient(self, exponents):
         """Extracts the coefficient for a given exponent tuple."""
+        if self.exponents.size == 0:
+            return np.array([0.0], dtype=self.coeffs.dtype)
         if not isinstance(exponents, tuple):
             raise TypeError("Exponents must be a tuple.")
         if len(exponents) != self.dimension:
@@ -651,14 +643,11 @@ class MultivariateTaylorFunctionBase:
         match_indices = np.where(match)[0]
 
         if match_indices.size > 0:
-            # Exponent exists, update the coefficient
             self.coeffs[match_indices[0]] = value
         else:
-            # Exponent does not exist, add it
             self.exponents = np.vstack([self.exponents, exponent_row])
             self.coeffs = np.append(self.coeffs, value)
 
-            # Re-sort to maintain a canonical representation
             sorted_indices = np.lexsort(self.exponents.T)
             self.exponents = self.exponents[sorted_indices]
             self.coeffs = self.coeffs[sorted_indices]
@@ -672,7 +661,7 @@ class MultivariateTaylorFunctionBase:
     def get_min_coefficient(self, tolerance=np.nan):
         """Finds the minimum absolute value among non-negligible coefficients."""
         if tolerance is np.nan:
-            tolerance = get_global_etol()
+            tolerance = self.get_etol()
 
         if self.coeffs.size == 0:
             return 0.0
@@ -695,13 +684,13 @@ class MultivariateTaylorFunctionBase:
     
     def copy(self):
         """Returns a copy of the MTF."""
-        return type(self)((self.exponents.copy(), self.coeffs.copy()), self.dimension, var_name=self.var_name, implementation=self.implementation)
+        return type(self)((self.exponents.copy(), self.coeffs.copy()), self.dimension, var_name=self.var_name)
 
     def _cleanup_after_operation(self):
         """
         Removes coefficients smaller than the global error tolerance in-place.
         """
-        etol = get_global_etol()
+        etol = self.get_etol()
 
         if self.coeffs.size == 0:
             return
@@ -713,29 +702,23 @@ class MultivariateTaylorFunctionBase:
 
     def __eq__(self, other):
         """Defines equality (==) for MultivariateTaylorFunction objects."""
-        if not isinstance(other, MultivariateTaylorFunctionBase):
+        if not isinstance(other, MultivariateTaylorFunction):
             return False
         if self.dimension != other.dimension:
             return False
 
-        # Create cleaned versions of both MTFs for comparison
-        # This handles cases where one MTF is empty and the other is a zero constant
         self_cleaned = self.copy()
         self_cleaned._cleanup_after_operation()
         other_cleaned = other.copy()
         other_cleaned._cleanup_after_operation()
 
-        # If both are empty after cleanup, they are equal
         if self_cleaned.coeffs.shape[0] == 0 and other_cleaned.coeffs.shape[0] == 0:
             return True
 
-        # If number of terms is different after cleanup, they are not equal
         if self_cleaned.coeffs.shape[0] != other_cleaned.coeffs.shape[0]:
             return False
 
-        # If number of terms is the same, compare the arrays
         if not np.array_equal(self_cleaned.exponents, other_cleaned.exponents):
-            # Fallback for non-canonical but equivalent forms (should be rare now)
             self_map = {tuple(exp): coeff for exp, coeff in zip(self_cleaned.exponents, self_cleaned.coeffs)}
             other_map = {tuple(exp): coeff for exp, coeff in zip(other_cleaned.exponents, other_cleaned.coeffs)}
             return self_map == other_map
@@ -745,6 +728,67 @@ class MultivariateTaylorFunctionBase:
     def __ne__(self, other):
         """Defines inequality (!=) for MultivariateTaylorFunction objects."""
         return not self.__eq__(other)
+
+    def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
+        """
+        Implements NumPy ufunc protocol, directly calling taylor functions from elementary_functions.py.
+        Handles scalar inputs by converting them to MultivariateTaylorFunction constants.
+        """
+        from . import elementary_functions as elem_funcs
+
+        if method == '__call__':
+            input_mtf = inputs[0]
+            other_input = inputs[1] if len(inputs) > 1 else None
+
+            if not isinstance(input_mtf, MultivariateTaylorFunction):
+                input_mtf = convert_to_mtf(input_mtf, dimension=self.dimension)
+
+            if ufunc is np.sin:
+                return elem_funcs.sin_taylor(input_mtf)
+            elif ufunc is np.cos:
+                return elem_funcs.cos_taylor(input_mtf)
+            elif ufunc is np.tan:
+                return elem_funcs.tan_taylor(input_mtf)
+            elif ufunc is np.exp:
+                return elem_funcs.exp_taylor(input_mtf)
+            elif ufunc is np.sqrt:
+                return sqrt_taylor(input_mtf)
+            elif ufunc is np.log:
+                return elem_funcs.log_taylor(input_mtf)
+            elif ufunc is np.arctan:
+                return elem_funcs.arctan_taylor(input_mtf)
+            elif ufunc is np.sinh:
+                return elem_funcs.sinh_taylor(input_mtf)
+            elif ufunc is np.cosh:
+                return elem_funcs.cosh_taylor(input_mtf)
+            elif ufunc is np.tanh:
+                return elem_funcs.tanh_taylor(input_mtf)
+            elif ufunc is np.arcsin:
+                return elem_funcs.arcsin_taylor(input_mtf)
+            elif ufunc is np.arccos:
+                return elem_funcs.arccos_taylor(input_mtf)
+            elif ufunc is np.arctanh:
+                return elem_funcs.arctanh_taylor(input_mtf)
+            elif ufunc is np.reciprocal:
+                return self._inv_mtf_internal(input_mtf)
+            elif ufunc in (np.add, np.subtract, np.multiply, np.divide, np.true_divide, np.power, np.float_power):
+                return NotImplemented
+            elif ufunc is np.negative:
+                return -input_mtf
+            elif ufunc is np.positive:
+                return +input_mtf
+            elif ufunc is np.power or ufunc is np.float_power:
+                if isinstance(other_input, (int, float, np.number)):
+                    return input_mtf ** other_input
+            elif ufunc is np.square:
+                return input_mtf * input_mtf
+
+            return NotImplemented
+
+        return NotImplemented
+
+    def __reduce__(self):
+        return (self.__class__, ((self.exponents, self.coeffs), self.dimension, self.var_name))
         
 
 def _generate_exponent_combinations(dimension, order):
@@ -765,12 +809,12 @@ def _generate_exponent_combinations(dimension, order):
 
 def convert_to_mtf(input_val, dimension=None):
     """Converts input to MultivariateTaylorFunction or ComplexMultivariateTaylorFunction."""
-    if isinstance(input_val, (MultivariateTaylorFunctionBase)):
+    if isinstance(input_val, (MultivariateTaylorFunction)):
         return input_val
     elif isinstance(input_val, (int, float)):
         if dimension is None:
-            dimension = get_global_max_dimension()
-        return MultivariateTaylorFunctionBase.from_constant(input_val, dimension=dimension, implementation='python')
+            dimension = MultivariateTaylorFunction.get_max_dimension()
+        return MultivariateTaylorFunction.from_constant(input_val, dimension=dimension)
     elif isinstance(input_val, np.ndarray) and input_val.shape == ():
         return convert_to_mtf(input_val.item(), dimension)
     elif isinstance(input_val, np.number):
@@ -782,7 +826,7 @@ def convert_to_mtf(input_val, dimension=None):
 
 
 
-def _split_constant_polynomial_part(input_mtf: MultivariateTaylorFunctionBase) -> tuple[float, MultivariateTaylorFunctionBase]:
+def _split_constant_polynomial_part(input_mtf: MultivariateTaylorFunction) -> tuple[float, MultivariateTaylorFunction]:
     """Helper: Splits MTF into constant and polynomial parts."""
     dimension = input_mtf.dimension
     const_exp = np.zeros(dimension, dtype=np.int32)
@@ -802,10 +846,10 @@ def _split_constant_polynomial_part(input_mtf: MultivariateTaylorFunctionBase) -
 
     return constant_term_C_value, polynomial_part_mtf
 
-def sqrt_taylor(variable, order: int = None) -> MultivariateTaylorFunctionBase:
+def sqrt_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """Taylor expansion of sqrt(x) using constant factoring."""
     if order is None:
-        order = get_global_max_order()
+        order = MultivariateTaylorFunction.get_max_order()
     input_mtf = convert_to_mtf(variable)
     constant_term_C_value, polynomial_part_B_mtf = _split_constant_polynomial_part(input_mtf)
     if constant_term_C_value <= 0:
@@ -816,10 +860,10 @@ def sqrt_taylor(variable, order: int = None) -> MultivariateTaylorFunctionBase:
     result_mtf = sqrt_1_plus_x_mtf * constant_factor_sqrt_C
     return result_mtf.truncate(order)
 
-def sqrt_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylorFunctionBase:
+def sqrt_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylorFunction:
     """Helper: 1D Taylor expansion of sqrt(1+u) around zero, precomputed coefficients."""
     if order is None:
-        order = get_global_max_order()
+        order = MultivariateTaylorFunction.get_max_order()
     input_mtf = convert_to_mtf(variable)
     sqrt_taylor_1d_coefficients = {}
     taylor_dimension_1d = 1
@@ -848,10 +892,10 @@ def sqrt_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylorF
     composed_mtf = sqrt_taylor_1d_mtf.compose_one_dim(input_mtf)
     return composed_mtf.truncate(order)
 
-def isqrt_taylor(variable, order: int = None) -> MultivariateTaylorFunctionBase:
+def isqrt_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """Taylor expansion of isqrt(x) using constant factoring."""
     if order is None:
-        order = get_global_max_order()
+        order = MultivariateTaylorFunction.get_max_order()
     input_mtf = convert_to_mtf(variable)
     constant_term_C_value, polynomial_part_B_mtf = _split_constant_polynomial_part(input_mtf)
     if abs(constant_term_C_value) < 1e-9:
@@ -862,10 +906,10 @@ def isqrt_taylor(variable, order: int = None) -> MultivariateTaylorFunctionBase:
     result_mtf = isqrt_1_plus_x_mtf * constant_factor_isqrt_C
     return result_mtf.truncate(order)
 
-def isqrt_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylorFunctionBase:
+def isqrt_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylorFunction:
     """Helper: 1D Taylor expansion of isqrt(1+u) around zero, precomputed coefficients."""
     if order is None:
-        order = get_global_max_order()
+        order = MultivariateTaylorFunction.get_max_order()
     input_mtf = convert_to_mtf(variable)
     isqrt_taylor_1d_coefficients = {}
     taylor_dimension_1d = 1
@@ -893,3 +937,120 @@ def isqrt_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylor
     )
     composed_mtf = isqrt_taylor_1d_mtf.compose_one_dim(input_mtf)
     return composed_mtf.truncate(order)
+
+def Var(var_index):
+    """
+    Represents an independent variable as an MultivariateTaylorFunction object.
+
+    Args:
+        var_index (int): Unique positive integer identifier for the variable.
+
+    Returns:
+        MultivariateTaylorFunction: A MultivariateTaylorFunction object representing the variable x_var_index.
+    """
+    dimension = MultivariateTaylorFunction.get_max_dimension()
+
+    if not MultivariateTaylorFunction.get_mtf_initialized_status():
+        raise RuntimeError("MTF Globals must be initialized before creating Var objects.")
+    if not isinstance(var_index, int) or var_index <= 0 or var_index > dimension:
+        raise ValueError(f"var_index must be a positive integer between 1 and {dimension}, inclusive.")
+
+    exponents_arr = np.zeros((1, dimension), dtype=np.int32)
+    exponents_arr[0, var_index - 1] = 1
+    coeffs_arr = np.array([1.0], dtype=np.float64)
+
+    return MultivariateTaylorFunction(coefficients=(exponents_arr, coeffs_arr), dimension=dimension)
+
+
+def compose(mtf_instance: MultivariateTaylorFunction, other_function_dict: dict[int, MultivariateTaylorFunction]) -> MultivariateTaylorFunction:
+    """
+    Composes a Taylor function with other Taylor functions.
+    """
+    if not isinstance(mtf_instance, MultivariateTaylorFunction):
+        raise TypeError("mtf_instance must be a MultivariateTaylorFunction object.")
+    if not isinstance(other_function_dict, dict):
+        raise TypeError("other_function_dict must be a dictionary.")
+
+    for var_index, substitution_function in other_function_dict.items():
+        if not isinstance(var_index, int):
+            raise TypeError("Keys of other_function_dict must be integers (variable indices).")
+        if not isinstance(substitution_function, MultivariateTaylorFunction):
+            raise TypeError("Values of other_function_dict must be MultivariateTaylorFunction objects.")
+        if not (1 <= var_index <= mtf_instance.dimension):
+            raise ValueError(f"Variable index {var_index} is out of bounds for dimension {mtf_instance.dimension}.")
+
+    final_mtf = type(mtf_instance).from_constant(0.0)
+
+    if mtf_instance.coeffs.size == 0:
+        return final_mtf
+
+    substitutions = {}
+    for j in range(mtf_instance.dimension):
+        var_index = j + 1
+        if var_index in other_function_dict:
+            substitutions[var_index] = other_function_dict[var_index]
+        else:
+            substitutions[var_index] = type(mtf_instance).from_variable(var_index, mtf_instance.dimension)
+
+    for i in range(mtf_instance.coeffs.size):
+        coeff = mtf_instance.coeffs[i]
+        exponents = mtf_instance.exponents[i]
+
+        term_result = type(mtf_instance).from_constant(coeff)
+
+        for j in range(mtf_instance.dimension):
+            power = exponents[j]
+            if power > 0:
+                var_index = j + 1
+                g_j = substitutions[var_index]
+                term_result *= (g_j ** power)
+
+        final_mtf += term_result
+
+    return final_mtf
+
+
+def mtfarray(mtfs, column_names=None):
+    """
+    Merges a list of MultivariateTaylorFunction objects into a single pandas DataFrame.
+    """
+    if isinstance(mtfs, np.ndarray):
+        mtfs = list(mtfs)
+
+    if not isinstance(mtfs, list):
+        raise TypeError("Input 'mtfs' must be a list.")
+
+    if not mtfs:
+        return pd.DataFrame(columns=['Order', 'Exponents'])
+
+    valid_mtf_types = (MultivariateTaylorFunction,)
+    for mtf in mtfs:
+        if not isinstance(mtf, valid_mtf_types):
+            raise TypeError(f"All elements in 'mtfs' must be instances of {MultivariateTaylorFunction.__name__}, but found {type(mtf).__name__}.")
+
+    first_dim = mtfs[0].dimension
+    for i, mtf in enumerate(mtfs[1:]):
+        if mtf.dimension != first_dim:
+            raise ValueError(f"MTF at index {i+1} has dimension {mtf.dimension}, but the first MTF has dimension {first_dim}. All MTFs must have the same dimension.")
+
+    dfs = []
+    for i, mtf in enumerate(mtfs):
+        df = mtf.get_tabular_dataframe()
+        if column_names and len(column_names) == len(mtfs):
+            if 'Coefficient' in df.columns:
+                df = df.rename(columns={'Coefficient': f'Coeff_{column_names[i]}'})
+        else:
+            mtf_name = getattr(mtf, 'name', str(i + 1))
+            if 'Coefficient' in df.columns:
+                df = df.rename(columns={'Coefficient': f'Coefficient_{mtf_name}'})
+        dfs.append(df)
+
+    tmap = reduce(lambda left, right: pd.merge(left, right, on=['Order', 'Exponents'], how='outer'), dfs)
+
+    coef_cols_initial = [col for col in tmap.columns if col.startswith('Coeff')]
+    cols = coef_cols_initial +['Order', 'Exponents']
+    tmap = tmap[cols]
+    tmap[coef_cols_initial] = tmap[coef_cols_initial].fillna(0)
+
+    tmap = tmap.sort_values(by=['Order', 'Exponents'], ascending=[True, False]).reset_index(drop=True)
+    return tmap

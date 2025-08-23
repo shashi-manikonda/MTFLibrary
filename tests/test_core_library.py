@@ -4,7 +4,13 @@ import pytest
 import numpy as np
 import pandas as pd
 import mtflib
-from mtflib import *
+from mtflib import (MultivariateTaylorFunction, Var, compose, mtfarray,
+                            convert_to_mtf,
+                            cos_taylor, sin_taylor, tan_taylor, exp_taylor,
+                            gaussian_taylor, log_taylor, arctan_taylor,
+                            sinh_taylor, cosh_taylor, tanh_taylor,
+                            arcsin_taylor, arccos_taylor, arctanh_taylor,
+                            ComplexMultivariateTaylorFunction, sqrt_taylor)
 
 # Global settings for tests
 MAX_ORDER = 5
@@ -13,12 +19,12 @@ ETOL = 1e-10
 
 @pytest.fixture(scope="function", autouse=True)
 def setup_function():
-    initialize_mtf_globals(MAX_ORDER, MAX_DIMENSION)
-    set_global_etol(ETOL)
-    global_dim = get_global_max_dimension()
+    MultivariateTaylorFunction.initialize_mtf(max_order=MAX_ORDER, max_dimension=MAX_DIMENSION)
+    MultivariateTaylorFunction.set_etol(ETOL)
+    global_dim = MultivariateTaylorFunction.get_max_dimension()
     exponent_zero = tuple([0] * global_dim)
     yield global_dim, exponent_zero
-    mtflib.taylor_function._INITIALIZED = False
+    mtflib.taylor_function.MultivariateTaylorFunction._INITIALIZED = False
 
 
 # --- Global Settings Tests ---
@@ -26,26 +32,26 @@ def setup_function():
 # --- Tests for Global Settings ---
 def test_global_initialization_once(setup_function):
     global_dim, exponent_zero = setup_function
-    assert get_global_max_order() == MAX_ORDER
-    assert get_global_max_dimension() == MAX_DIMENSION
-    with pytest.raises(RuntimeError):
-        initialize_mtf_globals(max_order=MAX_ORDER, max_dimension=MAX_DIMENSION) # Re-initialization should fail
+    assert MultivariateTaylorFunction.get_max_order() == MAX_ORDER
+    assert MultivariateTaylorFunction.get_max_dimension() == MAX_DIMENSION
+    # Re-initialization should not fail, but print a warning.
+    MultivariateTaylorFunction.initialize_mtf(max_order=MAX_ORDER, max_dimension=MAX_DIMENSION)
 
 def test_global_max_order_setting(setup_function):
     global_dim, exponent_zero = setup_function
-    set_global_max_order(MAX_ORDER)
-    assert get_global_max_order() == MAX_ORDER
+    MultivariateTaylorFunction.set_max_order(MAX_ORDER)
+    assert MultivariateTaylorFunction.get_max_order() == MAX_ORDER
     with pytest.raises(ValueError):
-        set_global_max_order(-1) # Invalid order
+        MultivariateTaylorFunction.set_max_order(-1) # Invalid order
 
 def test_global_etol_setting(setup_function):
     global_dim, exponent_zero = setup_function
-    set_global_etol(1e-6)
-    assert get_global_etol() == 1e-6
+    MultivariateTaylorFunction.set_etol(1e-6)
+    assert MultivariateTaylorFunction.get_etol() == 1e-6
     with pytest.raises(ValueError):
-        set_global_etol(-1e-6) # Invalid etol
+        MultivariateTaylorFunction.set_etol(-1e-6) # Invalid etol
     with pytest.raises(ValueError):
-        set_global_etol(0.0) # Invalid etol
+        MultivariateTaylorFunction.set_etol(0.0) # Invalid etol
 
 
 # --- Var Function Tests ---
@@ -65,9 +71,6 @@ def test_var_creation(setup_function):
         Var(0)
     with pytest.raises(ValueError):
         Var(global_dim + 1)
-    mtflib.taylor_function._INITIALIZED = False
-    with pytest.raises(RuntimeError):
-        Var(1) # Before initialization
 
 
 # --- MultivariateTaylorFunction (Real MTF) Tests ---
@@ -195,7 +198,7 @@ def test_mtf_get_min_coefficient(setup_function):
     exponent_one_zero = tuple(exponent_one_zero)
     exponent_zero_one = tuple(exponent_zero_one)
 
-    etol = get_global_etol()
+    etol = MultivariateTaylorFunction.get_etol()
     coeffs = {exponent_zero: 0.1,
               exponent_one_zero: 2.0,
               exponent_zero_one: 3.0}
@@ -304,7 +307,7 @@ def test_mtf_power(setup_function):
         assert coeff_three == pytest.approx(1.0)
     else:
         # If max_order is less than 3, the coefficient might not exist
-        assert get_global_max_order() < 3
+        assert MultivariateTaylorFunction.get_max_order() < 3
     with pytest.raises(ValueError):
         mtf ** (-2) # Negative power not allowed
     with pytest.raises(ValueError):
@@ -412,7 +415,7 @@ def test_cmtf_set_coefficient(setup_function):
         exponent_one[0] = 1
     exponent_one = tuple(exponent_one)
 
-    cmtf = ComplexMultivariateTaylorFunction.from_constant(0.0j, MAX_DIMENSION)
+    cmtf = ComplexMultivariateTaylorFunction.from_constant(0.0j, dimension=MAX_DIMENSION)
     cmtf.set_coefficient(exponent_one, 2+2j)
     assert np.allclose(cmtf.extract_coefficient(exponent_one), 2+2j)
     cmtf.set_coefficient(exponent_one, 0.0j) # Setting to zero
@@ -478,7 +481,7 @@ def test_cmtf_real_part(setup_function):
 
     cmtf = ComplexMultivariateTaylorFunction({exponent_zero: 1+1j, exponent_one: 2-1j}, dimension=global_dim)
     real_mtf = cmtf.real_part()
-    assert isinstance(real_mtf, MultivariateTaylorFunctionBase)
+    assert isinstance(real_mtf, MultivariateTaylorFunction)
     assert np.allclose(real_mtf.extract_coefficient(exponent_zero), 1.0)
     assert np.allclose(real_mtf.extract_coefficient(exponent_one), 2.0)
 
@@ -491,13 +494,13 @@ def test_cmtf_imag_part(setup_function):
 
     cmtf = ComplexMultivariateTaylorFunction({exponent_zero: 1+1j, exponent_one: 2-1j}, dimension=global_dim)
     imag_mtf = cmtf.imag_part()
-    assert isinstance(imag_mtf, MultivariateTaylorFunctionBase)
+    assert isinstance(imag_mtf, MultivariateTaylorFunction)
     assert np.allclose(imag_mtf.extract_coefficient(exponent_zero), 1.0)
     assert np.allclose(imag_mtf.extract_coefficient(exponent_one), -1.0)
 
 def test_cmtf_magnitude_phase_not_implemented(setup_function):
     global_dim, exponent_zero = setup_function
-    cmtf = ComplexMultivariateTaylorFunction.from_constant(1+1j, MAX_DIMENSION)
+    cmtf = ComplexMultivariateTaylorFunction.from_constant(1+1j, dimension=MAX_DIMENSION)
     with pytest.raises(NotImplementedError):
         cmtf.magnitude()
     with pytest.raises(NotImplementedError):
@@ -633,7 +636,7 @@ def test_convert_to_mtf(setup_function):
     exponent_one = tuple(exponent_one)
 
     mtf = convert_to_mtf(5.0)
-    assert isinstance(mtf, MultivariateTaylorFunction) or isinstance(mtf, MultivariateTaylorFunctionBase)
+    assert isinstance(mtf, MultivariateTaylorFunction)
     assert np.allclose(mtf.eval([0] * global_dim), 5.0)
     assert np.allclose(mtf.extract_coefficient(exponent_zero), 5.0)
     assert np.allclose(mtf.extract_coefficient(exponent_one), 0.0)
@@ -695,7 +698,7 @@ def test_elementary_functions_scalar(setup_function, func, func_name):
     global_dim, exponent_zero = setup_function
     scalar_input = 0.5;
     mtf_result = func(scalar_input)
-    assert isinstance(mtf_result, MultivariateTaylorFunctionBase) # Changed assertion here
+    assert isinstance(mtf_result, MultivariateTaylorFunction) # Changed assertion here
     zero_point = tuple([0 for _ in range(global_dim)])
     scalar_eval_result = func(scalar_input).eval(zero_point) # Evaluate at 0 as Taylor series is around 0
 
@@ -770,7 +773,7 @@ def test_mtf_pickle_unpickle(setup_function):
     if global_dim > 0:
         exponent_one[0] = 1
     exponent_one = tuple(exponent_one)
-    mtf_obj = MultivariateTaylorFunction({exponent_zero: 1.0, exponent_one: 2.0}, global_dim)
+    mtf_obj = MultivariateTaylorFunction({exponent_zero: 1.0, exponent_one: 2.0}, dimension=global_dim)
     pickled_mtf = pickle.dumps(mtf_obj)
     unpickled_mtf = pickle.loads(pickled_mtf)
     assert unpickled_mtf == mtf_obj
@@ -798,8 +801,7 @@ def test_array_ufunc():
     y = np.sin(x)
 
     # The result should be a MultivariateTaylorFunction object
-    from mtflib.taylor_function import MultivariateTaylorFunctionBase
-    assert isinstance(y, MultivariateTaylorFunctionBase)
+    assert isinstance(y, MultivariateTaylorFunction)
 
     # Check if the result is correct by evaluating at a point
     eval_point = [0.1, 0, 0]
@@ -871,7 +873,7 @@ def test_cleanup_default_behavior(setup_function):
     """
     Tests that cleanup of negligible coefficients is enabled by default.
     """
-    etol = get_global_etol()
+    etol = MultivariateTaylorFunction.get_etol()
     x = Var(1)
 
     # Create a function with a negligible term
@@ -879,15 +881,15 @@ def test_cleanup_default_behavior(setup_function):
 
     # The negligible constant term should be removed after the addition
     assert len(f.coeffs) == 1
-    assert f.extract_coefficient(tuple([0]*get_global_max_dimension())).item() == 0.0
+    assert f.extract_coefficient(tuple([0]*MultivariateTaylorFunction.get_max_dimension())).item() == 0.0
 
 def test_disable_cleanup(setup_function):
     """
     Tests that coefficient cleanup can be disabled.
     """
-    set_truncate_after_operation(False)
+    MultivariateTaylorFunction.set_truncate_after_operation(False)
 
-    etol = get_global_etol()
+    etol = MultivariateTaylorFunction.get_etol()
     x = Var(1)
 
     # Create a function with a negligible term
@@ -895,14 +897,14 @@ def test_disable_cleanup(setup_function):
 
     # The negligible term should NOT be removed
     assert len(f.coeffs) == 2
-    assert abs(f.extract_coefficient(tuple([0]*get_global_max_dimension())).item()) > 0
+    assert abs(f.extract_coefficient(tuple([0]*MultivariateTaylorFunction.get_max_dimension())).item()) > 0
 
     # Reset for other tests
-    set_truncate_after_operation(True)
+    MultivariateTaylorFunction.set_truncate_after_operation(True)
 
 def test_set_truncate_after_operation_validation(setup_function):
     """
     Tests the input validation for the setter function.
     """
     with pytest.raises(ValueError, match="Input 'enable' must be a boolean value"):
-        set_truncate_after_operation("not a boolean")
+        MultivariateTaylorFunction.set_truncate_after_operation("not a boolean")

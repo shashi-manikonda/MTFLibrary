@@ -20,30 +20,26 @@ pd.set_option('display.width', 1000)
 from . import elementary_coefficients
 from . import taylor_function
 from . import elementary_functions
-from . import MTFExtended
 from . import complex_taylor_function
 
-from .taylor_function import (initialize_mtf_globals, get_global_max_order,
-    get_global_max_dimension, set_global_max_order, set_global_etol,
-    get_global_etol,
-    set_truncate_after_operation,
-    MultivariateTaylorFunctionBase,
+from .taylor_function import (MultivariateTaylorFunction,
     convert_to_mtf,
-    get_mtf_initialized_status,
     _split_constant_polynomial_part,
     sqrt_taylor,
     isqrt_taylor,
-    get_precomputed_coefficients) # Added remaining names from taylor_function
+    Var,
+    compose,
+    mtfarray)
 from .elementary_functions import (cos_taylor, sin_taylor, tan_taylor,
     exp_taylor, gaussian_taylor, log_taylor, arctan_taylor,
     sinh_taylor, cosh_taylor, tanh_taylor, arcsin_taylor, arccos_taylor,
     arctanh_taylor, integrate, derivative)
 from .complex_taylor_function import (ComplexMultivariateTaylorFunction,
     convert_to_cmtf)
-from .MTFExtended import Var, MultivariateTaylorFunction, compose, MTF, mtfarray
 from .elementary_coefficients import load_precomputed_coefficients
 from .taylor_map import TaylorMap
 
+MTF = MultivariateTaylorFunction
 
 
 '''
@@ -54,23 +50,13 @@ public API of your library.
 __all__ = [
     'taylor_function',
     'load_precomputed_coefficients',
-    'get_precomputed_coefficients',
     'elementary_functions',
-    'MultivariateTaylorFunctionBase',
     'MultivariateTaylorFunction',
-    'initialize_mtf_globals',
-    'set_global_etol',
-    'get_global_etol', # Added get_global_etol - although already present, ensuring
-    'get_global_max_order',
-    'get_global_max_dimension',
-    'set_global_max_order', # Added set_global_max_order
-    'set_truncate_after_operation',
     'Var',
     'mtfarray',
     'compose',
     'MTF',
     'convert_to_mtf',
-    'get_mtf_initialized_status', # Added get_mtf_initialized_status - although already present, ensuring
     'integrate',
     'derivative',
     'cos_taylor',

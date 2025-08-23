@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 import mtflib
-from mtflib import TaylorMap, MTF
+from mtflib import TaylorMap, MultivariateTaylorFunction
 
 def test_map_inversion_from_demo():
     """
@@ -9,14 +9,11 @@ def test_map_inversion_from_demo():
     to verify if it's broken after recent changes.
     """
     # 1. Initialize mtflib
-    try:
-        mtflib.initialize_mtf_globals(max_order=4, max_dimension=2)
-    except RuntimeError:
-        pass # Already initialized
+    MultivariateTaylorFunction.initialize_mtf(max_order=4, max_dimension=2)
 
     # 2. Create the invertible map
-    x = MTF.from_variable(1, 2)
-    y = MTF.from_variable(2, 2)
+    x = MultivariateTaylorFunction.from_variable(1, 2)
+    y = MultivariateTaylorFunction.from_variable(2, 2)
     f1 = x + 0.1 * y**2
     f2 = y - 0.1 * x**2
     map_to_invert = TaylorMap([f1, f2])

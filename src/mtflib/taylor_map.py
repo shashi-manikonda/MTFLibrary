@@ -1,6 +1,5 @@
 import numpy as np
-from .MTFExtended import MTF
-from . import taylor_function as mtf_lib
+from .taylor_function import MultivariateTaylorFunction
 
 class TaylorMap:
     """
@@ -8,12 +7,12 @@ class TaylorMap:
     using an array of MultivariateTaylorFunction objects.
     """
 
-    def __init__(self, components: list[MTF]):
+    def __init__(self, components: list[MultivariateTaylorFunction]):
         """
         Initializes a TaylorMap object.
 
         Args:
-            components: A list of MTF objects.
+            components: A list of MultivariateTaylorFunction objects.
         """
         self.components = np.array(components)
         self.map_dim = len(components)
@@ -78,12 +77,12 @@ class TaylorMap:
         new_dimension = other.components[0].dimension if other.map_dim > 0 else 0
 
         for component_mtf in self.components:
-            composed_component = MTF.from_constant(0.0, dimension=new_dimension)
+            composed_component = MultivariateTaylorFunction.from_constant(0.0, dimension=new_dimension)
             for i in range(len(component_mtf.coeffs)):
                 exponent = component_mtf.exponents[i]
                 coeff = component_mtf.coeffs[i]
 
-                term_mtf = MTF.from_constant(1.0, dimension=new_dimension)
+                term_mtf = MultivariateTaylorFunction.from_constant(1.0, dimension=new_dimension)
                 for var_idx, power in enumerate(exponent):
                     if power > 0:
                         term_mtf *= other.components[var_idx] ** power
@@ -92,11 +91,11 @@ class TaylorMap:
 
             new_components.append(composed_component)
 
-        return TaylorMap(new_components).truncate(mtf_lib.get_global_max_order())
+        return TaylorMap(new_components).truncate(MultivariateTaylorFunction.get_max_order())
 
-    def get_component(self, index: int) -> MTF:
+    def get_component(self, index: int) -> MultivariateTaylorFunction:
         """
-        Returns the MTF at the given index.
+        Returns the MultivariateTaylorFunction at the given index.
         """
         return self.components[index]
 
@@ -112,7 +111,7 @@ class TaylorMap:
         """
         self.components[component_index].set_coefficient(tuple(exponent_array), new_value)
 
-    def add_component(self, new_component: MTF):
+    def add_component(self, new_component: MultivariateTaylorFunction):
         """
         Adds a new component to the map.
         """
@@ -167,7 +166,7 @@ class TaylorMap:
                 scaling_factor = np.prod(np.array(scaling_factors) ** exponent)
                 new_coeffs[i] *= scaling_factor
 
-            new_component = MTF((component.exponents.copy(), new_coeffs), dimension=component.dimension)
+            new_component = MultivariateTaylorFunction((component.exponents.copy(), new_coeffs), dimension=component.dimension)
             new_map_components.append(new_component)
 
         return TaylorMap(new_map_components)
@@ -277,11 +276,11 @@ class TaylorMap:
         inv_jacobian = np.linalg.inv(jacobian)
         inv_linear_components = []
         for i in range(dim):
-            comp_mtf = MTF.from_constant(0.0, dimension=dim)
+            comp_mtf = MultivariateTaylorFunction.from_constant(0.0, dimension=dim)
             for j in range(dim):
                 if abs(inv_jacobian[i, j]) > 1e-14:
-                    var_mtf = MTF.from_variable(j + 1, dim)
-                    comp_mtf += inv_jacobian[i, j] * var_mtf
+                    var_mtf = MultivariateTaylorFunction.from_variable(j + 1, dim)
+                    comp_mtf += float(inv_jacobian[i, j]) * var_mtf
             inv_linear_components.append(comp_mtf)
         beta_inv = TaylorMap(inv_linear_components)
 
@@ -298,16 +297,16 @@ class TaylorMap:
                 exp = tuple(component.exponents[k])
                 if sum(exp) > 1:
                     nl_coeffs[exp] = component.coeffs[k]
-            non_linear_components.append(MTF(nl_coeffs, dimension=dim))
+            non_linear_components.append(MultivariateTaylorFunction(nl_coeffs, dimension=dim))
         G = TaylorMap(non_linear_components)
 
-        identity_components = [MTF.from_variable(i + 1, dim) for i in range(dim)]
+        identity_components = [MultivariateTaylorFunction.from_variable(i + 1, dim) for i in range(dim)]
         identity_map = TaylorMap(identity_components)
 
         # --- Algorithm Step 5: Fixed-Point Iteration ---
         F_inv = beta_inv # Initial guess
 
-        max_order = mtf_lib.get_global_max_order()
+        max_order = MultivariateTaylorFunction.get_max_order()
         for _ in range(max_order - 1):
             composition_G_F_inv = G.compose(F_inv).truncate(max_order)
             inner_map = identity_map - composition_G_F_inv

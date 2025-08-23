@@ -8,13 +8,10 @@ import argparse
 import time
 import matplotlib.pyplot as plt
 
-# Add the project root to the Python path to ensure imports work correctly
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 from mtflib import initialize_mtf_globals, Var
-from applications.em.current_ring import current_ring
-from applications.em.biot_savart import serial_biot_savart, mpi_biot_savart
-from applications.em.plotting import Coil, _plot_coil_geometry
+from demos.applications.em.current_ring import current_ring
+from demos.applications.em.biot_savart import serial_biot_savart, mpi_biot_savart
+from demos.applications.em.plotting import Coil, _plot_coil_geometry
 import manage_backends
 
 # --- MPI Setup ---

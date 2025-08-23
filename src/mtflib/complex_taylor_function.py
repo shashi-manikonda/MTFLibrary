@@ -1,12 +1,9 @@
 # mtflib/complex_taylor_function.py
 import numpy as np
 from collections import defaultdict
-from .taylor_function import (initialize_mtf_globals, get_global_max_order,
-        get_global_max_dimension, set_global_max_order, set_global_etol,
-        get_global_etol, convert_to_mtf, get_mtf_initialized_status,
-        MultivariateTaylorFunctionBase)
+from .taylor_function import (MultivariateTaylorFunction, convert_to_mtf)
 
-class ComplexMultivariateTaylorFunction(MultivariateTaylorFunctionBase):
+class ComplexMultivariateTaylorFunction(MultivariateTaylorFunction):
     """
     Represents a multivariate Taylor function with complex coefficients.
 
@@ -15,27 +12,27 @@ class ComplexMultivariateTaylorFunction(MultivariateTaylorFunctionBase):
     similar operations as MultivariateTaylorFunction, adapted for complex arithmetic.
     """
 
-    def __init__(self, coefficients, dimension=None, var_name=None, implementation='python'):
+    def __init__(self, coefficients, dimension=None, var_name=None):
         """
         Initializes a ComplexMultivariateTaylorFunction object.
         """
-        super().__init__(coefficients, dimension, var_name, implementation)
+        super().__init__(coefficients, dimension, var_name)
         if self.coeffs.dtype != np.complex128:
             self.coeffs = self.coeffs.astype(np.complex128)
 
     @classmethod
-    def from_constant(cls, constant_value, dimension=None, implementation='python'):
+    def from_constant(cls, constant_value, dimension=None):
         """
         Creates a ComplexMultivariateTaylorFunction representing a constant value.
         """
         if dimension is None:
-            dimension = get_global_max_dimension()
+            dimension = cls.get_max_dimension()
         constant_value_complex = np.array([complex(constant_value)], dtype=np.complex128)
         coeffs = {(0,) * dimension: constant_value_complex}
-        return cls(coefficients=coeffs, dimension=dimension, implementation=implementation)
+        return cls(coefficients=coeffs, dimension=dimension)
 
     @classmethod
-    def from_variable(cls, var_index, dimension, implementation='python'):
+    def from_variable(cls, var_index, dimension):
         """
         Creates a ComplexMultivariateTaylorFunction representing a single variable.
         """
@@ -45,7 +42,7 @@ class ComplexMultivariateTaylorFunction(MultivariateTaylorFunctionBase):
         exponent = [0] * dimension
         exponent[var_index - 1] = 1
         coeffs = {tuple(exponent): np.array([1.0 + 0.0j], dtype=np.complex128)}
-        return cls(coefficients=coeffs, dimension=dimension, implementation=implementation)
+        return cls(coefficients=coeffs, dimension=dimension)
 
     def conjugate(self):
         """
@@ -57,13 +54,13 @@ class ComplexMultivariateTaylorFunction(MultivariateTaylorFunctionBase):
         """
         Returns the real part of the ComplexMultivariateTaylorFunction as a MultivariateTaylorFunction.
         """
-        return MultivariateTaylorFunctionBase((self.exponents, np.real(self.coeffs)), self.dimension)
+        return MultivariateTaylorFunction((self.exponents, np.real(self.coeffs)), self.dimension)
 
     def imag_part(self):
         """
         Returns the imaginary part of the ComplexMultivariateTaylorFunction as a MultivariateTaylorFunction.
         """
-        return MultivariateTaylorFunctionBase((self.exponents, np.imag(self.coeffs)), self.dimension)
+        return MultivariateTaylorFunction((self.exponents, np.imag(self.coeffs)), self.dimension)
 
     def __repr__(self):
         """Returns a detailed string representation of the MTF (for debugging)."""
@@ -156,7 +153,7 @@ def convert_to_cmtf(variable):
     """
     if isinstance(variable, ComplexMultivariateTaylorFunction):
         return variable  # Already a CMTF, return as is
-    elif isinstance(variable, MultivariateTaylorFunctionBase): # Var function returns MTF now
+    elif isinstance(variable, MultivariateTaylorFunction): # Var function returns MTF now
         # Convert MTF to CMTF: just need to ensure coefficients are complex type
         exponents = variable.exponents
         coeffs = variable.coeffs.astype(np.complex128)

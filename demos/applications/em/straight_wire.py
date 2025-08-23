@@ -2,9 +2,11 @@
 """
 Function to calculate the magnetic field of a straight wire segment.
 """
+import sys
+sys.path.append('.')
 import numpy as np
-from .biot_savart import serial_biot_savart
-from mtflib.taylor_function import MultivariateTaylorFunctionBase
+from demos.applications.em.biot_savart import serial_biot_savart
+from src.mtflib import MultivariateTaylorFunction
 
 def straight_wire_field(start_point, end_point, current, field_points, num_segments=100):
     """
@@ -42,7 +44,7 @@ def straight_wire_field(start_point, end_point, current, field_points, num_segme
         if isinstance(field_points[0][0], np.ndarray):
              return np.zeros_like(field_points, dtype=float)
         else: # Assume MTF objects
-             return np.array([MultivariateTaylorFunctionBase.from_constant(0.0) for _ in range(3)], dtype=object)
+             return np.array([MultivariateTaylorFunction.from_constant(0.0) for _ in range(3)], dtype=object)
 
     wire_direction = wire_vector / wire_length
 

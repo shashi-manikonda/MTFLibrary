@@ -1,5 +1,5 @@
 import numpy as np
-from mtflib import *
+from mtflib import MultivariateTaylorFunction
 
 mpi_installed = True  # Assume MPI is installed initially
 try:
@@ -40,7 +40,7 @@ def _numpy_biot_savart_core(source_points, dl_vectors, field_points, order=None)
     if order is not None:
         for i in range(B_field.shape[0]):
             for j in range(B_field.shape[1]):
-                if isinstance(B_field[i, j], MultivariateTaylorFunctionBase):
+                if isinstance(B_field[i, j], MultivariateTaylorFunction):
                     B_field[i, j] = B_field[i, j].truncate(order)
 
     return B_field
