@@ -90,9 +90,10 @@ class TaylorMap:
 
                 composed_component += term_mtf * coeff
 
+            composed_component.truncate_inplace(mtf_lib.get_global_max_order())
             new_components.append(composed_component)
 
-        return TaylorMap(new_components).truncate(mtf_lib.get_global_max_order())
+        return TaylorMap(new_components)
 
     def get_component(self, index: int) -> MTF:
         """

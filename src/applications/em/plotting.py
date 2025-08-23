@@ -73,33 +73,35 @@ def _plot_coil_geometry(ax, coils, refine_level=1):
                           direction[0], direction[1], direction[2],
                           length=0.1 * np.mean(coil.element_lengths), normalize=True, color=coil.color, arrow_length_ratio=0.5)
 
+def _calculate_total_b_field_mtf(coils, field_points, order):
+    """Helper function to calculate the total B-field MTF from all coils."""
+    # The field_points are now MTF variables, not numeric points
+    total_B_field_mtf = np.array([
+        MultivariateTaylorFunctionBase.from_constant(0.0, dimension=field_points.shape[1]),
+        MultivariateTaylorFunctionBase.from_constant(0.0, dimension=field_points.shape[1]),
+        MultivariateTaylorFunctionBase.from_constant(0.0, dimension=field_points.shape[1])
+    ])
+
+    for coil in coils:
+        # serial_biot_savart expects a list of points, but we are building a single MTF
+        # We pass a placeholder array of points, but the real variables are in the MTF
+        B_contrib_mtf = serial_biot_savart(
+            coil.segment_mtfs,
+            coil.element_lengths,
+            coil.direction_vectors,
+            field_points,
+            order=order
+        )[0] # Result is a list containing one array of 3 MTFs
+
+        total_B_field_mtf[0] += B_contrib_mtf[0] * coil.current
+        total_B_field_mtf[1] += B_contrib_mtf[1] * coil.current
+        total_B_field_mtf[2] += B_contrib_mtf[2] * coil.current
+
+    return total_B_field_mtf
+
 def plot_field_on_line(coils, start_point, end_point, component='magnitude', num_points=100, refine_level=5, eval_order=0):
     """
     Plots a component of the B-field along a straight line and shows the coil geometry.
-
-    Parameters:
-    -----------
-    coils : list of Coil
-        A list of Coil objects that generate the magnetic field.
-    start_point : array-like
-        The [x, y, z] coordinates for the start of the line.
-    end_point : array-like
-        The [x, y, z] coordinates for the end of the line.
-    component : str, optional
-        The field component to plot. Options: 'magnitude', 'Bx', 'By', 'Bz'. (default is 'magnitude')
-    num_points : int, optional
-        The number of points to sample along the line. (default is 100)
-    refine_level : int, optional
-        Controls the smoothness of the plotted coil geometry. (default is 5)
-    eval_order : int, optional
-        The Taylor series order to use for field evaluation. (default is 0)
-
-    Returns:
-    --------
-    fig : matplotlib.figure.Figure
-        The matplotlib figure object.
-    axes : tuple of matplotlib.axes.Axes
-        A tuple containing the (ax_3d, ax_2d) axes objects.
     """
     fig = plt.figure(figsize=(15, 7))
     ax_3d = fig.add_subplot(121, projection='3d')
@@ -108,44 +110,32 @@ def plot_field_on_line(coils, start_point, end_point, component='magnitude', num
     # Plot coil geometry
     _plot_coil_geometry(ax_3d, coils, refine_level)
 
-    # Plot the line on which the field is calculated
+    # Define the line for observation
     line_points = np.linspace(start_point, end_point, num_points)
     ax_3d.plot(line_points[:, 0], line_points[:, 1], line_points[:, 2], 'r--', label='Observation Line')
 
-    # Calculate total B-field
-    total_B_field = [MultivariateTaylorFunctionBase.from_constant(0.0) for _ in range(3)]
-    for coil in coils:
-        field_points_mtf = np.array([[x, y, z] for x, y, z in line_points], dtype=object)
-        B_field_coil = serial_biot_savart(coil.segment_mtfs, coil.element_lengths, coil.direction_vectors, field_points_mtf, order=eval_order)
+    # --- Optimized B-field Calculation ---
+    # 1. Create a single MTF for the B-field as a function of (x, y, z)
+    # The 'field_points' for serial_biot_savart should be the variables themselves.
+    # We assume the field is a function of 3 variables.
+    dim = 3
+    field_vars = np.array([
+        MultivariateTaylorFunctionBase.from_variable(1, dim),
+        MultivariateTaylorFunctionBase.from_variable(2, dim),
+        MultivariateTaylorFunctionBase.from_variable(3, dim)
+    ]).reshape(1, 3) # Shape (1, 3) to represent one symbolic point
 
-        # This part assumes serial_biot_savart returns a list of fields for each point
-        # We need to sum them up. A more efficient way would be to calculate the total field at each point.
-        # For now, let's just do a simple evaluation.
-        # This part needs a correct evaluation strategy. Let's assume a placeholder for now.
+    total_B_field_mtf = _calculate_total_b_field_mtf(coils, field_vars, eval_order)
 
-    # Placeholder for B-field evaluation
-    # This is a complex part that needs careful implementation.
-    # The B-field MTF needs to be evaluated at each point on the line.
-
-    # Calculate the B-field at each point on the line
-    B_vectors = np.zeros((num_points, 3))
-    for i, point in enumerate(line_points):
-        B_total_at_point = np.array([0.0, 0.0, 0.0])
-        for coil in coils:
-            # Calculate the field contribution from this coil at the current point
-            B_contrib_mtf = serial_biot_savart(
-                coil.segment_mtfs,
-                coil.element_lengths,
-                coil.direction_vectors,
-                np.array([point]), # Field point for calculation
-                order=eval_order
-            )
-            # The result is a list containing one array of 3 MTFs
-            # For zero-order, the constant term is the value
-            B_vec_contrib = np.array([b.extract_coefficient(tuple([0]*b.dimension)).item() for b in B_contrib_mtf[0]])
-            B_total_at_point += B_vec_contrib * coil.current
-
-        B_vectors[i] = B_total_at_point
+    # 2. Evaluate this single MTF at each point on the line
+    B_vectors = np.array([
+        [
+            total_B_field_mtf[0].eval(point).item(),
+            total_B_field_mtf[1].eval(point).item(),
+            total_B_field_mtf[2].eval(point).item()
+        ] for point in line_points
+    ])
+    # --- End of Optimization ---
 
     distances = np.linalg.norm(line_points - start_point, axis=1)
 
@@ -253,18 +243,23 @@ def plot_field_on_plane(coils, center_point, normal_vector, size=(2, 2), resolut
     points_3d = np.array(center_point) + u_grid[..., np.newaxis] * u_vec + v_grid[..., np.newaxis] * v_vec
     points_flat = points_3d.reshape(-1, 3)
 
-    # Calculate B-field at each grid point
-    B_vectors = np.zeros_like(points_flat)
-    for i, point in enumerate(points_flat):
-        B_total_at_point = np.array([0.0, 0.0, 0.0])
-        for coil in coils:
-            B_contrib_mtf = serial_biot_savart(
-                coil.segment_mtfs, coil.element_lengths, coil.direction_vectors,
-                np.array([point]), order=0
-            )
-            B_vec_contrib = np.array([b.extract_coefficient(tuple([0]*b.dimension)).item() for b in B_contrib_mtf[0]])
-            B_total_at_point += B_vec_contrib * coil.current
-        B_vectors[i] = B_total_at_point
+    # --- Optimized B-field Calculation ---
+    dim = 3
+    field_vars = np.array([
+        MultivariateTaylorFunctionBase.from_variable(1, dim),
+        MultivariateTaylorFunctionBase.from_variable(2, dim),
+        MultivariateTaylorFunctionBase.from_variable(3, dim)
+    ]).reshape(1, 3)
+
+    total_B_field_mtf = _calculate_total_b_field_mtf(coils, field_vars, eval_order)
+
+    B_vectors = np.array([
+        [
+            total_B_field_mtf[0].eval(point).item(),
+            total_B_field_mtf[1].eval(point).item(),
+            total_B_field_mtf[2].eval(point).item()
+        ] for point in points_flat
+    ])
 
     # Reshape B-vectors to match the grid shape
     B_vectors_grid = B_vectors.reshape(points_3d.shape)
@@ -354,20 +349,24 @@ def plot_field_vectors_3d(coils, points, refine_level=5, eval_order=0, scale=1.0
     # Plot coil geometry
     _plot_coil_geometry(ax, coils, refine_level)
 
-    # Placeholder for B-field calculation
-    # Calculate B-field at each specified point
+    # --- Optimized B-field Calculation ---
     points = np.array(points)
-    B_vectors = np.zeros_like(points, dtype=float)
-    for i, point in enumerate(points):
-        B_total_at_point = np.array([0.0, 0.0, 0.0])
-        for coil in coils:
-            B_contrib_mtf = serial_biot_savart(
-                coil.segment_mtfs, coil.element_lengths, coil.direction_vectors,
-                np.array([point]), order=0
-            )
-            B_vec_contrib = np.array([b.extract_coefficient(tuple([0]*b.dimension)).item() for b in B_contrib_mtf[0]])
-            B_total_at_point += B_vec_contrib * coil.current
-        B_vectors[i] = B_total_at_point
+    dim = 3
+    field_vars = np.array([
+        MultivariateTaylorFunctionBase.from_variable(1, dim),
+        MultivariateTaylorFunctionBase.from_variable(2, dim),
+        MultivariateTaylorFunctionBase.from_variable(3, dim)
+    ]).reshape(1, 3)
+
+    total_B_field_mtf = _calculate_total_b_field_mtf(coils, field_vars, eval_order)
+
+    B_vectors = np.array([
+        [
+            total_B_field_mtf[0].eval(point).item(),
+            total_B_field_mtf[1].eval(point).item(),
+            total_B_field_mtf[2].eval(point).item()
+        ] for point in points
+    ])
 
     X, Y, Z = points[:, 0], points[:, 1], points[:, 2]
     U, V, W = B_vectors[:, 0], B_vectors[:, 1], B_vectors[:, 2]
