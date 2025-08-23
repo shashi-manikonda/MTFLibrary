@@ -242,7 +242,7 @@ class MultivariateTaylorFunctionBase:
             raise ValueError("MTF dimensions must match for addition.")
 
         # C++ Backend Dispatch
-        if self.implementation == 'cpp' and _CPP_BACKEND_AVAILABLE and not (np.iscomplexobj(self.coeffs) or np.iscomplexobj(other.coeffs)):
+        if self.implementation == 'cpp' and other.implementation == 'cpp' and _CPP_BACKEND_AVAILABLE and not (np.iscomplexobj(self.coeffs) or np.iscomplexobj(other.coeffs)):
             new_exps, new_coeffs = mtf_cpp.add_mtf_cpp(self.exponents, self.coeffs, other.exponents, other.coeffs)
             result_mtf = type(self)((new_exps, new_coeffs), self.dimension, implementation='cpp')
             if _TRUNCATE_AFTER_OPERATION:
@@ -289,7 +289,7 @@ class MultivariateTaylorFunctionBase:
             raise ValueError("MTF dimensions must match for subtraction.")
 
         # C++ Backend Dispatch
-        if self.implementation == 'cpp' and _CPP_BACKEND_AVAILABLE and not (np.iscomplexobj(self.coeffs) or np.iscomplexobj(other.coeffs)):
+        if self.implementation == 'cpp' and other.implementation == 'cpp' and _CPP_BACKEND_AVAILABLE and not (np.iscomplexobj(self.coeffs) or np.iscomplexobj(other.coeffs)):
             # C++ add can handle subtraction by negating the second operand's coeffs
             new_exps, new_coeffs = mtf_cpp.add_mtf_cpp(self.exponents, self.coeffs, other.exponents, -other.coeffs)
             result_mtf = type(self)((new_exps, new_coeffs), self.dimension, implementation='cpp')
@@ -344,7 +344,7 @@ class MultivariateTaylorFunctionBase:
             return type(self)((np.empty((0, self.dimension), dtype=np.int32), np.empty((0,), dtype=dtype)), self.dimension)
 
         # C++ Backend Dispatch
-        if self.implementation == 'cpp' and _CPP_BACKEND_AVAILABLE and not (np.iscomplexobj(self.coeffs) or np.iscomplexobj(other.coeffs)):
+        if self.implementation == 'cpp' and other.implementation == 'cpp' and _CPP_BACKEND_AVAILABLE and not (np.iscomplexobj(self.coeffs) or np.iscomplexobj(other.coeffs)):
             new_exps, new_coeffs = mtf_cpp.multiply_mtf_cpp(self.exponents, self.coeffs, other.exponents, other.coeffs)
             result_mtf = type(self)((new_exps, new_coeffs), self.dimension, implementation='cpp')
             if _TRUNCATE_AFTER_OPERATION:
@@ -830,7 +830,7 @@ def sqrt_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylorF
         raise ValueError("Precomputed coefficients for 'sqrt' function not found. Ensure coefficients are loaded.")
     for n_order in range(0, max_precomputed_order + 1):
         coefficient_val = precomputed_coeffs[n_order]
-        sqrt_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = np.array([coefficient_val]).reshape(1)
+        sqrt_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = coefficient_val
     if order > elementary_coefficients.MAX_PRECOMPUTED_ORDER:
         print(f"Warning: Requested order {order} exceeds precomputed order {elementary_coefficients.MAX_PRECOMPUTED_ORDER}. Calculations may be slower for higher orders.")
         for n_order in range(elementary_coefficients.MAX_PRECOMPUTED_ORDER + 1, order + 1):
@@ -839,9 +839,9 @@ def sqrt_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylorF
             elif n_order == 1:
                 coefficient_val = 0.5
             else:
-                previous_coefficient = sqrt_taylor_1d_coefficients[_generate_exponent(n_order - 1, variable_index_1d, taylor_dimension_1d)][0]
+                previous_coefficient = sqrt_taylor_1d_coefficients[_generate_exponent(n_order - 1, variable_index_1d, taylor_dimension_1d)]
                 coefficient_val = previous_coefficient * (0.5 - (n_order - 1)) / n_order
-            sqrt_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = np.array([coefficient_val]).reshape(1)
+            sqrt_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = coefficient_val
     sqrt_taylor_1d_mtf = type(variable)(
         coefficients=sqrt_taylor_1d_coefficients, dimension=taylor_dimension_1d
     )
@@ -876,7 +876,7 @@ def isqrt_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylor
         raise ValueError("Precomputed coefficients for 'isqrt' function not found. Ensure coefficients are loaded.")
     for n_order in range(0, max_precomputed_order + 1):
         coefficient_val = precomputed_coeffs[n_order]
-        isqrt_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = np.array([coefficient_val]).reshape(1)
+        isqrt_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = coefficient_val
     if order > elementary_coefficients.MAX_PRECOMPUTED_ORDER:
         print(f"Warning: Requested order {order} exceeds precomputed order {elementary_coefficients.MAX_PRECOMPUTED_ORDER}. Calculations may be slower for higher orders.")
         for n_order in range(elementary_coefficients.MAX_PRECOMPUTED_ORDER + 1, order + 1):
@@ -885,9 +885,9 @@ def isqrt_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylor
             elif n_order == 1:
                 coefficient_val = -0.5
             else:
-                previous_coefficient = isqrt_taylor_1d_coefficients[_generate_exponent(n_order - 1, variable_index_1d, taylor_dimension_1d)][0]
+                previous_coefficient = isqrt_taylor_1d_coefficients[_generate_exponent(n_order - 1, variable_index_1d, taylor_dimension_1d)]
                 coefficient_val = previous_coefficient * (-0.5 - (n_order - 1)) / n_order
-            isqrt_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = np.array([coefficient_val]).reshape(1)
+            isqrt_taylor_1d_coefficients[_generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)] = coefficient_val
     isqrt_taylor_1d_mtf = type(variable)(
         coefficients=isqrt_taylor_1d_coefficients, dimension=taylor_dimension_1d
     )

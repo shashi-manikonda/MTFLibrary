@@ -30,8 +30,7 @@ class ComplexMultivariateTaylorFunction(MultivariateTaylorFunctionBase):
         """
         if dimension is None:
             dimension = get_global_max_dimension()
-        constant_value_complex = np.array([complex(constant_value)], dtype=np.complex128)
-        coeffs = {(0,) * dimension: constant_value_complex}
+        coeffs = {(0,) * dimension: complex(constant_value)}
         return cls(coefficients=coeffs, dimension=dimension, implementation=implementation)
 
     @classmethod
@@ -44,7 +43,7 @@ class ComplexMultivariateTaylorFunction(MultivariateTaylorFunctionBase):
 
         exponent = [0] * dimension
         exponent[var_index - 1] = 1
-        coeffs = {tuple(exponent): np.array([1.0 + 0.0j], dtype=np.complex128)}
+        coeffs = {tuple(exponent): 1.0 + 0.0j}
         return cls(coefficients=coeffs, dimension=dimension, implementation=implementation)
 
     def conjugate(self):
@@ -113,29 +112,6 @@ def _generate_exponent_combinations(dimension, order):
             for i in range(remaining_order + 1):
                 exponent_combinations.append(comb + (i,))
     return exponent_combinations
-
-
-def _add_coefficient_dicts(dict1, dict2, subtract=False):
-    """
-    Adds two coefficient dictionaries.
-
-    Args:
-        dict1 (defaultdict): First coefficient dictionary.
-        dict2 (defaultdict): Second coefficient dictionary.
-        subtract (bool, optional): If True, subtract dict2 from dict1. Defaults to False (add).
-
-    Returns:
-        defaultdict: A new coefficient dictionary with the sum (or difference) of coefficients.
-    """
-    sum_coeffs = defaultdict(lambda: np.array([0.0j]).reshape(1) if any(isinstance(coeff[0], complex) for coeff in dict1.values()) or any(isinstance(coeff[0], complex) for coeff in dict2.values()) else np.array([0.0]).reshape(1)) #Default to complex 0 if either dict is complex
-    for exponents in set(dict1.keys()) | set(dict2.keys()): # Iterate over all unique exponents
-        coeff1 = dict1.get(exponents, sum_coeffs.default_factory()) # Get coeff1, default to zero array if missing
-        coeff2 = dict2.get(exponents, sum_coeffs.default_factory()) # Get coeff2, default to zero array if missing
-        if subtract:
-            sum_coeffs[exponents] = np.array(coeff1).flatten() - np.array(coeff2).flatten() # Flatten for subtraction
-        else:
-            sum_coeffs[exponents] = np.array(coeff1).flatten() + np.array(coeff2).flatten() # Flatten for addition
-    return sum_coeffs
 
 
 def convert_to_cmtf(variable):

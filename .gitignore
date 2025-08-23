@@ -183,3 +183,8 @@ src/mtflib/backends/cython/mtf_cython.cpp
 
 # PyPI configuration file
 .pypirc
+
+# Benchmark results
+benchmarks/profiling_results/
+benchmarks/latest_benchmark_results.txt
+results/
