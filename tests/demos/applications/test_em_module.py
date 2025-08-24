@@ -59,15 +59,13 @@ def test_numpy_biot_savart_single_loop():
     # B = (4 * np.pi * 1e-7) / (2 * ring_radius) in the z-direction
     b_field_analytical_z = (4 * np.pi * 1e-7) / (2 * ring_radius)
 
-    # The numpy_biot_savart function includes a 0.5 factor on the dl_vectors.
-    # This is to support a workflow where the result is integrated over a
-    # parameterized segment of length 2. For a direct numerical evaluation like
-    # this test, the result will be half of the true analytical value.
-    expected_numerical_result = b_field_analytical_z / 2.0
+    # The numpy_biot_savart function has a 0.5 factor for integration workflows,
+    # so we must multiply by 2 for direct summation.
+    expected_numerical_result = b_field_analytical_z
 
     assert np.allclose(b_field_numerical[0, 0], 0)
     assert np.allclose(b_field_numerical[0, 1], 0)
-    assert np.allclose(b_field_numerical[0, 2], expected_numerical_result, rtol=1e-3)
+    assert np.allclose(b_field_numerical[0, 2] * 2, expected_numerical_result, rtol=1e-3)
 
 
 def test_current_ring_output_shapes():

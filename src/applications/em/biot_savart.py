@@ -22,7 +22,15 @@ def _numpy_biot_savart_core(source_points, dl_vectors, field_points, order=None)
     r_squared = np.sum(r_vectors**2, axis=2)
 
     # Avoid division by zero at the source point location
-    r_squared = np.where(r_squared == 0, 1e-18, r_squared)
+    for i in range(r_squared.shape[0]):
+        for j in range(r_squared.shape[1]):
+            print(f"r_squared[{i}, {j}] type: {type(r_squared[i, j])}")
+            if isinstance(r_squared[i, j], MultivariateTaylorFunction):
+                print(f"r_squared[{i}, {j}] constant term: {r_squared[i, j].extract_coefficient(tuple([0]*r_squared[i, j].dimension))}")
+                if abs(r_squared[i, j].extract_coefficient(tuple([0]*r_squared[i, j].dimension))) < 1e-18:
+                    r_squared[i, j] += 1e-18
+            elif r_squared[i, j] == 0:
+                r_squared[i, j] = 1e-18
 
     dl_vectors_reshaped = dl_vectors[:, np.newaxis, :]
     cross_products = np.cross(dl_vectors_reshaped, r_vectors, axis=2)

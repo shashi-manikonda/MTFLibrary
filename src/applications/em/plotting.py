@@ -1,10 +1,8 @@
-import sys
-sys.path.append('.')
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from src.mtflib import MultivariateTaylorFunction
-from demos.applications.em.biot_savart import serial_biot_savart
+from mtflib import MultivariateTaylorFunction
+from .biot_savart import serial_biot_savart
 
 class Coil:
     """
@@ -113,21 +111,6 @@ def plot_field_on_line(coils, start_point, end_point, component='magnitude', num
     # Plot the line on which the field is calculated
     line_points = np.linspace(start_point, end_point, num_points)
     ax_3d.plot(line_points[:, 0], line_points[:, 1], line_points[:, 2], 'r--', label='Observation Line')
-
-    # Calculate total B-field
-    total_B_field = [MultivariateTaylorFunction.from_constant(0.0) for _ in range(3)]
-    for coil in coils:
-        field_points_mtf = np.array([[x, y, z] for x, y, z in line_points], dtype=object)
-        B_field_coil = serial_biot_savart(coil.segment_mtfs, coil.element_lengths, coil.direction_vectors, field_points_mtf, order=eval_order)
-
-        # This part assumes serial_biot_savart returns a list of fields for each point
-        # We need to sum them up. A more efficient way would be to calculate the total field at each point.
-        # For now, let's just do a simple evaluation.
-        # This part needs a correct evaluation strategy. Let's assume a placeholder for now.
-
-    # Placeholder for B-field evaluation
-    # This is a complex part that needs careful implementation.
-    # The B-field MTF needs to be evaluated at each point on the line.
 
     # Calculate the B-field at each point on the line
     B_vectors = np.zeros((num_points, 3))
