@@ -1,5 +1,6 @@
 import numpy as np
 from mtflib import MultivariateTaylorFunction
+from mtflib.backends.cpp import mtf_cpp
 
 mpi_installed = True  # Assume MPI is installed initially
 try:
@@ -11,9 +12,9 @@ except ImportError:
 mu_0_4pi = 1e-7 # Define mu_0_4pi if it's not already globally defined
 
 
-def _numpy_biot_savart_core(source_points, dl_vectors, field_points, order=None):
+def _python_biot_savart_core(source_points, dl_vectors, field_points, order=None):
     """
-    Core vectorized Biot-Savart calculation.
+    Core vectorized Biot-Savart calculation in pure Python.
     """
     source_points_reshaped = source_points[:, np.newaxis, :]
     field_points_reshaped = field_points[np.newaxis, :, :]
@@ -24,9 +25,7 @@ def _numpy_biot_savart_core(source_points, dl_vectors, field_points, order=None)
     # Avoid division by zero at the source point location
     for i in range(r_squared.shape[0]):
         for j in range(r_squared.shape[1]):
-            print(f"r_squared[{i}, {j}] type: {type(r_squared[i, j])}")
             if isinstance(r_squared[i, j], MultivariateTaylorFunction):
-                print(f"r_squared[{i}, {j}] constant term: {r_squared[i, j].extract_coefficient(tuple([0]*r_squared[i, j].dimension))}")
                 if abs(r_squared[i, j].extract_coefficient(tuple([0]*r_squared[i, j].dimension))) < 1e-18:
                     r_squared[i, j] += 1e-18
             elif r_squared[i, j] == 0:
@@ -52,6 +51,36 @@ def _numpy_biot_savart_core(source_points, dl_vectors, field_points, order=None)
                     B_field[i, j] = B_field[i, j].truncate(order)
 
     return B_field
+
+def _cpp_biot_savart_core(source_points, dl_vectors, field_points, order=None):
+    """
+    Core vectorized Biot-Savart calculation using C++ backend.
+    """
+    def to_mtf_vector_list(points):
+        mtf_vectors = []
+        for p in points:
+            mtf_vector = []
+            for item in p:
+                if isinstance(item, MultivariateTaylorFunction):
+                    mtf_vector.append(item.mtf_data)
+                else:
+                    mtf_vector.append(MultivariateTaylorFunction.from_constant(item).mtf_data)
+            mtf_vectors.append(mtf_vector)
+        return mtf_vectors
+
+    source_points_cpp = to_mtf_vector_list(source_points)
+    dl_vectors_cpp = to_mtf_vector_list(dl_vectors)
+    field_points_cpp = to_mtf_vector_list(field_points)
+
+    b_field_cpp = mtf_cpp.biot_savart_core_cpp(source_points_cpp, dl_vectors_cpp, field_points_cpp)
+
+    b_field_py = []
+    for b_vec in b_field_cpp:
+        b_field_py.append([MultivariateTaylorFunction(coefficients=None, mtf_data=b_vec[0]),
+                           MultivariateTaylorFunction(coefficients=None, mtf_data=b_vec[1]),
+                           MultivariateTaylorFunction(coefficients=None, mtf_data=b_vec[2])])
+
+    return np.array(b_field_py)
 
 
 def numpy_biot_savart(element_centers, element_lengths, element_directions, field_points, order=None):
@@ -91,26 +120,7 @@ def numpy_biot_savart(element_centers, element_lengths, element_directions, fiel
         [[ 0.00000000e+00  0.00000000e+00  1.00000000e-08]
          [ 0.00000000e+00  0.00000000e+00  5.00000000e-09]]
     """
-    element_centers = np.array(element_centers)
-    element_lengths = np.array(element_lengths)
-    element_directions = np.array(element_directions)
-    field_points = np.array(field_points)
-
-    if element_centers.ndim != 2 or element_centers.shape[1] != 3:
-        raise ValueError("element_centers must be a NumPy array of shape (N, 3)")
-    if element_lengths.ndim != 1 or element_lengths.shape[0] != element_centers.shape[0]:
-        raise ValueError("element_lengths must be a NumPy array of shape (N,) and have the same length as element_centers")
-    if element_directions.ndim != 2 or element_directions.shape[1] != 3 or element_directions.shape[0] != element_centers.shape[0]:
-        raise ValueError("element_directions must be a NumPy array of shape (N, 3) and have the same length as element_centers")
-    if field_points.ndim != 2 or field_points.shape[1] != 3:
-        raise ValueError("field_points must be a NumPy array of shape (M, 3)")
-
-    source_points = element_centers  # Center points are used as source points
-    # The 0.5 factor is necessary for the MTF integration workflow, where the
-    # result is integrated over a parameter that ranges from -1 to 1 (an interval of length 2).
-    dl_vectors = 0.5 * element_lengths[:, np.newaxis] * element_directions  # dl_vector = dl * direction
-
-    return _numpy_biot_savart_core(source_points, dl_vectors, field_points, order)
+    return serial_biot_savart(element_centers, element_lengths, element_directions, field_points, order=order)
 
 
 def mpi_biot_savart(element_centers, element_lengths, element_directions, field_points, order=None):
@@ -176,7 +186,7 @@ def mpi_biot_savart(element_centers, element_lengths, element_directions, field_
     end_index = start_index + chunk_size + (1 if rank < remainder else 0)
     local_field_points = field_points[start_index:end_index]
 
-    local_B_field = numpy_biot_savart(element_centers, element_lengths, element_directions, local_field_points)  # Use serial numpy version for local computation
+    local_B_field = serial_biot_savart(element_centers, element_lengths, element_directions, local_field_points, order=order)
 
     all_B_field_chunks = comm.gather(local_B_field, root=0)
 
@@ -217,4 +227,24 @@ def serial_biot_savart(element_centers, element_lengths, element_directions, fie
         [[ 0.00000000e+00  0.00000000e+00  1.00000000e-08]
          [ 0.00000000e+00  0.00000000e+00  5.00000000e-09]]
     """
-    return numpy_biot_savart(element_centers, element_lengths, element_directions, field_points, order=order)
+    element_centers = np.array(element_centers)
+    element_lengths = np.array(element_lengths)
+    element_directions = np.array(element_directions)
+    field_points = np.array(field_points)
+
+    if element_centers.ndim != 2 or element_centers.shape[1] != 3:
+        raise ValueError("element_centers must be a NumPy array of shape (N, 3)")
+    if element_lengths.ndim != 1 or element_lengths.shape[0] != element_centers.shape[0]:
+        raise ValueError("element_lengths must be a NumPy array of shape (N,) and have the same length as element_centers")
+    if element_directions.ndim != 2 or element_directions.shape[1] != 3 or element_directions.shape[0] != element_centers.shape[0]:
+        raise ValueError("element_directions must be a NumPy array of shape (N, 3) and have the same length as element_centers")
+    if field_points.ndim != 2 or field_points.shape[1] != 3:
+        raise ValueError("field_points must be a NumPy array of shape (M, 3)")
+
+    source_points = element_centers
+    dl_vectors = 0.5 * element_lengths[:, np.newaxis] * element_directions
+
+    if MultivariateTaylorFunction._IMPLEMENTATION == 'cpp':
+        return _cpp_biot_savart_core(source_points, dl_vectors, field_points, order)
+    else:
+        return _python_biot_savart_core(source_points, dl_vectors, field_points, order)
