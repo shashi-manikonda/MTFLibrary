@@ -5,8 +5,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 import numpy as np
 from mtflib import (MultivariateTaylorFunction, Var, convert_to_mtf,
                     integrate, mtfarray, sqrt_taylor)
-from demos.applications.em.biot_savart import mpi_biot_savart, serial_biot_savart
-from demos.applications.em.current_ring import current_ring
+from src.applications.em.biot_savart import mpi_biot_savart, serial_biot_savart
+from src.applications.em.current_ring import current_ring
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
