@@ -4,7 +4,7 @@ import pytest
 import numpy as np
 import pandas as pd
 import mtflib
-from mtflib import (MultivariateTaylorFunction, Var, compose, mtfarray,
+from mtflib import (MultivariateTaylorFunction, Var, mtfarray,
                             convert_to_mtf,
                             cos_taylor, sin_taylor, tan_taylor, exp_taylor,
                             gaussian_taylor, log_taylor, arctan_taylor,
@@ -810,9 +810,9 @@ def test_array_ufunc():
 
     assert np.isclose(numerical_result[0], analytical_result, rtol=1e-5)
 
-def test_compose():
+def test_compose_method():
     """
-    Test the compose function.
+    Test the new compose method on the MultivariateTaylorFunction class.
     """
     x = Var(1)
     y = Var(2)
@@ -820,8 +820,8 @@ def test_compose():
     f = x**2 + y
     g = x + 1
 
-    # Compose f with g, replacing x with g
-    h = compose(f, {1: g})
+    # Compose f with g, replacing x with g, using the new method
+    h = f.compose({1: g})
 
     # The result should be (x+1)^2 + y = x^2 + 2x + 1 + y
 
@@ -831,6 +831,13 @@ def test_compose():
     analytical_result = (eval_point[0] + 1)**2 + eval_point[1]
 
     assert np.isclose(numerical_result[0], analytical_result)
+
+def test_old_compose_is_gone():
+    """
+    Test that the old standalone compose function is no longer available.
+    """
+    with pytest.raises(NameError):
+        compose(None, None)
 
 def test_mtfarray():
     """
@@ -908,3 +915,33 @@ def test_set_truncate_after_operation_validation(setup_function):
     """
     with pytest.raises(ValueError, match="Input 'enable' must be a boolean value"):
         MultivariateTaylorFunction.set_truncate_after_operation("not a boolean")
+
+def test_array_ufunc_extended():
+    """
+    Test the __array_ufunc__ implementation with more numpy ufuncs.
+    """
+    x = Var(1)
+    y = Var(2)
+
+    # Test a few more unary ufuncs
+    for ufunc, mtf_func in [
+        (np.cos, cos_taylor),
+        (np.exp, exp_taylor),
+        (np.log, log_taylor)
+    ]:
+        mtf_from_ufunc = ufunc(x + 0.5) # use an offset to avoid issues at 0 for log
+        mtf_from_direct_call = mtf_func(x + 0.5)
+        assert mtf_from_ufunc == mtf_from_direct_call
+
+    # Test a binary ufunc
+    mtf1 = x + y
+    mtf2 = x - y
+
+    ufunc_add_result = np.add(mtf1, mtf2)
+    direct_add_result = mtf1 + mtf2
+    assert ufunc_add_result == direct_add_result
+
+    # Test with a scalar
+    ufunc_add_scalar_result = np.add(mtf1, 5)
+    direct_add_scalar_result = mtf1 + 5
+    assert ufunc_add_scalar_result == direct_add_scalar_result

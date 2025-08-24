@@ -105,7 +105,7 @@ def sin_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFun
     sin_taylor_1d_mtf = type(input_mtf)(
         coefficients=sin_taylor_1d_coefficients, dimension=taylor_dimension_1d
     )
-    composed_mtf = sin_taylor_1d_mtf.compose_one_dim(input_mtf)
+    composed_mtf = sin_taylor_1d_mtf.compose({1: input_mtf})
     return composed_mtf.truncate(order)
 
 def cos_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFunction:
@@ -136,7 +136,7 @@ def cos_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFun
     cos_taylor_1d_mtf = type(input_mtf)(
         coefficients=cos_taylor_1d_coefficients, dimension=taylor_dimension_1d
     )
-    composed_mtf = cos_taylor_1d_mtf.compose_one_dim(input_mtf)
+    composed_mtf = cos_taylor_1d_mtf.compose({1: input_mtf})
     return composed_mtf.truncate(order)
 
 
@@ -192,7 +192,7 @@ def exp_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFun
     exp_taylor_1d_mtf = type(input_mtf)(
         coefficients=exp_taylor_1d_coefficients, dimension=taylor_dimension_1d
     )
-    composed_mtf = exp_taylor_1d_mtf.compose_one_dim(input_mtf)
+    composed_mtf = exp_taylor_1d_mtf.compose({1: input_mtf})
     return composed_mtf.truncate(order)
 
 
@@ -265,7 +265,7 @@ def log_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylorFu
     log_taylor_1d_mtf = type(input_mtf)(
         coefficients=log_taylor_1d_coefficients, dimension=taylor_dimension_1d
     )
-    composed_mtf = log_taylor_1d_mtf.compose_one_dim(input_mtf)
+    composed_mtf = log_taylor_1d_mtf.compose({1: input_mtf})
     return composed_mtf.truncate(order)
 
 
@@ -320,7 +320,7 @@ def arctan_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylo
     arctan_taylor_1d_mtf = type(input_mtf)(
         coefficients=arctan_taylor_1d_coefficients, dimension=taylor_dimension_1d
     )
-    composed_mtf = arctan_taylor_1d_mtf.compose_one_dim(input_mtf)
+    composed_mtf = arctan_taylor_1d_mtf.compose({1: input_mtf})
     return composed_mtf.truncate(order)
 
 def sinh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
@@ -391,7 +391,7 @@ def sinh_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFu
     sinh_taylor_1d_mtf = type(input_mtf)(
         coefficients=sinh_taylor_coefficients, dimension=taylor_dimension_1d
     )
-    composed_mtf = sinh_taylor_1d_mtf.compose_one_dim(input_mtf)
+    composed_mtf = sinh_taylor_1d_mtf.compose({1: input_mtf})
     return composed_mtf.truncate(order)
 
 
@@ -421,7 +421,7 @@ def cosh_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFu
     cosh_taylor_1d_mtf = type(input_mtf)(
         coefficients=cosh_taylor_coefficients, dimension=taylor_dimension_1d
     )
-    composed_mtf = cosh_taylor_1d_mtf.compose_one_dim(input_mtf)
+    composed_mtf = cosh_taylor_1d_mtf.compose({1: input_mtf})
     return composed_mtf.truncate(order)
 
 
@@ -486,7 +486,7 @@ def arctanh_taylor_1D_expansion(variable, order: int = None) -> MultivariateTayl
     arctanh_taylor_1d_mtf = type(input_mtf)(
         coefficients=arctanh_taylor_1d_coefficients, dimension=taylor_dimension_1d
     )
-    composed_mtf = arctanh_taylor_1d_mtf.compose_one_dim(input_mtf)
+    composed_mtf = arctanh_taylor_1d_mtf.compose({1: input_mtf})
     return composed_mtf.truncate(order)
 
 def arcsin_taylor(variable, order: int = None) -> MultivariateTaylorFunction:

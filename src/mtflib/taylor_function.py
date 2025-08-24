@@ -466,9 +466,9 @@ class MultivariateTaylorFunction:
             exponent_tuple = (i,)
             coeff_items.append((exponent_tuple, coeff_val))
         inverse_series_1d_mtf = type(self)(coefficients=dict(coeff_items), dimension=1)
-        composed_mtf = inverse_series_1d_mtf.compose_one_dim(
-            rescaled_mtf - type(self).from_constant(1.0, dimension=rescaled_mtf.dimension)
-        )
+        composed_mtf = inverse_series_1d_mtf.compose({
+            1: rescaled_mtf - type(self).from_constant(1.0, dimension=rescaled_mtf.dimension)
+        })
         final_mtf = composed_mtf / c0
         truncated_mtf = final_mtf.truncate(order)
         return truncated_mtf
@@ -562,37 +562,70 @@ class MultivariateTaylorFunction:
             return True
         return np.all(np.abs(mtf.coeffs) < zero_tolerance)
 
-    def _calculate_composed_term(self, self_exp_order, self_coeff, other_mtf):
-        """Helper function to calculate a single term in the composition."""
-        if self_exp_order == 0:
-            return self_coeff
+    def compose(self, other_function_dict: dict[int, "MultivariateTaylorFunction"]) -> "MultivariateTaylorFunction":
+        """
+        Composes this Taylor function with other Taylor functions.
+        self(g_1, g_2, ..., g_n) where g_i are given in other_function_dict.
+        """
+        if not isinstance(other_function_dict, dict):
+            raise TypeError("other_function_dict must be a dictionary.")
 
-        term_mtf = other_mtf ** self_exp_order
-        if self.is_zero_mtf(term_mtf):
-            return None
+        # If the dictionary is empty, just return a copy of self.
+        if not other_function_dict:
+            return self.copy()
 
-        return term_mtf * self_coeff
+        # Validate inputs and determine the dimension of the resulting function.
+        result_dim = None
+        for var_index, g in other_function_dict.items():
+            if not isinstance(var_index, int):
+                raise TypeError("Keys of other_function_dict must be integers (variable indices).")
+            if not isinstance(g, MultivariateTaylorFunction):
+                raise TypeError(f"Value for key {var_index} must be a MultivariateTaylorFunction object.")
+            if not (1 <= var_index <= self.dimension):
+                raise ValueError(f"Variable index {var_index} is out of bounds for the outer function's dimension {self.dimension}.")
 
-    def compose_one_dim(self, other_mtf):
-        """Performs function composition: self(other_mtf(x))."""
-        if self.dimension != 1:
-            raise ValueError("Composition is only supported for 1D MTF as the outer function.")
+            if result_dim is None:
+                result_dim = g.dimension
+            elif result_dim != g.dimension:
+                raise ValueError("All inner functions must have the same dimension.")
 
-        composed_mtf = type(other_mtf)(
-            (np.empty((0, other_mtf.dimension), dtype=np.int32), np.empty((0,), dtype=self.coeffs.dtype)),
-            other_mtf.dimension
-        )
+        # Create the full substitution mapping.
+        substitutions = {}
+        for i in range(1, self.dimension + 1):
+            if i in other_function_dict:
+                substitutions[i] = other_function_dict[i]
+            else:
+                # If a variable is not being substituted, it becomes a variable in the new space.
+                if i > result_dim:
+                    raise ValueError(f"Outer function variable {i} is not being substituted, but the result dimension is only {result_dim}.")
+                substitutions[i] = type(self).from_variable(i, result_dim)
 
+        # The final MTF will be initialized as a zero constant of the correct dimension.
+        final_mtf = type(self).from_constant(0.0, dimension=result_dim)
+
+        # If self is a zero function, the composition is also a zero function.
+        if self.coeffs.size == 0:
+            return final_mtf
+
+        # Iterate through terms of self (the outer function) and build the final mtf.
         for i in range(self.coeffs.size):
-            self_exp_order = self.exponents[i, 0]
-            self_coeff = self.coeffs[i]
+            coeff = self.coeffs[i]
+            exponents = self.exponents[i]
 
-            composed_term = self._calculate_composed_term(self_exp_order, self_coeff, other_mtf)
-            if composed_term is not None:
-                composed_mtf += composed_term
+            # Start with the coefficient of the term
+            term_result = type(self).from_constant(coeff, dimension=result_dim)
 
-        composed_mtf.truncate_inplace()
-        return composed_mtf
+            # Multiply by the substituted functions raised to their powers
+            for j in range(self.dimension):
+                power = exponents[j]
+                if power > 0:
+                    var_index = j + 1
+                    g_j = substitutions[var_index]
+                    term_result *= (g_j ** power)
+
+            final_mtf += term_result
+
+        return final_mtf
 
     def get_tabular_dataframe(self):
         """Returns a pandas DataFrame representation of MTF or CMTF instance."""
@@ -739,52 +772,50 @@ class MultivariateTaylorFunction:
         """
         from . import elementary_functions as elem_funcs
 
+        UNARY_UFUNC_MAP = {
+            np.sin: elem_funcs.sin_taylor,
+            np.cos: elem_funcs.cos_taylor,
+            np.tan: elem_funcs.tan_taylor,
+            np.exp: elem_funcs.exp_taylor,
+            np.sqrt: sqrt_taylor,
+            np.log: elem_funcs.log_taylor,
+            np.arctan: elem_funcs.arctan_taylor,
+            np.sinh: elem_funcs.sinh_taylor,
+            np.cosh: elem_funcs.cosh_taylor,
+            np.tanh: elem_funcs.tanh_taylor,
+            np.arcsin: elem_funcs.arcsin_taylor,
+            np.arccos: elem_funcs.arccos_taylor,
+            np.arctanh: elem_funcs.arctanh_taylor,
+            np.reciprocal: self._inv_mtf_internal,
+            np.negative: self.__neg__,
+            np.positive: lambda x: x,
+            np.square: lambda x: x * x,
+        }
+
+        BINARY_UFUNC_MAP = {
+            np.add: self.__add__,
+            np.subtract: self.__sub__,
+            np.multiply: self.__mul__,
+            np.divide: self.__truediv__,
+            np.true_divide: self.__truediv__,
+        }
+
         if method == '__call__':
             input_mtf = inputs[0]
-            other_input = inputs[1] if len(inputs) > 1 else None
-
             if not isinstance(input_mtf, MultivariateTaylorFunction):
                 input_mtf = convert_to_mtf(input_mtf, dimension=self.dimension)
 
-            if ufunc is np.sin:
-                return elem_funcs.sin_taylor(input_mtf)
-            elif ufunc is np.cos:
-                return elem_funcs.cos_taylor(input_mtf)
-            elif ufunc is np.tan:
-                return elem_funcs.tan_taylor(input_mtf)
-            elif ufunc is np.exp:
-                return elem_funcs.exp_taylor(input_mtf)
-            elif ufunc is np.sqrt:
-                return sqrt_taylor(input_mtf)
-            elif ufunc is np.log:
-                return elem_funcs.log_taylor(input_mtf)
-            elif ufunc is np.arctan:
-                return elem_funcs.arctan_taylor(input_mtf)
-            elif ufunc is np.sinh:
-                return elem_funcs.sinh_taylor(input_mtf)
-            elif ufunc is np.cosh:
-                return elem_funcs.cosh_taylor(input_mtf)
-            elif ufunc is np.tanh:
-                return elem_funcs.tanh_taylor(input_mtf)
-            elif ufunc is np.arcsin:
-                return elem_funcs.arcsin_taylor(input_mtf)
-            elif ufunc is np.arccos:
-                return elem_funcs.arccos_taylor(input_mtf)
-            elif ufunc is np.arctanh:
-                return elem_funcs.arctanh_taylor(input_mtf)
-            elif ufunc is np.reciprocal:
-                return self._inv_mtf_internal(input_mtf)
-            elif ufunc in (np.add, np.subtract, np.multiply, np.divide, np.true_divide, np.power, np.float_power):
-                return NotImplemented
-            elif ufunc is np.negative:
-                return -input_mtf
-            elif ufunc is np.positive:
-                return +input_mtf
-            elif ufunc is np.power or ufunc is np.float_power:
-                if isinstance(other_input, (int, float, np.number)):
-                    return input_mtf ** other_input
-            elif ufunc is np.square:
-                return input_mtf * input_mtf
+            if ufunc in UNARY_UFUNC_MAP:
+                return UNARY_UFUNC_MAP[ufunc](input_mtf)
+
+            if len(inputs) > 1:
+                other_input = inputs[1]
+                if ufunc in BINARY_UFUNC_MAP:
+                    return BINARY_UFUNC_MAP[ufunc](other_input)
+
+                if ufunc in (np.power, np.float_power):
+                    if isinstance(other_input, (int, float, np.number)):
+                        return input_mtf ** other_input
 
             return NotImplemented
 
@@ -892,7 +923,7 @@ def sqrt_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylorF
     sqrt_taylor_1d_mtf = type(variable)(
         coefficients=sqrt_taylor_1d_coefficients, dimension=taylor_dimension_1d
     )
-    composed_mtf = sqrt_taylor_1d_mtf.compose_one_dim(input_mtf)
+    composed_mtf = sqrt_taylor_1d_mtf.compose({1: input_mtf})
     return composed_mtf.truncate(order)
 
 def isqrt_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
@@ -938,7 +969,7 @@ def isqrt_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylor
     isqrt_taylor_1d_mtf = type(variable)(
         coefficients=isqrt_taylor_1d_coefficients, dimension=taylor_dimension_1d
     )
-    composed_mtf = isqrt_taylor_1d_mtf.compose_one_dim(input_mtf)
+    composed_mtf = isqrt_taylor_1d_mtf.compose({1: input_mtf})
     return composed_mtf.truncate(order)
 
 def Var(var_index):
@@ -963,54 +994,6 @@ def Var(var_index):
     coeffs_arr = np.array([1.0], dtype=np.float64)
 
     return MultivariateTaylorFunction(coefficients=(exponents_arr, coeffs_arr), dimension=dimension)
-
-
-def compose(mtf_instance: MultivariateTaylorFunction, other_function_dict: dict[int, MultivariateTaylorFunction]) -> MultivariateTaylorFunction:
-    """
-    Composes a Taylor function with other Taylor functions.
-    """
-    if not isinstance(mtf_instance, MultivariateTaylorFunction):
-        raise TypeError("mtf_instance must be a MultivariateTaylorFunction object.")
-    if not isinstance(other_function_dict, dict):
-        raise TypeError("other_function_dict must be a dictionary.")
-
-    for var_index, substitution_function in other_function_dict.items():
-        if not isinstance(var_index, int):
-            raise TypeError("Keys of other_function_dict must be integers (variable indices).")
-        if not isinstance(substitution_function, MultivariateTaylorFunction):
-            raise TypeError("Values of other_function_dict must be MultivariateTaylorFunction objects.")
-        if not (1 <= var_index <= mtf_instance.dimension):
-            raise ValueError(f"Variable index {var_index} is out of bounds for dimension {mtf_instance.dimension}.")
-
-    final_mtf = type(mtf_instance).from_constant(0.0)
-
-    if mtf_instance.coeffs.size == 0:
-        return final_mtf
-
-    substitutions = {}
-    for j in range(mtf_instance.dimension):
-        var_index = j + 1
-        if var_index in other_function_dict:
-            substitutions[var_index] = other_function_dict[var_index]
-        else:
-            substitutions[var_index] = type(mtf_instance).from_variable(var_index, mtf_instance.dimension)
-
-    for i in range(mtf_instance.coeffs.size):
-        coeff = mtf_instance.coeffs[i]
-        exponents = mtf_instance.exponents[i]
-
-        term_result = type(mtf_instance).from_constant(coeff)
-
-        for j in range(mtf_instance.dimension):
-            power = exponents[j]
-            if power > 0:
-                var_index = j + 1
-                g_j = substitutions[var_index]
-                term_result *= (g_j ** power)
-
-        final_mtf += term_result
-
-    return final_mtf
 
 
 def mtfarray(mtfs, column_names=None):
