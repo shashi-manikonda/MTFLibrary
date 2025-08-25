@@ -43,10 +43,10 @@ std::vector<MtfVector> biot_savart_core_cpp(
     MtfData scale_factor({{std::vector<int32_t>(dim, 0)}}, {{mu_0_4pi, 0.0}}, dim);
 
     #pragma omp parallel for
-    for (size_t i = 0; i < field_points.size(); ++i) {
+    for (long i = 0; i < field_points.size(); ++i) {
         const auto& field_point = field_points[i];
         MtfVector B_field_total = {MtfData({}, {}, dim), MtfData({}, {}, dim), MtfData({}, {}, dim)};
-        for (size_t j = 0; j < source_points.size(); ++j) {
+        for (long j = 0; j < source_points.size(); ++j) {
             const auto& source_point = source_points[j];
             const auto& dl_vector = dl_vectors[j];
 
