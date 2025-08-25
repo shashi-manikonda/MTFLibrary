@@ -12,4 +12,10 @@ std::vector<MtfVector> biot_savart_core_cpp(
     const std::vector<MtfVector>& dl_vectors,
     const std::vector<MtfVector>& field_points);
 
+py::list biot_savart_from_numpy(
+    py::list source_points_exps, py::list source_points_coeffs,
+    py::list dl_vectors_exps, py::list dl_vectors_coeffs,
+    py::list field_points_exps, py::list field_points_coeffs
+);
+
 #endif // BIOT_SAVART_OPS_HPP

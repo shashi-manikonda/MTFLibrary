@@ -56,29 +56,34 @@ def _cpp_biot_savart_core(source_points, dl_vectors, field_points, order=None):
     """
     Core vectorized Biot-Savart calculation using C++ backend.
     """
-    def to_mtf_vector_list(points):
-        mtf_vectors = []
+    def to_numpy_list(points):
+        exps_list = []
+        coeffs_list = []
         for p in points:
-            mtf_vector = []
+            p_exps = []
+            p_coeffs = []
             for item in p:
-                if isinstance(item, MultivariateTaylorFunction):
-                    mtf_vector.append(item.mtf_data)
-                else:
-                    mtf_vector.append(MultivariateTaylorFunction.from_constant(item).mtf_data)
-            mtf_vectors.append(mtf_vector)
-        return mtf_vectors
+                if not isinstance(item, MultivariateTaylorFunction):
+                    item = MultivariateTaylorFunction.from_constant(item)
+                p_exps.append(item.exponents)
+                p_coeffs.append(item.coeffs)
+            exps_list.append(p_exps)
+            coeffs_list.append(p_coeffs)
+        return exps_list, coeffs_list
 
-    source_points_cpp = to_mtf_vector_list(source_points)
-    dl_vectors_cpp = to_mtf_vector_list(dl_vectors)
-    field_points_cpp = to_mtf_vector_list(field_points)
+    source_points_exps, source_points_coeffs = to_numpy_list(source_points)
+    dl_vectors_exps, dl_vectors_coeffs = to_numpy_list(dl_vectors)
+    field_points_exps, field_points_coeffs = to_numpy_list(field_points)
 
-    b_field_cpp = mtf_cpp.biot_savart_core_cpp(source_points_cpp, dl_vectors_cpp, field_points_cpp)
+    b_field_dicts = mtf_cpp.biot_savart_from_numpy(
+        source_points_exps, source_points_coeffs,
+        dl_vectors_exps, dl_vectors_coeffs,
+        field_points_exps, field_points_coeffs
+    )
 
     b_field_py = []
-    for b_vec in b_field_cpp:
-        b_field_py.append([MultivariateTaylorFunction(coefficients=None, mtf_data=b_vec[0]),
-                           MultivariateTaylorFunction(coefficients=None, mtf_data=b_vec[1]),
-                           MultivariateTaylorFunction(coefficients=None, mtf_data=b_vec[2])])
+    for b_vec_dicts in b_field_dicts:
+        b_field_py.append([MultivariateTaylorFunction(coefficients=(d['exponents'], d['coeffs'])) for d in b_vec_dicts])
 
     return np.array(b_field_py)
 

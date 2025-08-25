@@ -56,27 +56,62 @@ std::vector<MtfVector> biot_savart_core_cpp(
                               .add(r_vector[1].multiply(r_vector[1]))
                               .add(r_vector[2].multiply(r_vector[2]));
 
-            MtfData inv_r_cubed = r_squared.power(-1.5);
+            MtfData r = r_squared.power(0.5);
+            MtfData r_inv = r.power(-1.0);
+            MtfData inv_r_cubed = r_inv.multiply(r_inv).multiply(r_inv);
 
             MtfVector cross_prod = cross_product(dl_vector, r_vector);
 
-            MtfData dBx = cross_prod[0];
-            dBx.multiply_inplace(inv_r_cubed);
-            dBx.multiply_inplace(scale_factor);
+            MtfData inv_r_cubed_scaled = inv_r_cubed.multiply(scale_factor);
+
+            MtfData dBx = cross_prod[0].multiply(inv_r_cubed_scaled);
             B_field_total[0].add_inplace(dBx);
 
-            MtfData dBy = cross_prod[1];
-            dBy.multiply_inplace(inv_r_cubed);
-            dBy.multiply_inplace(scale_factor);
+            MtfData dBy = cross_prod[1].multiply(inv_r_cubed_scaled);
             B_field_total[1].add_inplace(dBy);
 
-            MtfData dBz = cross_prod[2];
-            dBz.multiply_inplace(inv_r_cubed);
-            dBz.multiply_inplace(scale_factor);
+            MtfData dBz = cross_prod[2].multiply(inv_r_cubed_scaled);
             B_field_total[2].add_inplace(dBz);
         }
         B_fields.push_back(B_field_total);
     }
 
     return B_fields;
+}
+
+py::list biot_savart_from_numpy(
+    py::list source_points_exps, py::list source_points_coeffs,
+    py::list dl_vectors_exps, py::list dl_vectors_coeffs,
+    py::list field_points_exps, py::list field_points_coeffs
+) {
+    auto to_mtf_vector = [](py::list exps_list, py::list coeffs_list) {
+        std::vector<MtfVector> mtf_vectors;
+        for (size_t i = 0; i < exps_list.size(); ++i) {
+            py::list p_exps = exps_list[i].cast<py::list>();
+            py::list p_coeffs = coeffs_list[i].cast<py::list>();
+            MtfVector vec;
+            for (size_t j = 0; j < p_exps.size(); ++j) {
+                vec.push_back(MtfData(p_exps[j].cast<py::array_t<int32_t>>(), p_coeffs[j].cast<py::array_t<std::complex<double>>>()));
+            }
+            mtf_vectors.push_back(vec);
+        }
+        return mtf_vectors;
+    };
+
+    std::vector<MtfVector> source_points = to_mtf_vector(source_points_exps, source_points_coeffs);
+    std::vector<MtfVector> dl_vectors = to_mtf_vector(dl_vectors_exps, dl_vectors_coeffs);
+    std::vector<MtfVector> field_points = to_mtf_vector(field_points_exps, field_points_coeffs);
+
+    std::vector<MtfVector> b_fields = biot_savart_core_cpp(source_points, dl_vectors, field_points);
+
+    py::list result;
+    for (const auto& b_vec : b_fields) {
+        py::list b_vec_py;
+        for (const auto& mtf : b_vec) {
+            b_vec_py.append(mtf.to_dict());
+        }
+        result.append(b_vec_py);
+    }
+
+    return result;
 }

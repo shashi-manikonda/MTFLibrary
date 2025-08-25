@@ -25,6 +25,7 @@ PYBIND11_MODULE(mtf_cpp, m) {
     m.def("multiply_mtf_cpp", &multiply_mtf_cpp, "A function that multiplies two MTFs using C++");
     m.def("extract_coefficient_cpp", &extract_coefficient_cpp, "A function that extracts a coefficient from an MTF using C++");
     m.def("biot_savart_core_cpp", &biot_savart_core_cpp, "A function that computes the Biot-Savart law using C++");
+    m.def("biot_savart_from_numpy", &biot_savart_from_numpy, "A function that computes the Biot-Savart law from numpy arrays");
 
     m.def("sqrt_taylor_1D_expansion", &sqrt_taylor_1D_expansion, "1D Taylor expansion of sqrt(1+u)");
     m.def("isqrt_taylor_1D_expansion", &isqrt_taylor_1D_expansion, "1D Taylor expansion of isqrt(1+u)");

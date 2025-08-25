@@ -306,6 +306,15 @@ MtfData MtfData::power(double exponent) const {
         MtfData r_inv = this->power(-1.0);
         MtfData r_inv_sqrt = this->power(-0.5);
         return r_inv.multiply(r_inv_sqrt);
+    } else if (exponent == 0.5) {
+        auto [const_term, poly_part] = _split_constant_polynomial_part(*this);
+        if (const_term.real() < 0 && abs(const_term.imag()) < 1e-9) {
+             throw std::runtime_error("Cannot take sqrt of MTF with negative constant term.");
+        }
+        std::complex<double> const_factor_sqrt = sqrt(const_term);
+        MtfData poly_part_x = poly_part.multiply(MtfData({{std::vector<int32_t>(dimension, 0)}}, {1.0/const_term}, dimension));
+        MtfData sqrt_1_plus_x = sqrt_taylor_1D_expansion(poly_part_x, 10);
+        return sqrt_1_plus_x.multiply(MtfData({{std::vector<int32_t>(dimension, 0)}}, {const_factor_sqrt}, dimension));
     }
 
     throw std::runtime_error("Power function not implemented for this exponent.");
