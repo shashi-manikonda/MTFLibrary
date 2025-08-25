@@ -1,0 +1,63 @@
+import numpy as np
+import time
+import cProfile
+import pstats
+import os
+import sys
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from mtflib.backends.cpp import mtf_cpp
+from mtflib.taylor_function import MultivariateTaylorFunction
+from src.applications.em.biot_savart import serial_biot_savart
+from src.applications.em.current_ring import current_ring
+
+def run_biot_savart_benchmark(num_source_points, num_field_points, order=0):
+    """
+    Benchmarks the performance of serial_biot_savart with both Python and C++ backends.
+    """
+    print(f"--- Benchmarking serial_biot_savart with {num_source_points} source segments and {num_field_points} field points ---")
+
+    # 1. Setup the problem geometry (a single current ring)
+    ring_radius = 1.0
+    ring_center = np.array([0, 0, 0])
+    ring_axis = np.array([0, 0, 1])
+
+    segments_np, lengths_np, directions_np = current_ring(
+        ring_radius, num_source_points, ring_center, ring_axis, return_mtf=False
+    )
+
+    field_points = np.linspace(
+        [-1, -1, -1], [1, 1, 1], num_field_points
+    )
+
+    # 2. Benchmark the C++ implementation
+    mtf_cpp.switch_backend('cpp')
+    start_time_cpp = time.perf_counter()
+    _ = serial_biot_savart(segments_np, lengths_np, directions_np, field_points, order=order)
+    end_time_cpp = time.perf_counter()
+    duration_cpp = end_time_cpp - start_time_cpp
+    print(f"C++ Backend Time: {duration_cpp:.6f} seconds")
+
+    # 3. Benchmark the Python implementation
+    mtf_cpp.switch_backend('python')
+    start_time_py = time.perf_counter()
+    _ = serial_biot_savart(segments_np, lengths_np, directions_np, field_points, order=order)
+    end_time_py = time.perf_counter()
+    duration_py = end_time_py - start_time_py
+    print(f"Python Backend Time: {duration_py:.6f} seconds")
+
+    # 4. Compare and report
+    speedup = duration_py / duration_cpp if duration_cpp > 0 else float('inf')
+    print(f"Speedup (Python/C++): {speedup:.2f}x")
+    print("----------------------------------\n")
+
+if __name__ == '__main__':
+    # Initialize MTF global settings once for consistency
+    MultivariateTaylorFunction.initialize_mtf(max_order=10, max_dimension=3)
+
+    # Run the benchmark for different problem sizes
+    run_biot_savart_benchmark(num_source_points=100, num_field_points=100)
+    run_biot_savart_benchmark(num_source_points=1000, num_field_points=100)
+    run_biot_savart_benchmark(num_source_points=100, num_field_points=1000)
+    run_biot_savart_benchmark(num_source_points=1000, num_field_points=1000)

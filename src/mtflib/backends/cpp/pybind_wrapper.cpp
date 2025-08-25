@@ -31,4 +31,8 @@ PYBIND11_MODULE(mtf_cpp, m) {
     m.def("sqrt_taylor_1D_expansion", &sqrt_taylor_1D_expansion, "1D Taylor expansion of sqrt(1+u)");
     m.def("isqrt_taylor_1D_expansion", &isqrt_taylor_1D_expansion, "1D Taylor expansion of isqrt(1+u)");
     m.def("inverse_taylor_1D_expansion", &inverse_taylor_1D_expansion, "1D Taylor expansion of 1/(1-u)");
+
+    m.def("switch_backend", [](const std::string& backend_name) {
+        py::module_::import("mtflib").attr("MultivariateTaylorFunction").attr("_IMPLEMENTATION") = backend_name;
+    }, "Switch the backend implementation");
 }
