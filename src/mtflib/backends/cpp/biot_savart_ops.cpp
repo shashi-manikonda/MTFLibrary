@@ -60,9 +60,20 @@ std::vector<MtfVector> biot_savart_core_cpp(
 
             MtfVector cross_prod = cross_product(dl_vector, r_vector);
 
-            B_field_total[0] = B_field_total[0].add(cross_prod[0].multiply(inv_r_cubed).multiply(scale_factor));
-            B_field_total[1] = B_field_total[1].add(cross_prod[1].multiply(inv_r_cubed).multiply(scale_factor));
-            B_field_total[2] = B_field_total[2].add(cross_prod[2].multiply(inv_r_cubed).multiply(scale_factor));
+            MtfData dBx = cross_prod[0];
+            dBx.multiply_inplace(inv_r_cubed);
+            dBx.multiply_inplace(scale_factor);
+            B_field_total[0].add_inplace(dBx);
+
+            MtfData dBy = cross_prod[1];
+            dBy.multiply_inplace(inv_r_cubed);
+            dBy.multiply_inplace(scale_factor);
+            B_field_total[1].add_inplace(dBy);
+
+            MtfData dBz = cross_prod[2];
+            dBz.multiply_inplace(inv_r_cubed);
+            dBz.multiply_inplace(scale_factor);
+            B_field_total[2].add_inplace(dBz);
         }
         B_fields.push_back(B_field_total);
     }

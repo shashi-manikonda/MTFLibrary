@@ -6,6 +6,7 @@
 #include <omp.h>
 #include <stdexcept>
 #include <cmath>
+#include <complex>
 
 #if defined(_MSC_VER)
 #include <BaseTsd.h>
@@ -15,7 +16,7 @@ typedef SSIZE_T ssize_t;
 MtfData::MtfData() : dimension(0) {}
 
 MtfData::MtfData(py::array_t<int32_t, py::array::c_style | py::array::forcecast> exps_arr,
-                 py::array_t<double, py::array::c_style | py::array::forcecast> coeffs_arr) {
+                 py::array_t<std::complex<double>, py::array::c_style | py::array::forcecast> coeffs_arr) {
     auto exps_buf = exps_arr.request();
     auto coeffs_buf = coeffs_arr.request();
 
@@ -29,7 +30,7 @@ MtfData::MtfData(py::array_t<int32_t, py::array::c_style | py::array::forcecast>
     dimension = exps_buf.shape[1];
     ssize_t n_terms = exps_buf.shape[0];
     auto exps_ptr = static_cast<int32_t*>(exps_buf.ptr);
-    auto coeffs_ptr = static_cast<double*>(coeffs_buf.ptr);
+    auto coeffs_ptr = static_cast<std::complex<double>*>(coeffs_buf.ptr);
 
     exponents.resize(n_terms, std::vector<int32_t>(dimension));
     coeffs.resize(n_terms);
@@ -42,7 +43,7 @@ MtfData::MtfData(py::array_t<int32_t, py::array::c_style | py::array::forcecast>
     }
 }
 
-MtfData::MtfData(std::vector<std::vector<int32_t>> exps, std::vector<double> cs, int dim)
+MtfData::MtfData(std::vector<std::vector<int32_t>> exps, std::vector<std::complex<double>> cs, int dim)
     : exponents(exps), coeffs(cs), dimension(dim) {}
 
 
@@ -51,7 +52,7 @@ py::dict MtfData::to_dict() const {
 
     ssize_t n_terms = exponents.size();
     py::array_t<int32_t> exps_arr({n_terms, (ssize_t)dimension});
-    py::array_t<double> coeffs_arr(n_terms);
+    py::array_t<std::complex<double>> coeffs_arr(n_terms);
 
     auto exps_ptr = exps_arr.mutable_unchecked<2>();
     auto coeffs_ptr = coeffs_arr.mutable_unchecked<1>();
@@ -73,7 +74,7 @@ MtfData MtfData::add(const MtfData& other) const {
         throw std::runtime_error("Dimensions must match for addition.");
     }
 
-    std::unordered_map<std::vector<int32_t>, double, VectorHasher> combined_coeffs_map;
+    std::unordered_map<std::vector<int32_t>, std::complex<double>, VectorHasher> combined_coeffs_map;
 
     for (size_t i = 0; i < coeffs.size(); ++i) {
         combined_coeffs_map[exponents[i]] = coeffs[i];
@@ -84,7 +85,7 @@ MtfData MtfData::add(const MtfData& other) const {
     }
 
     std::vector<std::vector<int32_t>> new_exponents;
-    std::vector<double> new_coeffs;
+    std::vector<std::complex<double>> new_coeffs;
     for (auto const& [exp, coeff] : combined_coeffs_map) {
         new_exponents.push_back(exp);
         new_coeffs.push_back(coeff);
@@ -93,13 +94,36 @@ MtfData MtfData::add(const MtfData& other) const {
     return MtfData(new_exponents, new_coeffs, dimension);
 }
 
+void MtfData::add_inplace(const MtfData& other) {
+    if (dimension != other.dimension) {
+        throw std::runtime_error("Dimensions must match for addition.");
+    }
+
+    std::unordered_map<std::vector<int32_t>, std::complex<double>, VectorHasher> combined_coeffs_map;
+
+    for (size_t i = 0; i < coeffs.size(); ++i) {
+        combined_coeffs_map[exponents[i]] = coeffs[i];
+    }
+
+    for (size_t i = 0; i < other.coeffs.size(); ++i) {
+        combined_coeffs_map[other.exponents[i]] += other.coeffs[i];
+    }
+
+    exponents.clear();
+    coeffs.clear();
+    for (auto const& [exp, coeff] : combined_coeffs_map) {
+        exponents.push_back(exp);
+        coeffs.push_back(coeff);
+    }
+}
+
 
 MtfData MtfData::multiply(const MtfData& other) const {
     if (dimension != other.dimension) {
         throw std::runtime_error("Dimensions must match for multiplication.");
     }
 
-    std::unordered_map<std::vector<int32_t>, double, VectorHasher> combined_coeffs_map;
+    std::unordered_map<std::vector<int32_t>, std::complex<double>, VectorHasher> combined_coeffs_map;
 
     for (size_t i = 0; i < coeffs.size(); ++i) {
         for (size_t j = 0; j < other.coeffs.size(); ++j) {
@@ -112,13 +136,38 @@ MtfData MtfData::multiply(const MtfData& other) const {
     }
 
     std::vector<std::vector<int32_t>> new_exponents;
-    std::vector<double> new_coeffs;
+    std::vector<std::complex<double>> new_coeffs;
     for (auto const& [exp, coeff] : combined_coeffs_map) {
         new_exponents.push_back(exp);
         new_coeffs.push_back(coeff);
     }
 
     return MtfData(new_exponents, new_coeffs, dimension);
+}
+
+void MtfData::multiply_inplace(const MtfData& other) {
+    if (dimension != other.dimension) {
+        throw std::runtime_error("Dimensions must match for multiplication.");
+    }
+
+    std::unordered_map<std::vector<int32_t>, std::complex<double>, VectorHasher> combined_coeffs_map;
+
+    for (size_t i = 0; i < coeffs.size(); ++i) {
+        for (size_t j = 0; j < other.coeffs.size(); ++j) {
+            std::vector<int32_t> new_exp(dimension);
+            for (int k = 0; k < dimension; ++k) {
+                new_exp[k] = exponents[i][k] + other.exponents[j][k];
+            }
+            combined_coeffs_map[new_exp] += coeffs[i] * other.coeffs[j];
+        }
+    }
+
+    exponents.clear();
+    coeffs.clear();
+    for (auto const& [exp, coeff] : combined_coeffs_map) {
+        exponents.push_back(exp);
+        coeffs.push_back(coeff);
+    }
 }
 
 MtfData MtfData::compose(const std::map<int, MtfData>& other_function_dict) const {
@@ -135,11 +184,27 @@ MtfData MtfData::compose(const std::map<int, MtfData>& other_function_dict) cons
         }
     }
 
+    std::map<int, MtfData> substitutions;
+    for (int i = 1; i <= dimension; ++i) {
+        if (other_function_dict.count(i)) {
+            substitutions[i] = other_function_dict.at(i);
+        } else {
+            if (i > result_dim) {
+                throw std::runtime_error("Outer function variable not being substituted, but the result dimension is smaller.");
+            }
+            std::vector<std::vector<int32_t>> exps;
+            std::vector<int32_t> exp(result_dim, 0);
+            exp[i-1] = 1;
+            exps.push_back(exp);
+            substitutions[i] = MtfData(exps, {{1.0, 0.0}}, result_dim);
+        }
+    }
+
     // Create a zero MTF for the result
     MtfData final_mtf({}, {}, result_dim);
 
     for (size_t i = 0; i < coeffs.size(); ++i) {
-        double coeff = coeffs[i];
+        std::complex<double> coeff = coeffs[i];
         const auto& exp = exponents[i];
 
         MtfData term_result({{std::vector<int32_t>(result_dim, 0)}}, {coeff}, result_dim);
@@ -147,7 +212,7 @@ MtfData MtfData::compose(const std::map<int, MtfData>& other_function_dict) cons
         for (int j = 0; j < dimension; ++j) {
             int power = exp[j];
             if (power > 0) {
-                MtfData g_j = other_function_dict.at(j + 1);
+                MtfData g_j = substitutions.at(j + 1);
                 for (int p = 0; p < power; ++p) {
                     term_result = term_result.multiply(g_j);
                 }
@@ -160,17 +225,17 @@ MtfData MtfData::compose(const std::map<int, MtfData>& other_function_dict) cons
 }
 
 MtfData MtfData::negate() const {
-    std::vector<double> new_coeffs = coeffs;
-    for (double& c : new_coeffs) {
+    std::vector<std::complex<double>> new_coeffs = coeffs;
+    for (std::complex<double>& c : new_coeffs) {
         c = -c;
     }
     return MtfData(exponents, new_coeffs, dimension);
 }
 
-std::pair<double, MtfData> _split_constant_polynomial_part(const MtfData& mtf) {
-    double constant_term = 0.0;
+std::pair<std::complex<double>, MtfData> _split_constant_polynomial_part(const MtfData& mtf) {
+    std::complex<double> constant_term = {0.0, 0.0};
     std::vector<std::vector<int32_t>> poly_exponents;
-    std::vector<double> poly_coeffs;
+    std::vector<std::complex<double>> poly_coeffs;
 
     for (size_t i = 0; i < mtf.coeffs.size(); ++i) {
         bool is_const = true;
@@ -192,7 +257,7 @@ std::pair<double, MtfData> _split_constant_polynomial_part(const MtfData& mtf) {
 
 MtfData MtfData::power(double exponent) const {
     if (exponent == 0) {
-        return MtfData({{std::vector<int32_t>(dimension, 0)}}, {1.0}, dimension);
+        return MtfData({{std::vector<int32_t>(dimension, 0)}}, {{1.0, 0.0}}, dimension);
     }
     if (exponent == 1) {
         return *this;
@@ -201,9 +266,12 @@ MtfData MtfData::power(double exponent) const {
     if (abs(exponent - static_cast<int>(exponent)) < 1e-9) { // integer power
         int power_int = static_cast<int>(exponent);
         if (power_int > 1) {
-            MtfData result = *this;
-            for (int i = 1; i < power_int; ++i) {
-                result = result.multiply(*this);
+            MtfData result = MtfData({{std::vector<int32_t>(dimension, 0)}}, {{1.0, 0.0}}, dimension);
+            MtfData base = *this;
+            while (power_int > 0) {
+                if (power_int % 2 == 1) result = result.multiply(base);
+                base = base.multiply(base);
+                power_int /= 2;
             }
             return result;
         } else if (power_int == -1) {
@@ -212,25 +280,25 @@ MtfData MtfData::power(double exponent) const {
                 throw std::runtime_error("Cannot invert MTF with zero constant term.");
             }
             MtfData rescaled_mtf = this->multiply(MtfData({{std::vector<int32_t>(dimension, 0)}}, {1.0/const_term}, dimension));
-            MtfData one_mtf({{std::vector<int32_t>(dimension, 0)}}, {1.0}, dimension);
+            MtfData one_mtf({{std::vector<int32_t>(dimension, 0)}}, {{1.0, 0.0}}, dimension);
             MtfData composed_mtf = inverse_taylor_1D_expansion(rescaled_mtf.add(one_mtf.negate()), 10);
             return composed_mtf.multiply(MtfData({{std::vector<int32_t>(dimension, 0)}}, {1.0/const_term}, dimension));
         }
     } else if (exponent == 0.5) {
         auto [const_term, poly_part] = _split_constant_polynomial_part(*this);
-        if (const_term < 0) {
+        if (const_term.real() < 0 && abs(const_term.imag()) < 1e-9) {
              throw std::runtime_error("Cannot take sqrt of MTF with negative constant term.");
         }
-        double const_factor_sqrt = sqrt(const_term);
+        std::complex<double> const_factor_sqrt = sqrt(const_term);
         MtfData poly_part_x = poly_part.multiply(MtfData({{std::vector<int32_t>(dimension, 0)}}, {1.0/const_term}, dimension));
         MtfData sqrt_1_plus_x = sqrt_taylor_1D_expansion(poly_part_x, 10);
         return sqrt_1_plus_x.multiply(MtfData({{std::vector<int32_t>(dimension, 0)}}, {const_factor_sqrt}, dimension));
     } else if (exponent == -0.5) {
         auto [const_term, poly_part] = _split_constant_polynomial_part(*this);
-        if (const_term <= 0) {
+        if (abs(const_term) < 1e-9) {
              throw std::runtime_error("Cannot take isqrt of MTF with non-positive constant term.");
         }
-        double const_factor_isqrt = 1.0/sqrt(const_term);
+        std::complex<double> const_factor_isqrt = 1.0/sqrt(const_term);
         MtfData poly_part_x = poly_part.multiply(MtfData({{std::vector<int32_t>(dimension, 0)}}, {1.0/const_term}, dimension));
         MtfData isqrt_1_plus_x = isqrt_taylor_1D_expansion(poly_part_x, 10);
         return isqrt_1_plus_x.multiply(MtfData({{std::vector<int32_t>(dimension, 0)}}, {const_factor_isqrt}, dimension));
@@ -254,10 +322,10 @@ const std::vector<double>& get_precomputed_coeffs(const std::string& name) {
 MtfData sqrt_taylor_1D_expansion(const MtfData& variable, int order) {
     const auto& coeffs = get_precomputed_coeffs("sqrt");
     std::vector<std::vector<int32_t>> exps;
-    std::vector<double> selected_coeffs;
+    std::vector<std::complex<double>> selected_coeffs;
     for (int i = 0; i <= order; ++i) {
         exps.push_back({i});
-        selected_coeffs.push_back(coeffs[i]);
+        selected_coeffs.push_back({coeffs[i], 0.0});
     }
     MtfData mtf_1d(exps, selected_coeffs, 1);
     std::map<int, MtfData> compose_map;
@@ -268,10 +336,10 @@ MtfData sqrt_taylor_1D_expansion(const MtfData& variable, int order) {
 MtfData isqrt_taylor_1D_expansion(const MtfData& variable, int order) {
     const auto& coeffs = get_precomputed_coeffs("isqrt");
     std::vector<std::vector<int32_t>> exps;
-    std::vector<double> selected_coeffs;
+    std::vector<std::complex<double>> selected_coeffs;
     for (int i = 0; i <= order; ++i) {
         exps.push_back({i});
-        selected_coeffs.push_back(coeffs[i]);
+        selected_coeffs.push_back({coeffs[i], 0.0});
     }
     MtfData mtf_1d(exps, selected_coeffs, 1);
     std::map<int, MtfData> compose_map;
@@ -282,10 +350,10 @@ MtfData isqrt_taylor_1D_expansion(const MtfData& variable, int order) {
 MtfData inverse_taylor_1D_expansion(const MtfData& variable, int order) {
     const auto& coeffs = get_precomputed_coeffs("inverse");
     std::vector<std::vector<int32_t>> exps;
-    std::vector<double> selected_coeffs;
+    std::vector<std::complex<double>> selected_coeffs;
     for (int i = 0; i <= order; ++i) {
         exps.push_back({i});
-        selected_coeffs.push_back(coeffs[i]);
+        selected_coeffs.push_back({coeffs[i], 0.0});
     }
     MtfData mtf_1d(exps, selected_coeffs, 1);
     std::map<int, MtfData> compose_map;
@@ -294,35 +362,35 @@ MtfData inverse_taylor_1D_expansion(const MtfData& variable, int order) {
 }
 
 
-std::pair<py::array_t<int32_t>, py::array_t<double>> add_mtf_cpp(
+std::pair<py::array_t<int32_t>, py::array_t<std::complex<double>>> add_mtf_cpp(
     py::array_t<int32_t, py::array::c_style | py::array::forcecast> exps1,
-    py::array_t<double, py::array::c_style | py::array::forcecast> coeffs1,
+    py::array_t<std::complex<double>, py::array::c_style | py::array::forcecast> coeffs1,
     py::array_t<int32_t, py::array::c_style | py::array::forcecast> exps2,
-    py::array_t<double, py::array::c_style | py::array::forcecast> coeffs2) {
+    py::array_t<std::complex<double>, py::array::c_style | py::array::forcecast> coeffs2) {
 
     MtfData mtf1(exps1, coeffs1);
     MtfData mtf2(exps2, coeffs2);
     MtfData result = mtf1.add(mtf2);
     py::dict d = result.to_dict();
-    return std::make_pair(d["exponents"].cast<py::array_t<int32_t>>(), d["coeffs"].cast<py::array_t<double>>());
+    return std::make_pair(d["exponents"].cast<py::array_t<int32_t>>(), d["coeffs"].cast<py::array_t<std::complex<double>>>());
 }
 
-std::pair<py::array_t<int32_t>, py::array_t<double>> multiply_mtf_cpp(
+std::pair<py::array_t<int32_t>, py::array_t<std::complex<double>>> multiply_mtf_cpp(
     py::array_t<int32_t, py::array::c_style | py::array::forcecast> exps1,
-    py::array_t<double, py::array::c_style | py::array::forcecast> coeffs1,
+    py::array_t<std::complex<double>, py::array::c_style | py::array::forcecast> coeffs1,
     py::array_t<int32_t, py::array::c_style | py::array::forcecast> exps2,
-    py::array_t<double, py::array::c_style | py::array::forcecast> coeffs2) {
+    py::array_t<std::complex<double>, py::array::c_style | py::array::forcecast> coeffs2) {
 
     MtfData mtf1(exps1, coeffs1);
     MtfData mtf2(exps2, coeffs2);
     MtfData result = mtf1.multiply(mtf2);
     py::dict d = result.to_dict();
-    return std::make_pair(d["exponents"].cast<py::array_t<int32_t>>(), d["coeffs"].cast<py::array_t<double>>());
+    return std::make_pair(d["exponents"].cast<py::array_t<int32_t>>(), d["coeffs"].cast<py::array_t<std::complex<double>>>());
 }
 
-double extract_coefficient_cpp(
+std::complex<double> extract_coefficient_cpp(
     py::array_t<int32_t, py::array::c_style | py::array::forcecast> exps,
-    py::array_t<double, py::array::c_style | py::array::forcecast> coeffs,
+    py::array_t<std::complex<double>, py::array::c_style | py::array::forcecast> coeffs,
     std::vector<int32_t> exp_to_find) {
 
     auto e = exps.unchecked<2>();
@@ -335,7 +403,7 @@ double extract_coefficient_cpp(
         throw std::runtime_error("Dimension of exponent to find does not match dimension of MTF.");
     }
 
-    std::unordered_map<std::vector<int32_t>, double, VectorHasher> exp_map;
+    std::unordered_map<std::vector<int32_t>, std::complex<double>, VectorHasher> exp_map;
     for (ssize_t i = 0; i < n_terms; ++i) {
         std::vector<int32_t> exp_vec(dimension);
         for (ssize_t j = 0; j < dimension; ++j) {
@@ -349,5 +417,5 @@ double extract_coefficient_cpp(
         return it->second;
     }
 
-    return 0.0;
+    return {0.0, 0.0};
 }

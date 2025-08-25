@@ -29,10 +29,10 @@ class MultivariateTaylorFunction:
     _ETOL = 1e-16
     _TRUNCATE_AFTER_OPERATION = True
     _PRECOMPUTED_COEFFICIENTS = {}
-    _IMPLEMENTATION = 'python'
+    _IMPLEMENTATION = 'cpp'
 
     @classmethod
-    def initialize_mtf(cls, max_order=None, max_dimension=None, implementation='python'):
+    def initialize_mtf(cls, max_order=None, max_dimension=None, implementation='cpp'):
         """Initializes global settings and loads precomputed coefficients. Must be called once."""
         if cls._INITIALIZED:
             print("MTF globals already initialized. Re-initializing with new settings.")
@@ -442,7 +442,7 @@ class MultivariateTaylorFunction:
         if isinstance(other, MultivariateTaylorFunction):
             inverse_other_mtf = self._inv_mtf_internal(other)
             return self * inverse_other_mtf
-        elif isinstance(other, (int, float, np.number)):
+        elif isinstance(other, (int, float, complex, np.number)):
             result_mtf = type(self)((self.exponents.copy(), self.coeffs / other), self.dimension)
             if self._TRUNCATE_AFTER_OPERATION:
                 result_mtf._cleanup_after_operation()
@@ -506,9 +506,13 @@ class MultivariateTaylorFunction:
         # Zero out the exponents for the substituted variable
         new_exponents[:, var_index - 1] = 0
 
-        # Use np.unique to group the new exponents and sum the corresponding coefficients
-        unique_exponents, inverse_indices = np.unique(new_exponents, axis=0, return_inverse=True)
-        summed_coeffs = np.bincount(inverse_indices, weights=new_coeffs)
+        # Use a dictionary to group and sum coefficients, as bincount does not support complex numbers
+        summed_coeffs_dict = defaultdict(complex)
+        for i, exp in enumerate(new_exponents):
+            summed_coeffs_dict[tuple(exp)] += new_coeffs[i]
+
+        unique_exponents = np.array(list(summed_coeffs_dict.keys()), dtype=np.int32)
+        summed_coeffs = np.array(list(summed_coeffs_dict.values()))
 
         return type(self)((unique_exponents, summed_coeffs), self.dimension)
 
@@ -668,7 +672,8 @@ class MultivariateTaylorFunction:
         if self._IMPLEMENTATION == 'cpp' and _CPP_BACKEND_AVAILABLE and self.mtf_data:
             if not isinstance(exponents, tuple):
                 raise TypeError("Exponents must be a tuple.")
-            return mtf_cpp.extract_coefficient_cpp(self.exponents, self.coeffs, list(exponents))
+            coeff = mtf_cpp.extract_coefficient_cpp(self.exponents, self.coeffs, list(exponents))
+            return np.array([coeff])
 
         if self.exponents.size == 0:
             return np.array([0.0], dtype=self.coeffs.dtype)
