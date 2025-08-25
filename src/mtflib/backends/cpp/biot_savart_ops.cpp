@@ -37,17 +37,18 @@ std::vector<MtfVector> biot_savart_core_cpp(
     }
 
     int dim = field_points[0][0].dimension;
-    std::vector<MtfVector> B_fields;
-    B_fields.reserve(field_points.size());
+    std::vector<MtfVector> B_fields(field_points.size());
 
     double mu_0_4pi = 1e-7;
     MtfData scale_factor({{std::vector<int32_t>(dim, 0)}}, {{mu_0_4pi, 0.0}}, dim);
 
-    for (const auto& field_point : field_points) {
+    #pragma omp parallel for
+    for (size_t i = 0; i < field_points.size(); ++i) {
+        const auto& field_point = field_points[i];
         MtfVector B_field_total = {MtfData({}, {}, dim), MtfData({}, {}, dim), MtfData({}, {}, dim)};
-        for (size_t i = 0; i < source_points.size(); ++i) {
-            const auto& source_point = source_points[i];
-            const auto& dl_vector = dl_vectors[i];
+        for (size_t j = 0; j < source_points.size(); ++j) {
+            const auto& source_point = source_points[j];
+            const auto& dl_vector = dl_vectors[j];
 
             MtfVector r_vector(3);
             subtract_vectors_inplace(r_vector, field_point, source_point);
@@ -74,7 +75,7 @@ std::vector<MtfVector> biot_savart_core_cpp(
             MtfData dBz = cross_prod[2].multiply(inv_r_cubed_scaled);
             B_field_total[2].add_inplace(dBz);
         }
-        B_fields.push_back(B_field_total);
+        B_fields[i] = B_field_total;
     }
 
     return B_fields;
