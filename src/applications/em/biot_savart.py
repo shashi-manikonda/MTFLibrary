@@ -56,30 +56,33 @@ def _cpp_biot_savart_core(source_points, dl_vectors, field_points, order=None):
     """
     Core vectorized Biot-Savart calculation using C++ backend.
     """
-    def to_numpy_list(points):
-        exps_list = []
-        coeffs_list = []
+    all_exponents = []
+    all_coeffs = []
+    shapes = []
+
+    def process_points(points):
+        shapes.append(len(points))
+        point_shapes = []
         for p in points:
-            p_exps = []
-            p_coeffs = []
             for item in p:
                 if not isinstance(item, MultivariateTaylorFunction):
                     item = MultivariateTaylorFunction.from_constant(item)
-                p_exps.append(item.exponents)
-                p_coeffs.append(item.coeffs)
-            exps_list.append(p_exps)
-            coeffs_list.append(p_coeffs)
-        return exps_list, coeffs_list
+                all_exponents.append(item.exponents)
+                all_coeffs.append(item.coeffs)
+                point_shapes.append(item.exponents.shape[0])
+        return point_shapes
 
-    source_points_exps, source_points_coeffs = to_numpy_list(source_points)
-    dl_vectors_exps, dl_vectors_coeffs = to_numpy_list(dl_vectors)
-    field_points_exps, field_points_coeffs = to_numpy_list(field_points)
+    sp_shapes = process_points(source_points)
+    dl_shapes = process_points(dl_vectors)
+    fp_shapes = process_points(field_points)
 
-    b_field_dicts = mtf_cpp.biot_savart_from_numpy(
-        source_points_exps, source_points_coeffs,
-        dl_vectors_exps, dl_vectors_coeffs,
-        field_points_exps, field_points_coeffs
-    )
+    dimension = MultivariateTaylorFunction.get_max_dimension()
+
+    shapes = np.array([len(source_points), len(dl_vectors), len(field_points), dimension] + sp_shapes + dl_shapes + fp_shapes, dtype=np.int32)
+    all_exponents = np.vstack(all_exponents)
+    all_coeffs = np.concatenate(all_coeffs)
+
+    b_field_dicts = mtf_cpp.biot_savart_from_flat_numpy(all_exponents, all_coeffs, shapes)
 
     b_field_py = []
     for b_vec_dicts in b_field_dicts:

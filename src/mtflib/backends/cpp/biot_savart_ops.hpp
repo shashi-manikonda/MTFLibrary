@@ -18,4 +18,10 @@ py::list biot_savart_from_numpy(
     py::list field_points_exps, py::list field_points_coeffs
 );
 
+py::list biot_savart_from_flat_numpy(
+    py::array_t<int32_t> all_exponents,
+    py::array_t<std::complex<double>> all_coeffs,
+    py::array_t<int32_t> shapes
+);
+
 #endif // BIOT_SAVART_OPS_HPP
