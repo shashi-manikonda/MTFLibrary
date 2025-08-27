@@ -1,6 +1,7 @@
 import numpy as np
 from mtflib import MultivariateTaylorFunction
 from mtflib.backends.cpp import mtf_cpp
+from mtflib.backends.c import mtf_c_backend
 
 mpi_installed = True  # Assume MPI is installed initially
 try:
@@ -205,7 +206,61 @@ def mpi_biot_savart(element_centers, element_lengths, element_directions, field_
         return None
 
 
-def serial_biot_savart(element_centers, element_lengths, element_directions, field_points, order=None):
+def _c_biot_savart_core(source_points, dl_vectors, field_points, order=None):
+    """
+    Core vectorized Biot-Savart calculation using C backend.
+    """
+    all_exponents = []
+    all_coeffs = []
+    shapes = []
+
+    def process_points(points):
+        shapes.append(len(points))
+        point_shapes = []
+        for p in points:
+            for item in p:
+                if not isinstance(item, MultivariateTaylorFunction):
+                    item = MultivariateTaylorFunction.from_constant(item)
+                all_exponents.append(item.exponents)
+                all_coeffs.append(item.coeffs)
+                point_shapes.append(item.exponents.shape[0])
+        return point_shapes
+
+    sp_shapes = process_points(source_points)
+    dl_shapes = process_points(dl_vectors)
+    fp_shapes = process_points(field_points)
+
+    dimension = MultivariateTaylorFunction.get_max_dimension()
+
+    shapes = np.array([len(source_points), len(dl_vectors), len(field_points), dimension] + sp_shapes + dl_shapes + fp_shapes, dtype=np.int32)
+    all_exponents = np.vstack(all_exponents)
+    all_coeffs = np.concatenate(all_coeffs)
+
+    result_dict = mtf_c_backend.biot_savart_c_from_flat_numpy(all_exponents, all_coeffs, shapes)
+
+    # Reconstruct MTF objects from the result
+    res_exps = result_dict['exponents']
+    res_coeffs = result_dict['coeffs']
+    res_shapes = result_dict['shapes']
+
+    n_field_points = res_shapes[0]
+    b_field_py = []
+    current_offset = 0
+    shape_idx = 1
+    for i in range(n_field_points):
+        vec = []
+        for j in range(3):
+            n_terms = res_shapes[shape_idx]
+            exps = res_exps[current_offset:current_offset+n_terms]
+            coeffs = res_coeffs[current_offset:current_offset+n_terms]
+            vec.append(MultivariateTaylorFunction(coefficients=(exps, coeffs)))
+            current_offset += n_terms
+            shape_idx += 1
+        b_field_py.append(vec)
+
+    return np.array(b_field_py)
+
+def serial_biot_savart(element_centers, element_lengths, element_directions, field_points, order=None, backend=None):
     """
     Serial Biot-Savart calculation with element inputs.
 
@@ -252,7 +307,14 @@ def serial_biot_savart(element_centers, element_lengths, element_directions, fie
     source_points = element_centers
     dl_vectors = 0.5 * element_lengths[:, np.newaxis] * element_directions
 
-    if MultivariateTaylorFunction._IMPLEMENTATION == 'cpp':
+    if backend is None:
+        backend = MultivariateTaylorFunction._IMPLEMENTATION
+
+    if backend == 'cpp':
         return _cpp_biot_savart_core(source_points, dl_vectors, field_points, order)
-    else:
+    elif backend == 'c':
+        return _c_biot_savart_core(source_points, dl_vectors, field_points, order)
+    elif backend == 'cpp_v2':
+        return _cpp_biot_savart_core(source_points, dl_vectors, field_points, order)
+    else: # python
         return _python_biot_savart_core(source_points, dl_vectors, field_points, order)

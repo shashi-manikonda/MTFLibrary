@@ -18,6 +18,12 @@ extensions = [
               language='c++',
               extra_compile_args=cpp_args,
               extra_link_args=cpp_args),
+    Extension('mtflib.backends.c.mtf_c_backend',
+              ['src/mtflib/backends/c/c_backend.c', 'src/mtflib/backends/c/c_pybind_wrapper.cpp'],
+              include_dirs=[pybind11.get_include(), numpy.get_include(), 'src/mtflib/backends/c'],
+              language='c++',
+              extra_compile_args=cpp_args,
+              extra_link_args=cpp_args),
 ]
 
 setup(
