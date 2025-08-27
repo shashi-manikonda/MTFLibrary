@@ -101,7 +101,7 @@ def benchmark_biot_savart(implementation, num_points):
     field_points = np.random.rand(num_points, 3)
 
     start_time = time.time()
-    _ = serial_biot_savart(element_centers, element_lengths, element_directions, field_points)
+    _ = serial_biot_savart(element_centers, element_lengths, element_directions, field_points, backend=implementation)
     end_time = time.time()
     print(f"Time for serial_biot_savart with {num_points} points: {end_time - start_time:.6f} seconds")
 
@@ -128,7 +128,7 @@ def main():
     parser.add_argument('--dimension', type=int, default=DEFAULT_DIMENSION, help='Number of variables.')
     parser.add_argument('--num-terms', type=int, default=DEFAULT_NUM_TERMS, help='Number of non-zero terms in the random MTFs.')
     parser.add_argument('--num-points', type=int, default=DEFAULT_NUM_POINTS, help='Number of field points for Biot-Savart benchmark.')
-    parser.add_argument('--implementation', type=str, default=DEFAULT_IMPLEMENTATION, choices=['python', 'cpp'], help='Implementation to benchmark.')
+    parser.add_argument('--implementation', type=str, default=DEFAULT_IMPLEMENTATION, choices=['python', 'cpp', 'c'], help='Implementation to benchmark.')
     parser.add_argument('--profile', action='store_true', help='Enable cProfile profiling.')
 
     args = parser.parse_args()

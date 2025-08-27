@@ -107,17 +107,11 @@ typedef struct {
     complex_t coeff;
 } Term;
 
-void bubble_sort_terms(Term* terms, size_t n, int dimension) {
-    if (n == 0) return;
-    for (size_t i = 0; i < n - 1; i++) {
-        for (size_t j = 0; j < n - i - 1; j++) {
-            if (exponent_compare(terms[j].exponents, terms[j + 1].exponents, dimension) > 0) {
-                Term temp = terms[j];
-                terms[j] = terms[j + 1];
-                terms[j + 1] = temp;
-            }
-        }
-    }
+int compare_terms_r(const void* a, const void* b, void* arg) {
+    int dimension = *(int*)arg;
+    const Term* term_a = (const Term*)a;
+    const Term* term_b = (const Term*)b;
+    return memcmp(term_a->exponents, term_b->exponents, dimension * sizeof(int32_t));
 }
 
 MtfDataC mtf_multiply(const MtfDataC* a, const MtfDataC* b) {
@@ -141,7 +135,7 @@ MtfDataC mtf_multiply(const MtfDataC* a, const MtfDataC* b) {
         }
     }
 
-    bubble_sort_terms(new_terms, new_capacity, a->dimension);
+    qsort_r(new_terms, new_capacity, sizeof(Term), compare_terms_r, &a->dimension);
 
     size_t merged_n_terms = 0;
     if (new_capacity > 0) {
@@ -190,7 +184,23 @@ static const int num_isqrt_coeffs = sizeof(isqrt_coeffs) / sizeof(double);
 
 MtfDataC mtf_power(const MtfDataC* a, double exponent) {
     if (exponent != -0.5) {
-        return create_mtf_data(a->dimension, 0);
+        int exp_int = (int)exponent;
+        if (exp_int == exponent && exp_int >= 0) { // integer power
+            if (exp_int == 0) {
+                MtfDataC result = create_mtf_data(a->dimension, 1);
+                memset(result.exponents, 0, result.dimension * sizeof(int32_t));
+                result.coeffs[0] = 1.0;
+                return result;
+            }
+            MtfDataC result = clone_mtf_data(a);
+            for (int i = 1; i < exp_int; ++i) {
+                MtfDataC temp = mtf_multiply(&result, a);
+                free_mtf_data(&result);
+                result = temp;
+            }
+            return result;
+        }
+        return create_mtf_data(a->dimension, 0); // Not implemented for other exponents
     }
 
     complex_t const_term = 0.0;
