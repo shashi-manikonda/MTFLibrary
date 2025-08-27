@@ -30,21 +30,21 @@ py::dict biot_savart_c_from_flat_numpy(
 
     py::capsule free_exps(result_exps_ptr, [](void *f) { delete[] static_cast<int32_t*>(f); });
     py::array_t<int32_t> result_exps(
-        {(ssize_t)total_result_terms, (ssize_t)dimension},
+        {static_cast<pybind11::ssize_t>(total_result_terms), static_cast<pybind11::ssize_t>(dimension)},
         {sizeof(int32_t) * dimension, sizeof(int32_t)},
         result_exps_ptr,
         free_exps);
 
     py::capsule free_coeffs(result_coeffs_ptr, [](void *f) { delete[] static_cast<complex_t*>(f); });
     py::array_t<complex_t> result_coeffs(
-        {(ssize_t)total_result_terms},
+        {static_cast<pybind11::ssize_t>(total_result_terms)},
         {sizeof(complex_t)},
         result_coeffs_ptr,
         free_coeffs);
 
     py::capsule free_shapes(result_shapes_ptr, [](void *f) { delete[] static_cast<int32_t*>(f); });
     py::array_t<int32_t> result_shapes(
-        {(ssize_t)(n_field_points * 3 + 1)},
+        {static_cast<pybind11::ssize_t>(n_field_points * 3 + 1)},
         {sizeof(int32_t)},
         result_shapes_ptr,
         free_shapes);

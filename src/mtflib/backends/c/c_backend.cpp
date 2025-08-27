@@ -270,27 +270,27 @@ void biot_savart_c(
     std::vector<MtfDataC> fp(n_field_points * 3);
 
     size_t current_term_offset = 0;
-    for(int i=0; i<n_source_points*3; ++i) {
+    for(size_t i=0; i < (size_t)n_source_points*3; ++i) {
         sp[i] = create_mtf_data(dimension, sp_shapes[i]);
         if (sp_shapes[i] > 0) {
-            memcpy(sp[i].exponents, all_exponents + current_term_offset * dimension, sp_shapes[i] * dimension * sizeof(int32_t));
-            memcpy(sp[i].coeffs, all_coeffs + current_term_offset, sp_shapes[i] * sizeof(complex_t));
+            memcpy(sp[i].exponents, all_exponents + current_term_offset * dimension, (size_t)sp_shapes[i] * dimension * sizeof(int32_t));
+            memcpy(sp[i].coeffs, all_coeffs + current_term_offset, (size_t)sp_shapes[i] * sizeof(complex_t));
             current_term_offset += sp_shapes[i];
         }
     }
-    for(int i=0; i<n_dl_vectors*3; ++i) {
+    for(size_t i=0; i < (size_t)n_dl_vectors*3; ++i) {
         dl[i] = create_mtf_data(dimension, dl_shapes[i]);
         if (dl_shapes[i] > 0) {
-            memcpy(dl[i].exponents, all_exponents + current_term_offset * dimension, dl_shapes[i] * dimension * sizeof(int32_t));
-            memcpy(dl[i].coeffs, all_coeffs + current_term_offset, dl_shapes[i] * sizeof(complex_t));
+            memcpy(dl[i].exponents, all_exponents + current_term_offset * dimension, (size_t)dl_shapes[i] * dimension * sizeof(int32_t));
+            memcpy(dl[i].coeffs, all_coeffs + current_term_offset, (size_t)dl_shapes[i] * sizeof(complex_t));
             current_term_offset += dl_shapes[i];
         }
     }
-    for(int i=0; i<n_field_points*3; ++i) {
+    for(size_t i=0; i < (size_t)n_field_points*3; ++i) {
         fp[i] = create_mtf_data(dimension, fp_shapes[i]);
         if (fp_shapes[i] > 0) {
-            memcpy(fp[i].exponents, all_exponents + current_term_offset * dimension, fp_shapes[i] * dimension * sizeof(int32_t));
-            memcpy(fp[i].coeffs, all_coeffs + current_term_offset, fp_shapes[i] * sizeof(complex_t));
+            memcpy(fp[i].exponents, all_exponents + current_term_offset * dimension, (size_t)fp_shapes[i] * dimension * sizeof(int32_t));
+            memcpy(fp[i].coeffs, all_coeffs + current_term_offset, (size_t)fp_shapes[i] * sizeof(complex_t));
             current_term_offset += fp_shapes[i];
         }
     }
