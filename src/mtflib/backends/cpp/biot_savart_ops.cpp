@@ -10,11 +10,11 @@ void subtract_vectors_inplace(MtfVector& result, const MtfVector& a, const MtfVe
         throw std::runtime_error("Vectors must have 3 components.");
     }
     result[0] = a[0];
-    result[0].add_inplace(a[0].negate());
+    result[0].add_inplace(b[0].negate());
     result[1] = a[1];
-    result[1].add_inplace(a[1].negate());
+    result[1].add_inplace(b[1].negate());
     result[2] = a[2];
-    result[2].add_inplace(a[2].negate());
+    result[2].add_inplace(b[2].negate());
 }
 
 // Helper for vector cross product
@@ -55,10 +55,10 @@ std::vector<MtfVector> biot_savart_core_cpp(
 
 
     #pragma omp parallel for
-    for (size_t i = 0; i < field_points.size(); ++i) {
+    for (long i = 0; i < field_points.size(); ++i) {
         const auto& field_point = field_points[i];
         MtfVector B_field_total = {MtfData(dim), MtfData(dim), MtfData(dim)};
-        for (size_t j = 0; j < source_points.size(); ++j) {
+        for (long j = 0; j < source_points.size(); ++j) {
             const auto& source_point = source_points[j];
             const auto& dl_vector = dl_vectors[j];
 
@@ -111,7 +111,9 @@ py::list biot_savart_from_numpy(
             py::list p_coeffs = coeffs_list[i].cast<py::list>();
             MtfVector vec;
             for (size_t j = 0; j < p_exps.size(); ++j) {
-                vec.push_back(MtfData(p_exps[j].cast<py::array_t<int32_t>>(), p_coeffs[j].cast<py::array_t<std::complex<double>>>()));
+                MtfData mtf;
+                mtf.from_numpy(p_exps[j].cast<py::array_t<int32_t>>(), p_coeffs[j].cast<py::array_t<std::complex<double>>>());
+                vec.push_back(mtf);
             }
             mtf_vectors.push_back(vec);
         }

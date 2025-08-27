@@ -196,8 +196,9 @@ class MultivariateTaylorFunction:
         else:
             raise TypeError("Unsupported type for 'coefficients'. Must be a dict or a tuple of (exponents, coeffs) arrays.")
 
-        if _CPP_BACKEND_AVAILABLE:
-            self.mtf_data = mtf_cpp.MtfData(self.exponents, self.coeffs)
+        if _CPP_BACKEND_AVAILABLE and self._IMPLEMENTATION == 'cpp':
+            self.mtf_data = mtf_cpp.MtfData()
+            self.mtf_data.from_numpy(self.exponents, self.coeffs)
 
     @classmethod
     def from_constant(cls, constant_value, dimension=None):
@@ -254,14 +255,6 @@ class MultivariateTaylorFunction:
         if self.dimension != other.dimension:
             raise ValueError("MTF dimensions must match for addition.")
 
-        # C++ Backend Dispatch
-        if self._IMPLEMENTATION == 'cpp' and _CPP_BACKEND_AVAILABLE and self.mtf_data and other.mtf_data:
-            result_mtf_data = self.mtf_data.add(other.mtf_data)
-            result_mtf = type(self)(coefficients=None, dimension=self.dimension, mtf_data=result_mtf_data)
-            if self._TRUNCATE_AFTER_OPERATION:
-                result_mtf._cleanup_after_operation()
-            return result_mtf
-
         # Python Implementation (Optimized with dictionary)
         is_complex = np.iscomplexobj(self.coeffs) or np.iscomplexobj(other.coeffs)
         summed_coeffs_dict = defaultdict(complex) if is_complex else defaultdict(float)
@@ -300,14 +293,6 @@ class MultivariateTaylorFunction:
 
         if self.dimension != other.dimension:
             raise ValueError("MTF dimensions must match for subtraction.")
-
-        # C++ Backend Dispatch
-        if self._IMPLEMENTATION == 'cpp' and _CPP_BACKEND_AVAILABLE and self.mtf_data and other.mtf_data:
-            result_mtf_data = self.mtf_data.add(other.mtf_data.negate())
-            result_mtf = type(self)(coefficients=None, dimension=self.dimension, mtf_data=result_mtf_data)
-            if self._TRUNCATE_AFTER_OPERATION:
-                result_mtf._cleanup_after_operation()
-            return result_mtf
 
         # Python Implementation (Optimized with dictionary)
         is_complex = np.iscomplexobj(self.coeffs) or np.iscomplexobj(other.coeffs)
@@ -354,14 +339,6 @@ class MultivariateTaylorFunction:
         if self.coeffs.size == 0 or other.coeffs.size == 0:
             dtype = np.result_type(self.coeffs.dtype, other.coeffs.dtype)
             return type(self)((np.empty((0, self.dimension), dtype=np.int32), np.empty((0,), dtype=dtype)), self.dimension)
-
-        # C++ Backend Dispatch
-        if self._IMPLEMENTATION == 'cpp' and _CPP_BACKEND_AVAILABLE and self.mtf_data and other.mtf_data:
-            result_mtf_data = self.mtf_data.multiply(other.mtf_data)
-            result_mtf = type(self)(coefficients=None, dimension=self.dimension, mtf_data=result_mtf_data)
-            if self._TRUNCATE_AFTER_OPERATION:
-                result_mtf._cleanup_after_operation()
-            return result_mtf
 
         # Python Implementation (Optimized with dictionary)
         is_complex = np.iscomplexobj(self.coeffs) or np.iscomplexobj(other.coeffs)
@@ -614,12 +591,6 @@ class MultivariateTaylorFunction:
                     raise ValueError(f"Outer function variable {i} is not being substituted, but the result dimension is only {result_dim}.")
                 substitutions[i] = type(self).from_variable(i, result_dim)
 
-        # C++ Backend Dispatch
-        if self._IMPLEMENTATION == 'cpp' and _CPP_BACKEND_AVAILABLE and self.mtf_data:
-            other_function_dict_cpp = {k: v.mtf_data for k, v in other_function_dict.items()}
-            result_mtf_data = self.mtf_data.compose(other_function_dict_cpp)
-            return type(self)(coefficients=None, dimension=result_dim, mtf_data=result_mtf_data)
-
         # The final MTF will be initialized as a zero constant of the correct dimension.
         final_mtf = type(self).from_constant(0.0, dimension=result_dim)
 
@@ -669,12 +640,6 @@ class MultivariateTaylorFunction:
 
     def extract_coefficient(self, exponents):
         """Extracts the coefficient for a given exponent tuple."""
-        if self._IMPLEMENTATION == 'cpp' and _CPP_BACKEND_AVAILABLE and self.mtf_data:
-            if not isinstance(exponents, tuple):
-                raise TypeError("Exponents must be a tuple.")
-            coeff = mtf_cpp.extract_coefficient_cpp(self.exponents, self.coeffs, list(exponents))
-            return np.array([coeff])
-
         if self.exponents.size == 0:
             return np.array([0.0], dtype=self.coeffs.dtype)
         if not isinstance(exponents, tuple):
