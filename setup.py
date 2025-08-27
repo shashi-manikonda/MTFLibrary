@@ -9,11 +9,11 @@ if sys.platform == 'win32':
     cpp_args = ['/std:c++17', '/openmp']
 else:
     # GCC/Clang compiler arguments
-    cpp_args = ['-std=c++17', '-fopenmp']
+    cpp_args = ['-std=c++17', '-fopenmp', '-O3', '-march=native']
 
 extensions = [
     Extension('mtflib.backends.cpp.mtf_cpp',
-              ['src/mtflib/backends/cpp/mtf_data.cpp', 'src/mtflib/backends/cpp/pybind_wrapper.cpp', 'src/mtflib/backends/cpp/biot_savart_ops.cpp'],
+              ['src/mtflib/backends/cpp/mtf_data.cpp', 'src/mtflib/backends/cpp/mtf_data_v2.cpp', 'src/mtflib/backends/cpp/pybind_wrapper.cpp', 'src/mtflib/backends/cpp/biot_savart_ops.cpp'],
               include_dirs=[pybind11.get_include(), numpy.get_include(), 'src/mtflib/backends/cpp'],
               language='c++',
               extra_compile_args=cpp_args,

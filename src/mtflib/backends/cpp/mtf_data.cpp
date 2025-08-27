@@ -1,22 +1,64 @@
 #include "mtf_data.hpp"
-#include <vector>
-#include <unordered_map>
-#include "precomputed_coefficients.hpp"
-#include <algorithm>
-#include <omp.h>
 #include <stdexcept>
-#include <cmath>
-#include <complex>
+#include <algorithm>
+#include <numeric>
+#include "precomputed_coefficients.hpp"
 
-#if defined(_MSC_VER)
-#include <BaseTsd.h>
-typedef SSIZE_T ssize_t;
-#endif
+// Constructors
+MtfData::MtfData() : dimension(0), n_terms(0) {}
 
-MtfData::MtfData() : dimension(0) {}
+MtfData::MtfData(int dim) : dimension(dim), n_terms(0) {}
 
-MtfData::MtfData(py::array_t<int32_t, py::array::c_style | py::array::forcecast> exps_arr,
-                 py::array_t<std::complex<double>, py::array::c_style | py::array::forcecast> coeffs_arr) {
+MtfData::MtfData(const MtfData& other)
+    : exponents(other.exponents),
+      coeffs(other.coeffs),
+      dimension(other.dimension),
+      n_terms(other.n_terms) {}
+
+MtfData& MtfData::operator=(const MtfData& other) {
+    if (this != &other) {
+        exponents = other.exponents;
+        coeffs = other.coeffs;
+        dimension = other.dimension;
+        n_terms = other.n_terms;
+    }
+    return *this;
+}
+
+// Methods
+void MtfData::reserve(size_t capacity) {
+    exponents.reserve(capacity * dimension);
+    coeffs.reserve(capacity);
+}
+
+void MtfData::clear() {
+    exponents.clear();
+    coeffs.clear();
+    n_terms = 0;
+}
+
+// Conversion to/from Python
+py::dict MtfData::to_dict() const {
+    py::dict d;
+    py::array_t<int32_t> exps_arr({(ssize_t)n_terms, (ssize_t)dimension});
+    py::array_t<std::complex<double>> coeffs_arr(n_terms);
+
+    auto exps_ptr = exps_arr.mutable_unchecked<2>();
+    auto coeffs_ptr = coeffs_arr.mutable_unchecked<1>();
+
+    for (size_t i = 0; i < n_terms; ++i) {
+        for (int j = 0; j < dimension; ++j) {
+            exps_ptr(i, j) = exponents[i * dimension + j];
+        }
+        coeffs_ptr(i) = coeffs[i];
+    }
+
+    d["exponents"] = exps_arr;
+    d["coeffs"] = coeffs_arr;
+    return d;
+}
+
+void MtfData::from_numpy(py::array_t<int32_t> exps_arr, py::array_t<std::complex<double>> coeffs_arr) {
     auto exps_buf = exps_arr.request();
     auto coeffs_buf = coeffs_arr.request();
 
@@ -28,121 +70,96 @@ MtfData::MtfData(py::array_t<int32_t, py::array::c_style | py::array::forcecast>
     }
 
     dimension = exps_buf.shape[1];
-    ssize_t n_terms = exps_buf.shape[0];
+    n_terms = exps_buf.shape[0];
     auto exps_ptr = static_cast<int32_t*>(exps_buf.ptr);
     auto coeffs_ptr = static_cast<std::complex<double>*>(coeffs_buf.ptr);
 
-    exponents.resize(n_terms, std::vector<int32_t>(dimension));
+    exponents.resize(n_terms * dimension);
     coeffs.resize(n_terms);
 
-    for (ssize_t i = 0; i < n_terms; ++i) {
-        for (ssize_t j = 0; j < dimension; ++j) {
-            exponents[i][j] = exps_ptr[i * dimension + j];
-        }
-        coeffs[i] = coeffs_ptr[i];
-    }
-}
-
-MtfData::MtfData(std::vector<std::vector<int32_t>> exps, std::vector<std::complex<double>> cs, int dim)
-    : exponents(exps), coeffs(cs), dimension(dim) {}
-
-
-py::dict MtfData::to_dict() const {
-    py::dict d;
-
-    ssize_t n_terms = exponents.size();
-    py::array_t<int32_t> exps_arr({n_terms, (ssize_t)dimension});
-    py::array_t<std::complex<double>> coeffs_arr(n_terms);
-
-    auto exps_ptr = exps_arr.mutable_unchecked<2>();
-    auto coeffs_ptr = coeffs_arr.mutable_unchecked<1>();
-
-    for (ssize_t i = 0; i < n_terms; ++i) {
-        for (ssize_t j = 0; j < dimension; ++j) {
-            exps_ptr(i, j) = exponents[i][j];
-        }
-        coeffs_ptr(i) = coeffs[i];
-    }
-
-    d["exponents"] = exps_arr;
-    d["coeffs"] = coeffs_arr;
-    return d;
-}
-
-MtfData MtfData::add(const MtfData& other) const {
-    if (dimension != other.dimension) {
-        throw std::runtime_error("Dimensions must match for addition.");
-    }
-
-    std::unordered_map<std::vector<int32_t>, std::complex<double>, VectorHasher> combined_coeffs_map;
-
-    for (size_t i = 0; i < coeffs.size(); ++i) {
-        combined_coeffs_map[exponents[i]] = coeffs[i];
-    }
-
-    for (size_t i = 0; i < other.coeffs.size(); ++i) {
-        combined_coeffs_map[other.exponents[i]] += other.coeffs[i];
-    }
-
-    std::vector<std::vector<int32_t>> new_exponents;
-    std::vector<std::complex<double>> new_coeffs;
-    for (auto const& [exp, coeff] : combined_coeffs_map) {
-        new_exponents.push_back(exp);
-        new_coeffs.push_back(coeff);
-    }
-
-    return MtfData(new_exponents, new_coeffs, dimension);
+    std::copy(exps_ptr, exps_ptr + n_terms * dimension, exponents.begin());
+    std::copy(coeffs_ptr, coeffs_ptr + n_terms, coeffs.begin());
 }
 
 void MtfData::add_inplace(const MtfData& other) {
     if (dimension != other.dimension) {
         throw std::runtime_error("Dimensions must match for addition.");
     }
-
-    std::unordered_map<std::vector<int32_t>, std::complex<double>, VectorHasher> combined_coeffs_map;
-
-    for (size_t i = 0; i < coeffs.size(); ++i) {
-        combined_coeffs_map[exponents[i]] = coeffs[i];
+    if (other.n_terms == 0) {
+        return;
+    }
+    if (n_terms == 0) {
+        *this = other;
+        return;
     }
 
-    for (size_t i = 0; i < other.coeffs.size(); ++i) {
-        combined_coeffs_map[other.exponents[i]] += other.coeffs[i];
-    }
+    // Create index vectors to sort based on exponents
+    std::vector<size_t> this_indices(n_terms);
+    std::iota(this_indices.begin(), this_indices.end(), 0);
 
-    exponents.clear();
-    coeffs.clear();
-    for (auto const& [exp, coeff] : combined_coeffs_map) {
-        exponents.push_back(exp);
-        coeffs.push_back(coeff);
-    }
-}
+    std::vector<size_t> other_indices(other.n_terms);
+    std::iota(other_indices.begin(), other_indices.end(), 0);
 
+    // Sort the index vectors
+    std::sort(this_indices.begin(), this_indices.end(),
+              [&](size_t a, size_t b) {
+                  return std::lexicographical_compare(exponents.begin() + a * dimension, exponents.begin() + (a + 1) * dimension,
+                                                      exponents.begin() + b * dimension, exponents.begin() + (b + 1) * dimension);
+              });
 
-MtfData MtfData::multiply(const MtfData& other) const {
-    if (dimension != other.dimension) {
-        throw std::runtime_error("Dimensions must match for multiplication.");
-    }
+    std::sort(other_indices.begin(), other_indices.end(),
+              [&](size_t a, size_t b) {
+                  return std::lexicographical_compare(other.exponents.begin() + a * other.dimension, other.exponents.begin() + (a + 1) * other.dimension,
+                                                      other.exponents.begin() + b * other.dimension, other.exponents.begin() + (b + 1) * other.dimension);
+              });
 
-    std::unordered_map<std::vector<int32_t>, std::complex<double>, VectorHasher> combined_coeffs_map;
+    std::vector<int32_t> new_exponents;
+    std::vector<std::complex<double>> new_coeffs;
+    new_exponents.reserve(n_terms + other.n_terms);
+    new_coeffs.reserve(n_terms + other.n_terms);
 
-    for (size_t i = 0; i < coeffs.size(); ++i) {
-        for (size_t j = 0; j < other.coeffs.size(); ++j) {
-            std::vector<int32_t> new_exp(dimension);
-            for (int k = 0; k < dimension; ++k) {
-                new_exp[k] = exponents[i][k] + other.exponents[j][k];
+    size_t i = 0, j = 0;
+    while (i < n_terms && j < other.n_terms) {
+        auto this_exp_start = exponents.begin() + this_indices[i] * dimension;
+        auto this_exp_end = this_exp_start + dimension;
+        auto other_exp_start = other.exponents.begin() + other_indices[j] * other.dimension;
+        auto other_exp_end = other_exp_start + other.dimension;
+
+        if (std::lexicographical_compare(this_exp_start, this_exp_end, other_exp_start, other_exp_end)) {
+            new_exponents.insert(new_exponents.end(), this_exp_start, this_exp_end);
+            new_coeffs.push_back(coeffs[this_indices[i]]);
+            i++;
+        } else if (std::lexicographical_compare(other_exp_start, other_exp_end, this_exp_start, this_exp_end)) {
+            new_exponents.insert(new_exponents.end(), other_exp_start, other_exp_end);
+            new_coeffs.push_back(other.coeffs[other_indices[j]]);
+            j++;
+        } else {
+            std::complex<double> sum = coeffs[this_indices[i]] + other.coeffs[other_indices[j]];
+            if (std::abs(sum.real()) > 1e-16 || std::abs(sum.imag()) > 1e-16) {
+                new_exponents.insert(new_exponents.end(), this_exp_start, this_exp_end);
+                new_coeffs.push_back(sum);
             }
-            combined_coeffs_map[new_exp] += coeffs[i] * other.coeffs[j];
+            i++;
+            j++;
         }
     }
 
-    std::vector<std::vector<int32_t>> new_exponents;
-    std::vector<std::complex<double>> new_coeffs;
-    for (auto const& [exp, coeff] : combined_coeffs_map) {
-        new_exponents.push_back(exp);
-        new_coeffs.push_back(coeff);
+    while (i < n_terms) {
+        auto this_exp_start = exponents.begin() + this_indices[i] * dimension;
+        new_exponents.insert(new_exponents.end(), this_exp_start, this_exp_start + dimension);
+        new_coeffs.push_back(coeffs[this_indices[i]]);
+        i++;
+    }
+    while (j < other.n_terms) {
+        auto other_exp_start = other.exponents.begin() + other_indices[j] * other.dimension;
+        new_exponents.insert(new_exponents.end(), other_exp_start, other_exp_start + other.dimension);
+        new_coeffs.push_back(other.coeffs[other_indices[j]]);
+        j++;
     }
 
-    return MtfData(new_exponents, new_coeffs, dimension);
+    exponents.swap(new_exponents);
+    coeffs.swap(new_coeffs);
+    n_terms = coeffs.size();
 }
 
 void MtfData::multiply_inplace(const MtfData& other) {
@@ -150,281 +167,165 @@ void MtfData::multiply_inplace(const MtfData& other) {
         throw std::runtime_error("Dimensions must match for multiplication.");
     }
 
-    std::unordered_map<std::vector<int32_t>, std::complex<double>, VectorHasher> combined_coeffs_map;
+    if (n_terms == 0 || other.n_terms == 0) {
+        clear();
+        return;
+    }
 
-    for (size_t i = 0; i < coeffs.size(); ++i) {
-        for (size_t j = 0; j < other.coeffs.size(); ++j) {
-            std::vector<int32_t> new_exp(dimension);
+    std::vector<int32_t> new_exponents;
+    std::vector<std::complex<double>> new_coeffs;
+    size_t new_capacity = n_terms * other.n_terms;
+    new_exponents.reserve(new_capacity * dimension);
+    new_coeffs.reserve(new_capacity);
+
+    for (size_t i = 0; i < n_terms; ++i) {
+        for (size_t j = 0; j < other.n_terms; ++j) {
+            std::vector<int32_t> temp_exp(dimension);
             for (int k = 0; k < dimension; ++k) {
-                new_exp[k] = exponents[i][k] + other.exponents[j][k];
+                temp_exp[k] = exponents[i * dimension + k] + other.exponents[j * other.dimension + k];
             }
-            combined_coeffs_map[new_exp] += coeffs[i] * other.coeffs[j];
+            new_exponents.insert(new_exponents.end(), temp_exp.begin(), temp_exp.end());
+            new_coeffs.push_back(coeffs[i] * other.coeffs[j]);
         }
     }
 
-    exponents.clear();
-    coeffs.clear();
-    for (auto const& [exp, coeff] : combined_coeffs_map) {
-        exponents.push_back(exp);
-        coeffs.push_back(coeff);
-    }
-}
+    size_t new_n_terms = new_coeffs.size();
+    std::vector<size_t> indices(new_n_terms);
+    std::iota(indices.begin(), indices.end(), 0);
 
-MtfData MtfData::compose(const std::map<int, MtfData>& other_function_dict) const {
-    if (other_function_dict.empty()) {
-        return *this;
-    }
+    std::sort(indices.begin(), indices.end(),
+              [&](size_t a, size_t b) {
+                  return std::lexicographical_compare(new_exponents.begin() + a * dimension, new_exponents.begin() + (a + 1) * dimension,
+                                                      new_exponents.begin() + b * dimension, new_exponents.begin() + (b + 1) * dimension);
+              });
 
-    int result_dim = -1;
-    for (auto const& [var_index, g] : other_function_dict) {
-        if (result_dim == -1) {
-            result_dim = g.dimension;
-        } else if (result_dim != g.dimension) {
-            throw std::runtime_error("All inner functions must have the same dimension.");
-        }
-    }
+    std::vector<int32_t> final_exponents;
+    std::vector<std::complex<double>> final_coeffs;
+    if (new_n_terms > 0) {
+        final_exponents.reserve(new_n_terms * dimension);
+        final_coeffs.reserve(new_n_terms);
 
-    std::map<int, MtfData> substitutions;
-    for (int i = 1; i <= dimension; ++i) {
-        if (other_function_dict.count(i)) {
-            substitutions[i] = other_function_dict.at(i);
-        } else {
-            if (i > result_dim) {
-                throw std::runtime_error("Outer function variable not being substituted, but the result dimension is smaller.");
-            }
-            std::vector<std::vector<int32_t>> exps;
-            std::vector<int32_t> exp(result_dim, 0);
-            exp[i-1] = 1;
-            exps.push_back(exp);
-            substitutions[i] = MtfData(exps, {{1.0, 0.0}}, result_dim);
-        }
-    }
+        final_exponents.insert(final_exponents.end(), new_exponents.begin() + indices[0] * dimension, new_exponents.begin() + (indices[0] + 1) * dimension);
+        final_coeffs.push_back(new_coeffs[indices[0]]);
 
-    // Create a zero MTF for the result
-    MtfData final_mtf({}, {}, result_dim);
+        for (size_t i = 1; i < new_n_terms; ++i) {
+            auto current_exp_start = new_exponents.begin() + indices[i] * dimension;
+            auto last_final_exp_start = final_exponents.end() - dimension;
 
-    for (size_t i = 0; i < coeffs.size(); ++i) {
-        std::complex<double> coeff = coeffs[i];
-        const auto& exp = exponents[i];
-
-        MtfData term_result({{std::vector<int32_t>(result_dim, 0)}}, {coeff}, result_dim);
-
-        for (int j = 0; j < dimension; ++j) {
-            int power = exp[j];
-            if (power > 0) {
-                MtfData g_j = substitutions.at(j + 1);
-                for (int p = 0; p < power; ++p) {
-                    term_result = term_result.multiply(g_j);
-                }
+            if (std::equal(current_exp_start, current_exp_start + dimension, last_final_exp_start)) {
+                final_coeffs.back() += new_coeffs[indices[i]];
+            } else {
+                final_exponents.insert(final_exponents.end(), current_exp_start, current_exp_start + dimension);
+                final_coeffs.push_back(new_coeffs[indices[i]]);
             }
         }
-        final_mtf = final_mtf.add(term_result);
     }
 
-    return final_mtf;
-}
+    exponents.swap(final_exponents);
+    coeffs.swap(final_coeffs);
+    n_terms = coeffs.size();
 
-MtfData MtfData::negate() const {
-    std::vector<std::complex<double>> new_coeffs = coeffs;
-    for (std::complex<double>& c : new_coeffs) {
-        c = -c;
+    // Prune near-zero coefficients
+    size_t current_pos = 0;
+    for (size_t i = 0; i < n_terms; ++i) {
+        if (std::abs(coeffs[i].real()) > 1e-16 || std::abs(coeffs[i].imag()) > 1e-16) {
+            if (current_pos != i) {
+                coeffs[current_pos] = coeffs[i];
+                std::copy(exponents.begin() + i * dimension, exponents.begin() + (i + 1) * dimension, exponents.begin() + current_pos * dimension);
+            }
+            current_pos++;
+        }
     }
-    return MtfData(exponents, new_coeffs, dimension);
+    coeffs.resize(current_pos);
+    exponents.resize(current_pos * dimension);
+    n_terms = current_pos;
 }
 
-std::pair<std::complex<double>, MtfData> _split_constant_polynomial_part(const MtfData& mtf) {
-    std::complex<double> constant_term = {0.0, 0.0};
-    std::vector<std::vector<int32_t>> poly_exponents;
-    std::vector<std::complex<double>> poly_coeffs;
-
-    for (size_t i = 0; i < mtf.coeffs.size(); ++i) {
-        bool is_const = true;
-        for (int32_t exp_val : mtf.exponents[i]) {
-            if (exp_val != 0) {
-                is_const = false;
+void MtfData::power_inplace(double exponent) {
+    if (exponent == -0.5) {
+        // Find constant term
+        std::complex<double> const_term = {0.0, 0.0};
+        int const_term_idx = -1;
+        std::vector<int32_t> zero_exp(dimension, 0);
+        for (size_t i = 0; i < n_terms; ++i) {
+            if (std::equal(exponents.begin() + i * dimension, exponents.begin() + (i + 1) * dimension, zero_exp.begin())) {
+                const_term = coeffs[i];
+                const_term_idx = i;
                 break;
             }
         }
-        if (is_const) {
-            constant_term = mtf.coeffs[i];
-        } else {
-            poly_exponents.push_back(mtf.exponents[i]);
-            poly_coeffs.push_back(mtf.coeffs[i]);
+
+        if (const_term_idx == -1 || (std::abs(const_term.real()) < 1e-16 && std::abs(const_term.imag()) < 1e-16)) {
+            throw std::runtime_error("Cannot take isqrt of MTF with zero or non-existent constant term.");
         }
-    }
-    return {constant_term, MtfData(poly_exponents, poly_coeffs, mtf.dimension)};
-}
 
-MtfData MtfData::power(double exponent) const {
-    if (exponent == 0) {
-        return MtfData({{std::vector<int32_t>(dimension, 0)}}, {{1.0, 0.0}}, dimension);
-    }
-    if (exponent == 1) {
-        return *this;
-    }
+        // Rescale the polynomial
+        std::complex<double> const_factor_isqrt = 1.0 / sqrt(const_term);
+        for (auto& c : coeffs) {
+            c /= const_term;
+        }
 
-    if (abs(exponent - static_cast<int>(exponent)) < 1e-9) { // integer power
-        int power_int = static_cast<int>(exponent);
-        if (power_int > 1) {
-            MtfData result = MtfData({{std::vector<int32_t>(dimension, 0)}}, {{1.0, 0.0}}, dimension);
-            MtfData base = *this;
-            while (power_int > 0) {
-                if (power_int % 2 == 1) result = result.multiply(base);
-                base = base.multiply(base);
-                power_int /= 2;
+        // x = (rescaled_poly - 1)
+        MtfData x(dimension);
+        x.reserve(n_terms > 0 ? n_terms - 1 : 0);
+        for (size_t i = 0; i < n_terms; ++i) {
+            if (i == (size_t)const_term_idx) continue;
+            x.exponents.insert(x.exponents.end(), exponents.begin() + i * dimension, exponents.begin() + (i + 1) * dimension);
+            x.coeffs.push_back(coeffs[i]);
+        }
+        x.n_terms = x.coeffs.size();
+
+        // Taylor series for isqrt(1+x) = sum(c_n * x^n)
+        const auto& taylor_coeffs = mtf_coeffs::precomputed_coefficients.at("isqrt");
+        MtfData result(dimension);
+        result.exponents.insert(result.exponents.end(), zero_exp.begin(), zero_exp.end());
+        result.coeffs.push_back({taylor_coeffs[0], 0.0});
+        result.n_terms = 1;
+
+        MtfData x_power_n = x;
+
+        for (size_t n = 1; n < taylor_coeffs.size(); ++n) {
+            MtfData term = x_power_n;
+            for (auto& c : term.coeffs) {
+                c *= taylor_coeffs[n];
             }
-            return result;
-        } else if (power_int == -1) {
-            auto [const_term, poly_part] = _split_constant_polynomial_part(*this);
-            if (abs(const_term) < 1e-16) {
-                throw std::runtime_error("Cannot invert MTF with zero constant term.");
+            result.add_inplace(term);
+            if (n < taylor_coeffs.size() - 1) {
+                x_power_n.multiply_inplace(x);
             }
-            MtfData rescaled_mtf = this->multiply(MtfData({{std::vector<int32_t>(dimension, 0)}}, {1.0/const_term}, dimension));
-            MtfData one_mtf({{std::vector<int32_t>(dimension, 0)}}, {{1.0, 0.0}}, dimension);
-            MtfData composed_mtf = inverse_taylor_1D_expansion(rescaled_mtf.add(one_mtf.negate()), 10);
-            return composed_mtf.multiply(MtfData({{std::vector<int32_t>(dimension, 0)}}, {1.0/const_term}, dimension));
         }
-    } else if (exponent == 0.5) {
-        auto [const_term, poly_part] = _split_constant_polynomial_part(*this);
-        if (const_term.real() < 0 && abs(const_term.imag()) < 1e-9) {
-             throw std::runtime_error("Cannot take sqrt of MTF with negative constant term.");
+
+        // Rescale result
+        for (auto& c : result.coeffs) {
+            c *= const_factor_isqrt;
         }
-        std::complex<double> const_factor_sqrt = sqrt(const_term);
-        MtfData poly_part_x = poly_part.multiply(MtfData({{std::vector<int32_t>(dimension, 0)}}, {1.0/const_term}, dimension));
-        MtfData sqrt_1_plus_x = sqrt_taylor_1D_expansion(poly_part_x, 10);
-        return sqrt_1_plus_x.multiply(MtfData({{std::vector<int32_t>(dimension, 0)}}, {const_factor_sqrt}, dimension));
-    } else if (exponent == -0.5) {
-        auto [const_term, poly_part] = _split_constant_polynomial_part(*this);
-        if (abs(const_term) < 1e-9) {
-             throw std::runtime_error("Cannot take isqrt of MTF with non-positive constant term.");
-        }
-        std::complex<double> const_factor_isqrt = 1.0/sqrt(const_term);
-        MtfData poly_part_x = poly_part.multiply(MtfData({{std::vector<int32_t>(dimension, 0)}}, {1.0/const_term}, dimension));
-        MtfData isqrt_1_plus_x = isqrt_taylor_1D_expansion(poly_part_x, 10);
-        return isqrt_1_plus_x.multiply(MtfData({{std::vector<int32_t>(dimension, 0)}}, {const_factor_isqrt}, dimension));
-    } else if (exponent == -1.5) {
-        MtfData r_inv = this->power(-1.0);
-        MtfData r_inv_sqrt = this->power(-0.5);
-        return r_inv.multiply(r_inv_sqrt);
-    } else if (exponent == 0.5) {
-        auto [const_term, poly_part] = _split_constant_polynomial_part(*this);
-        if (const_term.real() < 0 && abs(const_term.imag()) < 1e-9) {
-             throw std::runtime_error("Cannot take sqrt of MTF with negative constant term.");
-        }
-        std::complex<double> const_factor_sqrt = sqrt(const_term);
-        MtfData poly_part_x = poly_part.multiply(MtfData({{std::vector<int32_t>(dimension, 0)}}, {1.0/const_term}, dimension));
-        MtfData sqrt_1_plus_x = sqrt_taylor_1D_expansion(poly_part_x, 10);
-        return sqrt_1_plus_x.multiply(MtfData({{std::vector<int32_t>(dimension, 0)}}, {const_factor_sqrt}, dimension));
-    }
 
-    throw std::runtime_error("Power function not implemented for this exponent.");
+        // Swap with this
+        exponents.swap(result.exponents);
+        coeffs.swap(result.coeffs);
+        n_terms = result.n_terms;
+
+    } else {
+        throw std::runtime_error("Power function not implemented for this exponent.");
+    }
 }
 
-const std::vector<double>& get_precomputed_coeffs(const std::string& name) {
-    auto it = mtf_coeffs::precomputed_coefficients.find(name);
-    if (it == mtf_coeffs::precomputed_coefficients.end()) {
-        throw std::runtime_error("Precomputed coefficients not found for " + name);
-    }
-    return it->second;
+MtfData MtfData::add(const MtfData& other) const {
+    MtfData result = *this;
+    result.add_inplace(other);
+    return result;
 }
 
-MtfData sqrt_taylor_1D_expansion(const MtfData& variable, int order) {
-    const auto& coeffs = get_precomputed_coeffs("sqrt");
-    std::vector<std::vector<int32_t>> exps;
-    std::vector<std::complex<double>> selected_coeffs;
-    for (int i = 0; i <= order; ++i) {
-        exps.push_back({i});
-        selected_coeffs.push_back({coeffs[i], 0.0});
-    }
-    MtfData mtf_1d(exps, selected_coeffs, 1);
-    std::map<int, MtfData> compose_map;
-    compose_map[1] = variable;
-    return mtf_1d.compose(compose_map);
+MtfData MtfData::multiply(const MtfData& other) const {
+    MtfData result = *this;
+    result.multiply_inplace(other);
+    return result;
 }
 
-MtfData isqrt_taylor_1D_expansion(const MtfData& variable, int order) {
-    const auto& coeffs = get_precomputed_coeffs("isqrt");
-    std::vector<std::vector<int32_t>> exps;
-    std::vector<std::complex<double>> selected_coeffs;
-    for (int i = 0; i <= order; ++i) {
-        exps.push_back({i});
-        selected_coeffs.push_back({coeffs[i], 0.0});
+MtfData MtfData::negate() const {
+    MtfData result = *this;
+    for (auto& c : result.coeffs) {
+        c = -c;
     }
-    MtfData mtf_1d(exps, selected_coeffs, 1);
-    std::map<int, MtfData> compose_map;
-    compose_map[1] = variable;
-    return mtf_1d.compose(compose_map);
-}
-
-MtfData inverse_taylor_1D_expansion(const MtfData& variable, int order) {
-    const auto& coeffs = get_precomputed_coeffs("inverse");
-    std::vector<std::vector<int32_t>> exps;
-    std::vector<std::complex<double>> selected_coeffs;
-    for (int i = 0; i <= order; ++i) {
-        exps.push_back({i});
-        selected_coeffs.push_back({coeffs[i], 0.0});
-    }
-    MtfData mtf_1d(exps, selected_coeffs, 1);
-    std::map<int, MtfData> compose_map;
-    compose_map[1] = variable;
-    return mtf_1d.compose(compose_map);
-}
-
-
-std::pair<py::array_t<int32_t>, py::array_t<std::complex<double>>> add_mtf_cpp(
-    py::array_t<int32_t, py::array::c_style | py::array::forcecast> exps1,
-    py::array_t<std::complex<double>, py::array::c_style | py::array::forcecast> coeffs1,
-    py::array_t<int32_t, py::array::c_style | py::array::forcecast> exps2,
-    py::array_t<std::complex<double>, py::array::c_style | py::array::forcecast> coeffs2) {
-
-    MtfData mtf1(exps1, coeffs1);
-    MtfData mtf2(exps2, coeffs2);
-    MtfData result = mtf1.add(mtf2);
-    py::dict d = result.to_dict();
-    return std::make_pair(d["exponents"].cast<py::array_t<int32_t>>(), d["coeffs"].cast<py::array_t<std::complex<double>>>());
-}
-
-std::pair<py::array_t<int32_t>, py::array_t<std::complex<double>>> multiply_mtf_cpp(
-    py::array_t<int32_t, py::array::c_style | py::array::forcecast> exps1,
-    py::array_t<std::complex<double>, py::array::c_style | py::array::forcecast> coeffs1,
-    py::array_t<int32_t, py::array::c_style | py::array::forcecast> exps2,
-    py::array_t<std::complex<double>, py::array::c_style | py::array::forcecast> coeffs2) {
-
-    MtfData mtf1(exps1, coeffs1);
-    MtfData mtf2(exps2, coeffs2);
-    MtfData result = mtf1.multiply(mtf2);
-    py::dict d = result.to_dict();
-    return std::make_pair(d["exponents"].cast<py::array_t<int32_t>>(), d["coeffs"].cast<py::array_t<std::complex<double>>>());
-}
-
-std::complex<double> extract_coefficient_cpp(
-    py::array_t<int32_t, py::array::c_style | py::array::forcecast> exps,
-    py::array_t<std::complex<double>, py::array::c_style | py::array::forcecast> coeffs,
-    std::vector<int32_t> exp_to_find) {
-
-    auto e = exps.unchecked<2>();
-    auto c = coeffs.unchecked<1>();
-
-    ssize_t n_terms = e.shape(0);
-    ssize_t dimension = e.shape(1);
-
-    if (exp_to_find.size() != (size_t)dimension) {
-        throw std::runtime_error("Dimension of exponent to find does not match dimension of MTF.");
-    }
-
-    std::unordered_map<std::vector<int32_t>, std::complex<double>, VectorHasher> exp_map;
-    for (ssize_t i = 0; i < n_terms; ++i) {
-        std::vector<int32_t> exp_vec(dimension);
-        for (ssize_t j = 0; j < dimension; ++j) {
-            exp_vec[j] = e(i, j);
-        }
-        exp_map[exp_vec] = c(i);
-    }
-
-    auto it = exp_map.find(exp_to_find);
-    if (it != exp_map.end()) {
-        return it->second;
-    }
-
-    return {0.0, 0.0};
+    return result;
 }

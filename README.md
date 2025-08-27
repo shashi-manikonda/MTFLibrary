@@ -16,6 +16,7 @@
     pip install numpy
     ```
 
+  - **C++ Compiler:** A C++17 compliant compiler (e.g., GCC, Clang, MSVC) is required to build the C++ backend.
   - **mpi4py (Optional):** For MPI-parallel Biot-Savart calculations, install `mpi4py`:
 
     ```bash
@@ -78,6 +79,7 @@ print(f"Exact value: {exact_value}")
   - **Visualization and Output:** Representing MTFs as formatted tables for easy readability and inspection.
   - **NumPy Compatibility:** Seamless integration with NumPy arrays and ufuncs through the `__array_ufunc__` protocol, allowing element-wise operations with NumPy functions.
   - **Electromagnetism Extension:** Extending `mtflib`'s capabilities to electromagnetic field computations, including Biot-Savart law calculations for current loops and segments.
+  - **C++ Backend:** A C++ backend for the core `MtfData` class and the Biot-Savart law calculation is available for performance-critical applications.
 
 ### Key Applications:
 
@@ -127,10 +129,15 @@ print(f"Exact value: {exact_value}")
       - Example scripts and unit tests provided to demonstrate usage.
   - **Efficiency and Performance:**
       - Leverages NumPy for optimized numerical operations and efficient storage of Taylor coefficients.
+      - **C++ Backend:** A C++ backend is provided for performance-critical calculations. While the C++ backend is designed to be faster, the current implementation is still slower than the highly optimized NumPy backend for most operations due to the overhead of the `MtfData` class. Further optimization of the C++ backend is planned for a future release.
       - **Coefficient Cleanup Control:** `mtflib` now automatically removes negligible coefficients after arithmetic operations to improve performance and keep Taylor series representations concise. This feature is enabled by default and can be controlled via the `MultivariateTaylorFunction.set_truncate_after_operation(enable: bool)` class method.
       - MPI-parallel implementation of Biot-Savart law for large-scale electromagnetic computations, utilizing `mpi_biot_savart`.
   - **Testability and Reliability:**
       - Includes a comprehensive suite of unit tests to ensure the correctness and reliability of MTF operations and elementary functions.
+  - **C++ Backend:**
+      - A C++ backend for the core `MtfData` class and the Biot-Savart law calculation is available.
+      - The C++ backend is implemented using pybind11 and can be enabled by setting `MultivariateTaylorFunction._IMPLEMENTATION = 'cpp'`.
+      - While the C++ backend is designed to be faster than the Python backend, the current implementation is still slower than the highly optimized NumPy backend for most operations due to the overhead of the `MtfData` class. Further optimization of the C++ backend is planned for a future release.
 
 ## Demo Files
 To help you get started with `mtflib`, we have included several demo files that illustrate how to use the library for various applications. These demo files cover a range of topics, including:

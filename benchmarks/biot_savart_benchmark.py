@@ -32,24 +32,31 @@ def run_biot_savart_benchmark(num_source_points, num_field_points, order=0):
     )
 
     # 2. Benchmark the C++ implementation
-    mtf_cpp.switch_backend('cpp')
     start_time_cpp = time.perf_counter()
-    _ = serial_biot_savart(segments_np, lengths_np, directions_np, field_points, order=order)
+    _ = serial_biot_savart(segments_np, lengths_np, directions_np, field_points, order=order, backend='cpp')
     end_time_cpp = time.perf_counter()
     duration_cpp = end_time_cpp - start_time_cpp
     print(f"C++ Backend Time: {duration_cpp:.6f} seconds")
 
-    # 3. Benchmark the Python implementation
-    mtf_cpp.switch_backend('python')
+    # 3. Benchmark the C++ V2 implementation
+    start_time_cpp_v2 = time.perf_counter()
+    _ = serial_biot_savart(segments_np, lengths_np, directions_np, field_points, order=order, backend='cpp_v2')
+    end_time_cpp_v2 = time.perf_counter()
+    duration_cpp_v2 = end_time_cpp_v2 - start_time_cpp_v2
+    print(f"C++ V2 Backend Time: {duration_cpp_v2:.6f} seconds")
+
+    # 4. Benchmark the Python implementation
     start_time_py = time.perf_counter()
-    _ = serial_biot_savart(segments_np, lengths_np, directions_np, field_points, order=order)
+    _ = serial_biot_savart(segments_np, lengths_np, directions_np, field_points, order=order, backend='python')
     end_time_py = time.perf_counter()
     duration_py = end_time_py - start_time_py
     print(f"Python Backend Time: {duration_py:.6f} seconds")
 
-    # 4. Compare and report
-    speedup = duration_py / duration_cpp if duration_cpp > 0 else float('inf')
-    print(f"Speedup (Python/C++): {speedup:.2f}x")
+    # 5. Compare and report
+    speedup_v1 = duration_py / duration_cpp if duration_cpp > 0 else float('inf')
+    speedup_v2 = duration_py / duration_cpp_v2 if duration_cpp_v2 > 0 else float('inf')
+    print(f"Speedup (Python/C++ V1): {speedup_v1:.2f}x")
+    print(f"Speedup (Python/C++ V2): {speedup_v2:.2f}x")
     print("----------------------------------\n")
 
 if __name__ == '__main__':

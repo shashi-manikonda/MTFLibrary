@@ -2,15 +2,19 @@
 #include "mtf_data.hpp"
 #include <stdexcept>
 #include <cmath>
+#include <omp.h>
 
 // Helper for vector subtraction
 void subtract_vectors_inplace(MtfVector& result, const MtfVector& a, const MtfVector& b) {
     if (a.size() != 3 || b.size() != 3) {
         throw std::runtime_error("Vectors must have 3 components.");
     }
-    result[0] = a[0].add(b[0].negate());
-    result[1] = a[1].add(b[1].negate());
-    result[2] = a[2].add(b[2].negate());
+    result[0] = a[0];
+    result[0].add_inplace(a[0].negate());
+    result[1] = a[1];
+    result[1].add_inplace(a[1].negate());
+    result[2] = a[2];
+    result[2].add_inplace(a[2].negate());
 }
 
 // Helper for vector cross product
@@ -18,9 +22,12 @@ void cross_product_inplace(MtfVector& result, const MtfVector& a, const MtfVecto
     if (a.size() != 3 || b.size() != 3) {
         throw std::runtime_error("Vectors must have 3 components.");
     }
-    result[0] = a[1].multiply(b[2]).add(a[2].multiply(b[1]).negate());
-    result[1] = a[2].multiply(b[0]).add(a[0].multiply(b[2]).negate());
-    result[2] = a[0].multiply(b[1]).add(a[1].multiply(b[0]).negate());
+    result[0] = a[1].multiply(b[2]);
+    result[0].add_inplace(a[2].multiply(b[1]).negate());
+    result[1] = a[2].multiply(b[0]);
+    result[1].add_inplace(a[0].multiply(b[2]).negate());
+    result[2] = a[0].multiply(b[1]);
+    result[2].add_inplace(a[1].multiply(b[0]).negate());
 }
 
 std::vector<MtfVector> biot_savart_core_cpp(
@@ -40,40 +47,51 @@ std::vector<MtfVector> biot_savart_core_cpp(
     std::vector<MtfVector> B_fields(field_points.size());
 
     double mu_0_4pi = 1e-7;
-    MtfData scale_factor({{std::vector<int32_t>(dim, 0)}}, {{mu_0_4pi, 0.0}}, dim);
+    MtfData scale_factor(dim);
+    std::vector<int32_t> zero_exp(dim, 0);
+    scale_factor.exponents.insert(scale_factor.exponents.end(), zero_exp.begin(), zero_exp.end());
+    scale_factor.coeffs.push_back({mu_0_4pi, 0.0});
+    scale_factor.n_terms = 1;
+
 
     #pragma omp parallel for
-    for (long i = 0; i < field_points.size(); ++i) {
+    for (size_t i = 0; i < field_points.size(); ++i) {
         const auto& field_point = field_points[i];
-        MtfVector B_field_total = {MtfData({}, {}, dim), MtfData({}, {}, dim), MtfData({}, {}, dim)};
-        for (long j = 0; j < source_points.size(); ++j) {
+        MtfVector B_field_total = {MtfData(dim), MtfData(dim), MtfData(dim)};
+        for (size_t j = 0; j < source_points.size(); ++j) {
             const auto& source_point = source_points[j];
             const auto& dl_vector = dl_vectors[j];
 
-            MtfVector r_vector(3);
+            MtfVector r_vector(3, MtfData(dim));
             subtract_vectors_inplace(r_vector, field_point, source_point);
 
-            MtfData r_squared = r_vector[0].multiply(r_vector[0])
-                              .add(r_vector[1].multiply(r_vector[1]))
-                              .add(r_vector[2].multiply(r_vector[2]));
+            MtfData r_squared = r_vector[0];
+            r_squared.multiply_inplace(r_vector[0]);
+            MtfData r_squared_y = r_vector[1];
+            r_squared_y.multiply_inplace(r_vector[1]);
+            r_squared.add_inplace(r_squared_y);
+            MtfData r_squared_z = r_vector[2];
+            r_squared_z.multiply_inplace(r_vector[2]);
+            r_squared.add_inplace(r_squared_z);
 
-            MtfData r = r_squared.power(0.5);
-            MtfData r_inv = r.power(-1.0);
-            MtfData inv_r_cubed = r_inv.multiply(r_inv).multiply(r_inv);
+            r_squared.power_inplace(-0.5); // r_inv
+            MtfData inv_r_cubed = r_squared;
+            inv_r_cubed.multiply_inplace(r_squared);
+            inv_r_cubed.multiply_inplace(r_squared);
 
-            MtfVector cross_prod(3);
+            inv_r_cubed.multiply_inplace(scale_factor);
+
+            MtfVector cross_prod(3, MtfData(dim));
             cross_product_inplace(cross_prod, dl_vector, r_vector);
 
-            MtfData inv_r_cubed_scaled = inv_r_cubed.multiply(scale_factor);
+            cross_prod[0].multiply_inplace(inv_r_cubed);
+            B_field_total[0].add_inplace(cross_prod[0]);
 
-            MtfData dBx = cross_prod[0].multiply(inv_r_cubed_scaled);
-            B_field_total[0].add_inplace(dBx);
+            cross_prod[1].multiply_inplace(inv_r_cubed);
+            B_field_total[1].add_inplace(cross_prod[1]);
 
-            MtfData dBy = cross_prod[1].multiply(inv_r_cubed_scaled);
-            B_field_total[1].add_inplace(dBy);
-
-            MtfData dBz = cross_prod[2].multiply(inv_r_cubed_scaled);
-            B_field_total[2].add_inplace(dBz);
+            cross_prod[2].multiply_inplace(inv_r_cubed);
+            B_field_total[2].add_inplace(cross_prod[2]);
         }
         B_fields[i] = B_field_total;
     }
@@ -137,19 +155,24 @@ py::list biot_savart_from_flat_numpy(
 
     auto to_mtf_vector = [&](int n_points, int terms_offset, int& current_offset) {
         std::vector<MtfVector> mtf_vectors;
+        mtf_vectors.reserve(n_points);
         for (int i = 0; i < n_points; ++i) {
             MtfVector vec;
+            vec.reserve(3);
             for (int j = 0; j < 3; ++j) {
                 int n_terms = shapes_ptr(terms_offset + i*3 + j);
-                std::vector<std::vector<int32_t>> exps(n_terms, std::vector<int32_t>(dimension));
-                std::vector<std::complex<double>> coeffs(n_terms);
+                MtfData mtf(dimension);
+                mtf.n_terms = n_terms;
+                mtf.exponents.resize(n_terms * dimension);
+                mtf.coeffs.resize(n_terms);
+
                 for (int k = 0; k < n_terms; ++k) {
                     for (int l = 0; l < dimension; ++l) {
-                        exps[k][l] = exps_ptr(current_offset + k, l);
+                        mtf.exponents[k * dimension + l] = exps_ptr(current_offset + k, l);
                     }
-                    coeffs[k] = coeffs_ptr(current_offset + k);
+                    mtf.coeffs[k] = coeffs_ptr(current_offset + k);
                 }
-                vec.push_back(MtfData(exps, coeffs, dimension));
+                vec.push_back(mtf);
                 current_offset += n_terms;
             }
             mtf_vectors.push_back(vec);
