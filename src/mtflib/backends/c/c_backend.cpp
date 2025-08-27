@@ -1,7 +1,8 @@
 #include "c_backend.h"
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
+#include <vector>
+#include <numeric>
+#include <algorithm>
+#include <cstring>
 
 // --- Helper Functions for MtfDataC ---
 
@@ -10,19 +11,19 @@ MtfDataC create_mtf_data(int dimension, size_t n_terms) {
     mtf.dimension = dimension;
     mtf.n_terms = n_terms;
     if (n_terms > 0) {
-        mtf.exponents = (int32_t*)malloc(n_terms * dimension * sizeof(int32_t));
-        mtf.coeffs = (complex_t*)malloc(n_terms * sizeof(complex_t));
+        mtf.exponents = new int32_t[n_terms * dimension];
+        mtf.coeffs = new complex_t[n_terms];
     } else {
-        mtf.exponents = NULL;
-        mtf.coeffs = NULL;
+        mtf.exponents = nullptr;
+        mtf.coeffs = nullptr;
     }
     return mtf;
 }
 
 void free_mtf_data(MtfDataC* mtf) {
     if (mtf) {
-        free(mtf->exponents);
-        free(mtf->coeffs);
+        delete[] mtf->exponents;
+        delete[] mtf->coeffs;
     }
 }
 
@@ -54,10 +55,10 @@ MtfDataC mtf_add(const MtfDataC* a, const MtfDataC* b) {
     if (a->n_terms == 0) return clone_mtf_data(b);
     if (b->n_terms == 0) return clone_mtf_data(a);
 
-    size_t new_capacity = a->n_terms + b->n_terms;
-    MtfDataC result = create_mtf_data(a->dimension, 0);
-    result.exponents = (int32_t*)realloc(result.exponents, new_capacity * a->dimension * sizeof(int32_t));
-    result.coeffs = (complex_t*)realloc(result.coeffs, new_capacity * sizeof(complex_t));
+    std::vector<int32_t> new_exponents;
+    new_exponents.reserve((a->n_terms + b->n_terms) * a->dimension);
+    std::vector<complex_t> new_coeffs;
+    new_coeffs.reserve(a->n_terms + b->n_terms);
 
     size_t i = 0, j = 0;
     while (i < a->n_terms && j < b->n_terms) {
@@ -66,112 +67,95 @@ MtfDataC mtf_add(const MtfDataC* a, const MtfDataC* b) {
         int cmp = exponent_compare(exp_a, exp_b, a->dimension);
 
         if (cmp < 0) {
-            memcpy(result.exponents + result.n_terms * a->dimension, exp_a, a->dimension * sizeof(int32_t));
-            result.coeffs[result.n_terms] = a->coeffs[i];
+            new_exponents.insert(new_exponents.end(), exp_a, exp_a + a->dimension);
+            new_coeffs.push_back(a->coeffs[i]);
             i++;
         } else if (cmp > 0) {
-            memcpy(result.exponents + result.n_terms * a->dimension, exp_b, a->dimension * sizeof(int32_t));
-            result.coeffs[result.n_terms] = b->coeffs[j];
+            new_exponents.insert(new_exponents.end(), exp_b, exp_b + a->dimension);
+            new_coeffs.push_back(b->coeffs[j]);
             j++;
         } else {
             complex_t sum = a->coeffs[i] + b->coeffs[j];
-            if (cabs(sum) > 1e-16) {
-                memcpy(result.exponents + result.n_terms * a->dimension, exp_a, a->dimension * sizeof(int32_t));
-                result.coeffs[result.n_terms] = sum;
-                result.n_terms++;
+            if (std::abs(sum) > 1e-16) {
+                new_exponents.insert(new_exponents.end(), exp_a, exp_a + a->dimension);
+                new_coeffs.push_back(sum);
             }
             i++;
             j++;
-            continue;
         }
-        result.n_terms++;
     }
 
     while (i < a->n_terms) {
-        memcpy(result.exponents + result.n_terms * a->dimension, a->exponents + i * a->dimension, a->dimension * sizeof(int32_t));
-        result.coeffs[result.n_terms] = a->coeffs[i];
+        const int32_t* exp_a = a->exponents + i * a->dimension;
+        new_exponents.insert(new_exponents.end(), exp_a, exp_a + a->dimension);
+        new_coeffs.push_back(a->coeffs[i]);
         i++;
-        result.n_terms++;
     }
     while (j < b->n_terms) {
-        memcpy(result.exponents + result.n_terms * a->dimension, b->exponents + j * b->dimension, b->dimension * sizeof(int32_t));
-        result.coeffs[result.n_terms] = b->coeffs[j];
+        const int32_t* exp_b = b->exponents + j * b->dimension;
+        new_exponents.insert(new_exponents.end(), exp_b, exp_b + a->dimension);
+        new_coeffs.push_back(b->coeffs[j]);
         j++;
-        result.n_terms++;
+    }
+
+    MtfDataC result = create_mtf_data(a->dimension, new_coeffs.size());
+    if (!new_coeffs.empty()) {
+        memcpy(result.exponents, new_exponents.data(), new_exponents.size() * sizeof(int32_t));
+        memcpy(result.coeffs, new_coeffs.data(), new_coeffs.size() * sizeof(complex_t));
     }
     return result;
 }
 
-typedef struct {
-    int32_t* exponents;
+struct Term {
+    const int32_t* exponents;
     complex_t coeff;
-} Term;
-
-int compare_terms_r(const void* a, const void* b, void* arg) {
-    int dimension = *(int*)arg;
-    const Term* term_a = (const Term*)a;
-    const Term* term_b = (const Term*)b;
-    return memcmp(term_a->exponents, term_b->exponents, dimension * sizeof(int32_t));
-}
+};
 
 MtfDataC mtf_multiply(const MtfDataC* a, const MtfDataC* b) {
     if (!a || !b || a->n_terms == 0 || b->n_terms == 0) {
         return create_mtf_data(a ? a->dimension : (b ? b->dimension : 0), 0);
     }
 
-    size_t new_capacity = a->n_terms * b->n_terms;
-    Term* new_terms = (Term*)malloc(new_capacity * sizeof(Term));
-    int32_t* new_exponents_data = (int32_t*)malloc(new_capacity * a->dimension * sizeof(int32_t));
+    std::vector<int32_t> new_exponents_data(a->n_terms * b->n_terms * a->dimension);
+    std::vector<Term> new_terms;
+    new_terms.reserve(a->n_terms * b->n_terms);
 
-    size_t current_term = 0;
     for (size_t i = 0; i < a->n_terms; ++i) {
         for (size_t j = 0; j < b->n_terms; ++j) {
-            new_terms[current_term].exponents = new_exponents_data + current_term * a->dimension;
+            size_t term_idx = i * b->n_terms + j;
+            int32_t* current_exp = &new_exponents_data[term_idx * a->dimension];
             for (int k = 0; k < a->dimension; ++k) {
-                new_terms[current_term].exponents[k] = a->exponents[i * a->dimension + k] + b->exponents[j * b->dimension + k];
+                current_exp[k] = a->exponents[i * a->dimension + k] + b->exponents[j * b->dimension + k];
             }
-            new_terms[current_term].coeff = a->coeffs[i] * b->coeffs[j];
-            current_term++;
+            new_terms.push_back({current_exp, a->coeffs[i] * b->coeffs[j]});
         }
     }
 
-    qsort_r(new_terms, new_capacity, sizeof(Term), compare_terms_r, &a->dimension);
+    std::sort(new_terms.begin(), new_terms.end(), [&](const Term& t1, const Term& t2) {
+        return exponent_compare(t1.exponents, t2.exponents, a->dimension) < 0;
+    });
 
-    size_t merged_n_terms = 0;
-    if (new_capacity > 0) {
-        merged_n_terms = 1;
-        for (size_t i = 1; i < new_capacity; ++i) {
-            if (exponent_compare(new_terms[i].exponents, new_terms[merged_n_terms - 1].exponents, a->dimension) == 0) {
-                new_terms[merged_n_terms - 1].coeff += new_terms[i].coeff;
+    std::vector<int32_t> final_exponents;
+    std::vector<complex_t> final_coeffs;
+    if (!new_terms.empty()) {
+        final_exponents.insert(final_exponents.end(), new_terms[0].exponents, new_terms[0].exponents + a->dimension);
+        final_coeffs.push_back(new_terms[0].coeff);
+
+        for (size_t i = 1; i < new_terms.size(); ++i) {
+            if (exponent_compare(new_terms[i].exponents, &final_exponents.back() - a->dimension + 1, a->dimension) == 0) {
+                final_coeffs.back() += new_terms[i].coeff;
             } else {
-                if (new_terms[merged_n_terms].exponents != new_terms[i].exponents) {
-                    memcpy(new_terms[merged_n_terms].exponents, new_terms[i].exponents, a->dimension * sizeof(int32_t));
-                }
-                new_terms[merged_n_terms].coeff = new_terms[i].coeff;
-                merged_n_terms++;
+                final_exponents.insert(final_exponents.end(), new_terms[i].exponents, new_terms[i].exponents + a->dimension);
+                final_coeffs.push_back(new_terms[i].coeff);
             }
         }
     }
 
-    size_t final_n_terms = 0;
-    for (size_t i = 0; i < merged_n_terms; ++i) {
-        if (cabs(new_terms[i].coeff) > 1e-16) {
-            final_n_terms++;
-        }
+    MtfDataC result = create_mtf_data(a->dimension, final_coeffs.size());
+    if(!final_coeffs.empty()) {
+        memcpy(result.exponents, final_exponents.data(), final_exponents.size() * sizeof(int32_t));
+        memcpy(result.coeffs, final_coeffs.data(), final_coeffs.size() * sizeof(complex_t));
     }
-
-    MtfDataC result = create_mtf_data(a->dimension, final_n_terms);
-    size_t current_final_term = 0;
-    for (size_t i = 0; i < merged_n_terms; ++i) {
-        if (cabs(new_terms[i].coeff) > 1e-16) {
-            memcpy(result.exponents + current_final_term * a->dimension, new_terms[i].exponents, a->dimension * sizeof(int32_t));
-            result.coeffs[current_final_term] = new_terms[i].coeff;
-            current_final_term++;
-        }
-    }
-
-    free(new_terms);
-    free(new_exponents_data);
     return result;
 }
 
@@ -184,7 +168,7 @@ static const int num_isqrt_coeffs = sizeof(isqrt_coeffs) / sizeof(double);
 
 MtfDataC mtf_power(const MtfDataC* a, double exponent) {
     if (exponent != -0.5) {
-        int exp_int = (int)exponent;
+        int exp_int = static_cast<int>(exponent);
         if (exp_int == exponent && exp_int >= 0) { // integer power
             if (exp_int == 0) {
                 MtfDataC result = create_mtf_data(a->dimension, 1);
@@ -205,22 +189,21 @@ MtfDataC mtf_power(const MtfDataC* a, double exponent) {
 
     complex_t const_term = 0.0;
     int const_term_idx = -1;
-    int32_t* zero_exp = (int32_t*)calloc(a->dimension, sizeof(int32_t));
+    std::vector<int32_t> zero_exp(a->dimension, 0);
     for (size_t i = 0; i < a->n_terms; ++i) {
-        if (memcmp(a->exponents + i * a->dimension, zero_exp, a->dimension * sizeof(int32_t)) == 0) {
+        if (memcmp(a->exponents + i * a->dimension, zero_exp.data(), a->dimension * sizeof(int32_t)) == 0) {
             const_term = a->coeffs[i];
             const_term_idx = i;
             break;
         }
     }
-    free(zero_exp);
 
-    if (const_term_idx == -1 || cabs(const_term) < 1e-16) {
+    if (const_term_idx == -1 || std::abs(const_term) < 1e-16) {
         return create_mtf_data(a->dimension, 0);
     }
 
     MtfDataC temp = clone_mtf_data(a);
-    complex_t const_factor_isqrt = 1.0 / csqrt(const_term);
+    complex_t const_factor_isqrt = 1.0 / std::sqrt(const_term);
     for (size_t i = 0; i < temp.n_terms; ++i) {
         temp.coeffs[i] /= const_term;
     }
@@ -228,7 +211,7 @@ MtfDataC mtf_power(const MtfDataC* a, double exponent) {
     MtfDataC x = create_mtf_data(temp.dimension, temp.n_terms > 0 ? temp.n_terms - 1 : 0);
     size_t current_x_term = 0;
     for (size_t i = 0; i < temp.n_terms; ++i) {
-        if (i == (size_t)const_term_idx) continue;
+        if (i == static_cast<size_t>(const_term_idx)) continue;
         memcpy(x.exponents + current_x_term * x.dimension, temp.exponents + i * temp.dimension, x.dimension * sizeof(int32_t));
         x.coeffs[current_x_term] = temp.coeffs[i];
         current_x_term++;
@@ -282,33 +265,37 @@ void biot_savart_c(
     const int32_t* dl_shapes = shapes + 4 + n_source_points * 3;
     const int32_t* fp_shapes = shapes + 4 + n_source_points * 3 + n_dl_vectors * 3;
 
-    MtfDataC* sp = (MtfDataC*)malloc(n_source_points * 3 * sizeof(MtfDataC));
-    MtfDataC* dl = (MtfDataC*)malloc(n_dl_vectors * 3 * sizeof(MtfDataC));
-    MtfDataC* fp = (MtfDataC*)malloc(n_field_points * 3 * sizeof(MtfDataC));
+    std::vector<MtfDataC> sp(n_source_points * 3);
+    std::vector<MtfDataC> dl(n_dl_vectors * 3);
+    std::vector<MtfDataC> fp(n_field_points * 3);
 
-    int current_term_offset = 0;
+    size_t current_term_offset = 0;
     for(int i=0; i<n_source_points*3; ++i) {
         sp[i] = create_mtf_data(dimension, sp_shapes[i]);
-        memcpy(sp[i].exponents, all_exponents + (size_t)current_term_offset * dimension, (size_t)sp_shapes[i] * dimension * sizeof(int32_t));
-        memcpy(sp[i].coeffs, all_coeffs + current_term_offset, (size_t)sp_shapes[i] * sizeof(complex_t));
-        current_term_offset += sp_shapes[i];
+        if (sp_shapes[i] > 0) {
+            memcpy(sp[i].exponents, all_exponents + current_term_offset * dimension, sp_shapes[i] * dimension * sizeof(int32_t));
+            memcpy(sp[i].coeffs, all_coeffs + current_term_offset, sp_shapes[i] * sizeof(complex_t));
+            current_term_offset += sp_shapes[i];
+        }
     }
-    // Note: The python wrapper must send all_coeffs and all_exponents concatenated in the right order.
-    // Here we assume it is sp, then dl, then fp.
     for(int i=0; i<n_dl_vectors*3; ++i) {
         dl[i] = create_mtf_data(dimension, dl_shapes[i]);
-        memcpy(dl[i].exponents, all_exponents + (size_t)current_term_offset * dimension, (size_t)dl_shapes[i] * dimension * sizeof(int32_t));
-        memcpy(dl[i].coeffs, all_coeffs + current_term_offset, (size_t)dl_shapes[i] * sizeof(complex_t));
-        current_term_offset += dl_shapes[i];
+        if (dl_shapes[i] > 0) {
+            memcpy(dl[i].exponents, all_exponents + current_term_offset * dimension, dl_shapes[i] * dimension * sizeof(int32_t));
+            memcpy(dl[i].coeffs, all_coeffs + current_term_offset, dl_shapes[i] * sizeof(complex_t));
+            current_term_offset += dl_shapes[i];
+        }
     }
     for(int i=0; i<n_field_points*3; ++i) {
         fp[i] = create_mtf_data(dimension, fp_shapes[i]);
-        memcpy(fp[i].exponents, all_exponents + (size_t)current_term_offset * dimension, (size_t)fp_shapes[i] * dimension * sizeof(int32_t));
-        memcpy(fp[i].coeffs, all_coeffs + current_term_offset, (size_t)fp_shapes[i] * sizeof(complex_t));
-        current_term_offset += fp_shapes[i];
+        if (fp_shapes[i] > 0) {
+            memcpy(fp[i].exponents, all_exponents + current_term_offset * dimension, fp_shapes[i] * dimension * sizeof(int32_t));
+            memcpy(fp[i].coeffs, all_coeffs + current_term_offset, fp_shapes[i] * sizeof(complex_t));
+            current_term_offset += fp_shapes[i];
+        }
     }
 
-    MtfDataC* B_fields = (MtfDataC*)malloc(n_field_points * 3 * sizeof(MtfDataC));
+    std::vector<MtfDataC> B_fields(n_field_points * 3);
     double mu_0_4pi = 1e-7;
 
     #pragma omp parallel for
@@ -366,9 +353,9 @@ void biot_savart_c(
     for(int i=0; i<n_field_points*3; ++i) total_terms += B_fields[i].n_terms;
     *total_result_terms_out = total_terms;
 
-    *result_exps = (int32_t*)malloc(total_terms * dimension * sizeof(int32_t));
-    *result_coeffs = (complex_t*)malloc(total_terms * sizeof(complex_t));
-    *result_shapes = (int32_t*)malloc((n_field_points * 3 + 1) * sizeof(int32_t));
+    *result_exps = new int32_t[total_terms * dimension];
+    *result_coeffs = new complex_t[total_terms];
+    *result_shapes = new int32_t[n_field_points * 3 + 1];
     (*result_shapes)[0] = n_field_points;
 
     size_t current_res_offset = 0;
@@ -381,12 +368,8 @@ void biot_savart_c(
         }
     }
 
-    for(int i=0; i<n_source_points*3; ++i) free_mtf_data(&sp[i]);
-    for(int i=0; i<n_dl_vectors*3; ++i) free_mtf_data(&dl[i]);
-    for(int i=0; i<n_field_points*3; ++i) free_mtf_data(&fp[i]);
-    for(int i=0; i<n_field_points*3; ++i) free_mtf_data(&B_fields[i]);
-    free(sp);
-    free(dl);
-    free(fp);
-    free(B_fields);
+    for(auto& mtf : sp) free_mtf_data(&mtf);
+    for(auto& mtf : dl) free_mtf_data(&mtf);
+    for(auto& mtf : fp) free_mtf_data(&mtf);
+    for(auto& mtf : B_fields) free_mtf_data(&mtf);
 }
