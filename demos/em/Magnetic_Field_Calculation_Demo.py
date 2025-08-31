@@ -1,15 +1,5 @@
 #!/usr/bin/env python
 # coding: utf-8
-
-# Add the project root to the Python path
-import os
-import sys
-# This snippet dynamically finds the project's 'src' directory and adds it to the Python path.
-# This allows the demo to be run from any directory and still find the necessary modules.
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-src_path = os.path.join(project_root, 'src')
-if src_path not in sys.path:
-    sys.path.insert(0, src_path)
 # %%
 
 # # mtflib Demo: Magnetic Field Calculation and Validation
@@ -45,7 +35,6 @@ from mtflib import MultivariateTaylorFunction, Var, integrate, sqrt_taylor, mtfa
 from applications.em.biot_savart import mpi_biot_savart, serial_biot_savart
 from applications.em.current_ring import current_ring
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 
 # Check if MTF globals are already initialized
 if not MultivariateTaylorFunction.get_mtf_initialized_status():

@@ -2,7 +2,6 @@
 """
 Function to calculate the magnetic field of a straight wire segment.
 """
-import sys
 import numpy as np
 from .biot_savart import serial_biot_savart
 from mtflib import MultivariateTaylorFunction

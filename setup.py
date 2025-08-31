@@ -1,5 +1,6 @@
 import sys
 from setuptools import setup, find_packages, Extension
+from pathlib import Path
 import numpy
 import pybind11
 
@@ -28,10 +29,15 @@ extensions = [
               extra_link_args=link_args),
 ]
 
+this_directory = Path(__file__).parent
+long_description = (this_directory / "README.md").read_text()
+
 setup(
     name='mtflib',
     version='2.0.0',
     description='Multivariate Taylor Expansion Library with C++ backend',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     author='Shashikant Manikonda',
     author_email='manikonda@outlook.com',
     license='MIT',

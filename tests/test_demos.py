@@ -1,6 +1,5 @@
 import pytest
 import subprocess
-import os
 import sys
 
 # Get the single demo script to test

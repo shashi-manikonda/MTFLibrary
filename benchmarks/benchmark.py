@@ -3,19 +3,12 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import time
 import numpy as np
-import mtflib
 from mtflib.taylor_function import (
     MultivariateTaylorFunction,
-)
-from mtflib.elementary_functions import (
-    sin_taylor,
-    exp_taylor,
-    log_taylor,
 )
 from src.applications.em.biot_savart import serial_biot_savart
 import argparse
 import cProfile
-import pstats
 import random
 import os
 
