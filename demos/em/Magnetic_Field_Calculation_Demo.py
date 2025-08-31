@@ -35,6 +35,7 @@ from mtflib import MultivariateTaylorFunction, Var, integrate, sqrt_taylor, mtfa
 from applications.em.biot_savart import mpi_biot_savart, serial_biot_savart
 from applications.em.current_ring import current_ring
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 # Check if MTF globals are already initialized
 if not MultivariateTaylorFunction.get_mtf_initialized_status():

@@ -23,6 +23,8 @@ def test_numpy_biot_savart_single_loop():
     """
     ring_radius = 0.1  # meters
     num_segments = 100
+    ring_center = np.array([0, 0, 0])
+    ring_axis = np.array([0, 0, 1])
     field_points = np.array([[0, 0, 0]])
 
     # The current_ring function returns MTFs, but for this test, we need the evaluated values.

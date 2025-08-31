@@ -6,7 +6,7 @@ import pandas as pd
 import mtflib
 from mtflib import (MultivariateTaylorFunction, Var, mtfarray,
                             convert_to_mtf,
-                            cos_taylor, sin_taylor, exp_taylor,
+                            cos_taylor, sin_taylor, tan_taylor, exp_taylor,
                             gaussian_taylor, log_taylor, arctan_taylor,
                             sinh_taylor, cosh_taylor, tanh_taylor,
                             arcsin_taylor, arccos_taylor, arctanh_taylor,
@@ -696,7 +696,7 @@ elementary_functions_list = [
 @pytest.mark.parametrize("func, func_name", elementary_functions_list)
 def test_elementary_functions_scalar(setup_function, func, func_name):
     global_dim, exponent_zero = setup_function
-    scalar_input = 0.5
+    scalar_input = 0.5;
     mtf_result = func(scalar_input)
     assert isinstance(mtf_result, MultivariateTaylorFunction) # Changed assertion here
     zero_point = tuple([0 for _ in range(global_dim)])

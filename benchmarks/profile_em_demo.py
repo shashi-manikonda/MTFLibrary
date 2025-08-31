@@ -2,15 +2,16 @@ import numpy as np
 import cProfile
 import pstats
 import os
+import sys
+import subprocess
 import argparse
 import time
 import matplotlib.pyplot as plt
 
-from mtflib import initialize_mtf_globals
-from demos.applications.em.current_ring import current_ring
-from demos.applications.em.biot_savart import serial_biot_savart, mpi_biot_savart
-from demos.applications.em.plotting import Coil, _plot_coil_geometry
-import manage_backends
+from mtflib import MultivariateTaylorFunction, Var
+from applications.em.current_ring import current_ring
+from applications.em.biot_savart import serial_biot_savart, mpi_biot_savart
+from applications.em.plotting import Coil, _plot_coil_geometry
 
 # --- MPI Setup ---
 try:
@@ -186,17 +187,10 @@ def main():
     args = parser.parse_args()
 
     # --- Initialize MTF ---
-    initialize_mtf_globals(max_order=6, max_dimension=4)
-
-    # --- Backend Management ---
-    is_mpi_process = 'OMPI_COMM_WORLD_RANK' in os.environ
-    # Only let the main process (or rank 0 in MPI) manage the backend files
-    if not is_mpi_process or (is_mpi_process and MPI.COMM_WORLD.Get_rank() == 0):
-        print(f"Managing backend: setting to '{args.backend}'")
-        manage_backends.switch_backend(enable=(args.backend == 'compiled'))
+    MultivariateTaylorFunction.initialize_mtf(max_order=6, max_dimension=4)
 
     # In MPI, ensure all processes wait for file changes before proceeding
-    if is_mpi_process:
+    if 'OMPI_COMM_WORLD_RANK' in os.environ:
         MPI.COMM_WORLD.Barrier()
 
     # --- Setup Geometry ---
@@ -211,9 +205,6 @@ def main():
     elif args.command == "plot":
         profile_plotting(coils, field_points, args.backend)
 
-    # --- Restore Backend ---
-    if not is_mpi_process or (is_mpi_process and MPI.COMM_WORLD.Get_rank() == 0):
-        manage_backends.switch_backend(enable=True)
 
 if __name__ == "__main__":
     main()

@@ -11,8 +11,9 @@ Refactored for reduced redundancy and using precomputed coefficients.
 
 import math
 import numpy as np
+from collections import defaultdict
 from .taylor_function import (MultivariateTaylorFunction, convert_to_mtf, _split_constant_polynomial_part,
-    sqrt_taylor)
+    sqrt_taylor, isqrt_taylor)
 from .complex_taylor_function import ComplexMultivariateTaylorFunction
 from . import elementary_coefficients  # Import the new module with loaded coefficients
 
