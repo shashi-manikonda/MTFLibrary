@@ -55,7 +55,7 @@ class MultivariateTaylorFunction:
         cls._INITIALIZED = True
         print(f"MTF globals initialized: _MAX_ORDER={cls._MAX_ORDER}, _MAX_DIMENSION={cls._MAX_DIMENSION}, _INITIALIZED={cls._INITIALIZED}")
         print(f"Max coefficient count (order={cls._MAX_ORDER}, nvars={cls._MAX_DIMENSION}): {cls.get_max_coefficient_count()}")
-        print("Precomputed coefficients loaded and ready for use.")
+        print(f"Precomputed coefficients loaded and ready for use.")
 
     @classmethod
     def get_max_coefficient_count(cls, max_order=None, max_dimension=None):
