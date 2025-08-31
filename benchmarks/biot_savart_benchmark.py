@@ -1,10 +1,13 @@
 import numpy as np
 import time
+import cProfile
+import pstats
 import os
 import sys
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from mtflib.backends.cpp import mtf_cpp
 from mtflib.taylor_function import MultivariateTaylorFunction
 from src.applications.em.biot_savart import serial_biot_savart
 from src.applications.em.current_ring import current_ring

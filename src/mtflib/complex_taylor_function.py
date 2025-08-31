@@ -1,7 +1,7 @@
 # mtflib/complex_taylor_function.py
 import numpy as np
 from collections import defaultdict
-from .taylor_function import (MultivariateTaylorFunction)
+from .taylor_function import (MultivariateTaylorFunction, convert_to_mtf)
 
 class ComplexMultivariateTaylorFunction(MultivariateTaylorFunction):
     """

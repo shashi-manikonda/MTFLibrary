@@ -1,2 +1,0 @@
-# Include all C++ header and source files from the backends
-graft src/mtflib/backends
