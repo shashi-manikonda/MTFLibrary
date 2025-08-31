@@ -1,5 +1,6 @@
 import sys
 from setuptools import setup, find_packages, Extension
+from pathlib import Path
 import numpy
 import pybind11
 
@@ -7,23 +8,36 @@ import pybind11
 if sys.platform == 'win32':
     # MSVC compiler arguments
     cpp_args = ['/std:c++17', '/openmp']
+    link_args = []
 else:
     # GCC/Clang compiler arguments
-    cpp_args = ['-std=c++17', '-fopenmp']
+    cpp_args = ['-std=c++17', '-fopenmp', '-O3', '-march=native']
+    link_args = ['-fopenmp']
 
 extensions = [
     Extension('mtflib.backends.cpp.mtf_cpp',
-              ['src/mtflib/backends/cpp/mtf_ops.cpp', 'src/mtflib/backends/cpp/pybind_wrapper.cpp'],
+              ['src/mtflib/backends/cpp/mtf_data.cpp', 'src/mtflib/backends/cpp/pybind_wrapper.cpp', 'src/mtflib/backends/cpp/biot_savart_ops.cpp'],
               include_dirs=[pybind11.get_include(), numpy.get_include(), 'src/mtflib/backends/cpp'],
               language='c++',
               extra_compile_args=cpp_args,
-              extra_link_args=cpp_args),
+              extra_link_args=link_args),
+    Extension('mtflib.backends.c.mtf_c_backend',
+              ['src/mtflib/backends/c/c_backend.cpp', 'src/mtflib/backends/c/c_pybind_wrapper.cpp'],
+              include_dirs=[pybind11.get_include(), numpy.get_include(), 'src/mtflib/backends/c'],
+              language='c++',
+              extra_compile_args=cpp_args,
+              extra_link_args=link_args),
 ]
+
+this_directory = Path(__file__).parent
+long_description = (this_directory / "README.md").read_text()
 
 setup(
     name='mtflib',
     version='2.0.0',
     description='Multivariate Taylor Expansion Library with C++ backend',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     author='Shashikant Manikonda',
     author_email='manikonda@outlook.com',
     license='MIT',

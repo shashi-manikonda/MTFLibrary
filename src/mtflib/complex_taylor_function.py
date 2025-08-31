@@ -1,7 +1,7 @@
 # mtflib/complex_taylor_function.py
 import numpy as np
 from collections import defaultdict
-from .taylor_function import (MultivariateTaylorFunction, convert_to_mtf)
+from .taylor_function import (MultivariateTaylorFunction)
 
 class ComplexMultivariateTaylorFunction(MultivariateTaylorFunction):
     """
@@ -12,11 +12,11 @@ class ComplexMultivariateTaylorFunction(MultivariateTaylorFunction):
     similar operations as MultivariateTaylorFunction, adapted for complex arithmetic.
     """
 
-    def __init__(self, coefficients, dimension=None, var_name=None):
+    def __init__(self, coefficients, dimension=None, var_name=None, mtf_data=None):
         """
         Initializes a ComplexMultivariateTaylorFunction object.
         """
-        super().__init__(coefficients, dimension, var_name)
+        super().__init__(coefficients, dimension, var_name, mtf_data=mtf_data)
         if self.coeffs.dtype != np.complex128:
             self.coeffs = self.coeffs.astype(np.complex128)
 

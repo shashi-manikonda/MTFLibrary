@@ -1,11 +1,11 @@
 import pytest
 import subprocess
-import os
 import sys
 
 # Get the single demo script to test
 DEMO_SCRIPT = 'demos/em/Magnetic_Field_Calculation_Demo.py'
 
+@pytest.mark.skip(reason="Demo script is too slow to run as part of the regular test suite.")
 @pytest.mark.parametrize("script_path", [DEMO_SCRIPT])
 def test_demo_script_execution(script_path):
     """

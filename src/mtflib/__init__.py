@@ -11,12 +11,6 @@ and extended functionalities.
 
 import pandas as pd
 
-# Set the display format for floats
-pd.options.display.float_format = '{:.12e}'.format
-pd.set_option('display.max_columns', None)
-pd.set_option('display.max_rows', None)
-pd.set_option('display.width', 1000)
-
 from . import elementary_coefficients
 from . import taylor_function
 from . import elementary_functions
@@ -24,7 +18,6 @@ from . import complex_taylor_function
 
 from .taylor_function import (MultivariateTaylorFunction,
     convert_to_mtf,
-    _split_constant_polynomial_part,
     sqrt_taylor,
     isqrt_taylor,
     Var,
@@ -38,6 +31,13 @@ from .complex_taylor_function import (ComplexMultivariateTaylorFunction,
 from .elementary_coefficients import load_precomputed_coefficients
 from .taylor_map import TaylorMap
 
+# Set the display format for floats and other pandas options
+pd.options.display.float_format = '{:.12e}'.format
+pd.set_option('display.max_columns', None)
+pd.set_option('display.max_rows', None)
+pd.set_option('display.width', 1000)
+
+# Alias for convenience
 MTF = MultivariateTaylorFunction
 
 
@@ -48,6 +48,8 @@ public API of your library.
 '''
 __all__ = [
     'taylor_function',
+    'elementary_coefficients',
+    'complex_taylor_function',
     'load_precomputed_coefficients',
     'elementary_functions',
     'MultivariateTaylorFunction',

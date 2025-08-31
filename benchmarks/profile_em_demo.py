@@ -2,13 +2,11 @@ import numpy as np
 import cProfile
 import pstats
 import os
-import sys
-import subprocess
 import argparse
 import time
 import matplotlib.pyplot as plt
 
-from mtflib import initialize_mtf_globals, Var
+from mtflib import initialize_mtf_globals
 from demos.applications.em.current_ring import current_ring
 from demos.applications.em.biot_savart import serial_biot_savart, mpi_biot_savart
 from demos.applications.em.plotting import Coil, _plot_coil_geometry

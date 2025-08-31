@@ -2,10 +2,8 @@
 """
 Function to calculate the magnetic field of a rectangular current loop.
 """
-import sys
 import numpy as np
 from .straight_wire import straight_wire_field
-from mtflib import MultivariateTaylorFunction
 
 def rectangular_loop_field(p1, p2, p4, current, field_points, num_segments_per_side=25):
     """

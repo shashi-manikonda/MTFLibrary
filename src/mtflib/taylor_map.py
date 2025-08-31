@@ -99,13 +99,13 @@ class TaylorMap:
         """
         return self.components[index]
 
-    def get_coefficient(self, component_index: int, exponent_array: np.ndarray) -> float:
+    def get_coefficient(self, component_index: int, exponent_array: np.ndarray):
         """
         Returns the coefficient for a specific term in a specific component.
         """
         return self.components[component_index].extract_coefficient(tuple(exponent_array)).item()
 
-    def set_coefficient(self, component_index: int, exponent_array: np.ndarray, new_value: float):
+    def set_coefficient(self, component_index: int, exponent_array: np.ndarray, new_value):
         """
         Sets the coefficient for a specific term in a specific component.
         """
@@ -143,7 +143,7 @@ class TaylorMap:
         if self.map_dim != self.components[0].dimension:
             raise ValueError("Trace is only defined for maps from N-dim to N-dim space.")
 
-        trace_val = 0.0
+        trace_val = 0.0j
         for i in range(self.map_dim):
             exponent = [0] * self.map_dim
             exponent[i] = 1
@@ -261,7 +261,7 @@ class TaylorMap:
                 raise ValueError(f"Map must have no constant terms to be invertible. Component {i} has constant term {const_term}.")
 
         # --- Algorithm Step 1: Extract Linear Part (β) and Jacobian ---
-        jacobian = np.zeros((dim, dim))
+        jacobian = np.zeros((dim, dim), dtype=np.complex128)
         for i in range(dim):
             for j in range(dim):
                 exp = tuple([1 if k == j else 0 for k in range(dim)])

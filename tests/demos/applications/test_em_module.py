@@ -23,8 +23,6 @@ def test_numpy_biot_savart_single_loop():
     """
     ring_radius = 0.1  # meters
     num_segments = 100
-    ring_center = np.array([0, 0, 0])
-    ring_axis = np.array([0, 0, 1])
     field_points = np.array([[0, 0, 0]])
 
     # The current_ring function returns MTFs, but for this test, we need the evaluated values.
@@ -63,9 +61,21 @@ def test_numpy_biot_savart_single_loop():
     # so we must multiply by 2 for direct summation.
     expected_numerical_result = b_field_analytical_z
 
-    assert np.allclose(b_field_numerical[0, 0], 0)
-    assert np.allclose(b_field_numerical[0, 1], 0)
-    assert np.allclose(b_field_numerical[0, 2] * 2, expected_numerical_result, rtol=1e-3)
+    b_field_numerical_x = b_field_numerical[0, 0]
+    if isinstance(b_field_numerical_x, MultivariateTaylorFunction):
+        b_field_numerical_x = b_field_numerical_x.extract_coefficient(tuple([0]*b_field_numerical_x.dimension)).item()
+
+    b_field_numerical_y = b_field_numerical[0, 1]
+    if isinstance(b_field_numerical_y, MultivariateTaylorFunction):
+        b_field_numerical_y = b_field_numerical_y.extract_coefficient(tuple([0]*b_field_numerical_y.dimension)).item()
+
+    b_field_numerical_z = b_field_numerical[0, 2]
+    if isinstance(b_field_numerical_z, MultivariateTaylorFunction):
+        b_field_numerical_z = b_field_numerical_z.extract_coefficient(tuple([0]*b_field_numerical_z.dimension)).item()
+
+    assert np.allclose(b_field_numerical_x, 0)
+    assert np.allclose(b_field_numerical_y, 0)
+    assert np.allclose(b_field_numerical_z * 2, expected_numerical_result, rtol=1e-3)
 
 
 def test_current_ring_output_shapes():

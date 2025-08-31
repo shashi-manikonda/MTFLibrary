@@ -29,10 +29,10 @@ class MultivariateTaylorFunction:
     _ETOL = 1e-16
     _TRUNCATE_AFTER_OPERATION = True
     _PRECOMPUTED_COEFFICIENTS = {}
-    _IMPLEMENTATION = 'python'
+    _IMPLEMENTATION = 'cpp'
 
     @classmethod
-    def initialize_mtf(cls, max_order=None, max_dimension=None, implementation='python'):
+    def initialize_mtf(cls, max_order=None, max_dimension=None, implementation='cpp'):
         """Initializes global settings and loads precomputed coefficients. Must be called once."""
         if cls._INITIALIZED:
             print("MTF globals already initialized. Re-initializing with new settings.")
@@ -55,7 +55,7 @@ class MultivariateTaylorFunction:
         cls._INITIALIZED = True
         print(f"MTF globals initialized: _MAX_ORDER={cls._MAX_ORDER}, _MAX_DIMENSION={cls._MAX_DIMENSION}, _INITIALIZED={cls._INITIALIZED}")
         print(f"Max coefficient count (order={cls._MAX_ORDER}, nvars={cls._MAX_DIMENSION}): {cls.get_max_coefficient_count()}")
-        print(f"Precomputed coefficients loaded and ready for use.")
+        print("Precomputed coefficients loaded and ready for use.")
 
     @classmethod
     def get_max_coefficient_count(cls, max_order=None, max_dimension=None):
@@ -127,7 +127,7 @@ class MultivariateTaylorFunction:
         cls._TRUNCATE_AFTER_OPERATION = enable
 
 
-    def __init__(self, coefficients, dimension=None, var_name=None):
+    def __init__(self, coefficients, dimension=None, var_name=None, mtf_data=None):
         """
         Initializes a MultivariateTaylorFunction object.
 
@@ -137,6 +137,14 @@ class MultivariateTaylorFunction:
         :param var_name: The name of the variable (optional).
         """
         self.var_name = var_name
+        self.mtf_data = mtf_data
+
+        if self.mtf_data:
+            data_dict = self.mtf_data.to_dict()
+            self.exponents = data_dict['exponents']
+            self.coeffs = data_dict['coeffs']
+            self.dimension = self.exponents.shape[1] if self.exponents.size > 0 else dimension
+            return
 
         # Fast path for tuple of (exponents, coeffs)
         if isinstance(coefficients, tuple) and len(coefficients) == 2 and isinstance(coefficients[0], np.ndarray) and isinstance(coefficients[1], np.ndarray):
@@ -187,6 +195,10 @@ class MultivariateTaylorFunction:
                 self.coeffs = self.coeffs[sorted_indices]
         else:
             raise TypeError("Unsupported type for 'coefficients'. Must be a dict or a tuple of (exponents, coeffs) arrays.")
+
+        if _CPP_BACKEND_AVAILABLE and self._IMPLEMENTATION == 'cpp':
+            self.mtf_data = mtf_cpp.MtfData()
+            self.mtf_data.from_numpy(self.exponents, self.coeffs)
 
     @classmethod
     def from_constant(cls, constant_value, dimension=None):
@@ -243,14 +255,6 @@ class MultivariateTaylorFunction:
         if self.dimension != other.dimension:
             raise ValueError("MTF dimensions must match for addition.")
 
-        # C++ Backend Dispatch
-        if self._IMPLEMENTATION == 'cpp' and not (np.iscomplexobj(self.coeffs) or np.iscomplexobj(other.coeffs)):
-            new_exps, new_coeffs = mtf_cpp.add_mtf_cpp(self.exponents, self.coeffs, other.exponents, other.coeffs)
-            result_mtf = type(self)((new_exps, new_coeffs), self.dimension)
-            if self._TRUNCATE_AFTER_OPERATION:
-                result_mtf._cleanup_after_operation()
-            return result_mtf
-
         # Python Implementation (Optimized with dictionary)
         is_complex = np.iscomplexobj(self.coeffs) or np.iscomplexobj(other.coeffs)
         summed_coeffs_dict = defaultdict(complex) if is_complex else defaultdict(float)
@@ -289,15 +293,6 @@ class MultivariateTaylorFunction:
 
         if self.dimension != other.dimension:
             raise ValueError("MTF dimensions must match for subtraction.")
-
-        # C++ Backend Dispatch
-        if self._IMPLEMENTATION == 'cpp' and not (np.iscomplexobj(self.coeffs) or np.iscomplexobj(other.coeffs)):
-            # C++ add can handle subtraction by negating the second operand's coeffs
-            new_exps, new_coeffs = mtf_cpp.add_mtf_cpp(self.exponents, self.coeffs, other.exponents, -other.coeffs)
-            result_mtf = type(self)((new_exps, new_coeffs), self.dimension)
-            if self._TRUNCATE_AFTER_OPERATION:
-                result_mtf._cleanup_after_operation()
-            return result_mtf
 
         # Python Implementation (Optimized with dictionary)
         is_complex = np.iscomplexobj(self.coeffs) or np.iscomplexobj(other.coeffs)
@@ -344,14 +339,6 @@ class MultivariateTaylorFunction:
         if self.coeffs.size == 0 or other.coeffs.size == 0:
             dtype = np.result_type(self.coeffs.dtype, other.coeffs.dtype)
             return type(self)((np.empty((0, self.dimension), dtype=np.int32), np.empty((0,), dtype=dtype)), self.dimension)
-
-        # C++ Backend Dispatch
-        if self._IMPLEMENTATION == 'cpp' and not (np.iscomplexobj(self.coeffs) or np.iscomplexobj(other.coeffs)):
-            new_exps, new_coeffs = mtf_cpp.multiply_mtf_cpp(self.exponents, self.coeffs, other.exponents, other.coeffs)
-            result_mtf = type(self)((new_exps, new_coeffs), self.dimension)
-            if self._TRUNCATE_AFTER_OPERATION:
-                result_mtf._cleanup_after_operation()
-            return result_mtf
 
         # Python Implementation (Optimized with dictionary)
         is_complex = np.iscomplexobj(self.coeffs) or np.iscomplexobj(other.coeffs)
@@ -432,7 +419,7 @@ class MultivariateTaylorFunction:
         if isinstance(other, MultivariateTaylorFunction):
             inverse_other_mtf = self._inv_mtf_internal(other)
             return self * inverse_other_mtf
-        elif isinstance(other, (int, float, np.number)):
+        elif isinstance(other, (int, float, complex, np.number)):
             result_mtf = type(self)((self.exponents.copy(), self.coeffs / other), self.dimension)
             if self._TRUNCATE_AFTER_OPERATION:
                 result_mtf._cleanup_after_operation()
@@ -496,9 +483,13 @@ class MultivariateTaylorFunction:
         # Zero out the exponents for the substituted variable
         new_exponents[:, var_index - 1] = 0
 
-        # Use np.unique to group the new exponents and sum the corresponding coefficients
-        unique_exponents, inverse_indices = np.unique(new_exponents, axis=0, return_inverse=True)
-        summed_coeffs = np.bincount(inverse_indices, weights=new_coeffs)
+        # Use a dictionary to group and sum coefficients, as bincount does not support complex numbers
+        summed_coeffs_dict = defaultdict(complex)
+        for i, exp in enumerate(new_exponents):
+            summed_coeffs_dict[tuple(exp)] += new_coeffs[i]
+
+        unique_exponents = np.array(list(summed_coeffs_dict.keys()), dtype=np.int32)
+        summed_coeffs = np.array(list(summed_coeffs_dict.values()))
 
         return type(self)((unique_exponents, summed_coeffs), self.dimension)
 

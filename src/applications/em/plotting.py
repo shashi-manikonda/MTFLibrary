@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 from mtflib import MultivariateTaylorFunction
 from .biot_savart import serial_biot_savart
 
@@ -113,9 +112,9 @@ def plot_field_on_line(coils, start_point, end_point, component='magnitude', num
     ax_3d.plot(line_points[:, 0], line_points[:, 1], line_points[:, 2], 'r--', label='Observation Line')
 
     # Calculate the B-field at each point on the line
-    B_vectors = np.zeros((num_points, 3))
+    B_vectors = np.zeros((num_points, 3), dtype=np.complex128)
     for i, point in enumerate(line_points):
-        B_total_at_point = np.array([0.0, 0.0, 0.0])
+        B_total_at_point = np.array([0.0j, 0.0j, 0.0j])
         for coil in coils:
             # Calculate the field contribution from this coil at the current point
             B_contrib_mtf = serial_biot_savart(
@@ -239,9 +238,9 @@ def plot_field_on_plane(coils, center_point, normal_vector, size=(2, 2), resolut
     points_flat = points_3d.reshape(-1, 3)
 
     # Calculate B-field at each grid point
-    B_vectors = np.zeros_like(points_flat)
+    B_vectors = np.zeros_like(points_flat, dtype=np.complex128)
     for i, point in enumerate(points_flat):
-        B_total_at_point = np.array([0.0, 0.0, 0.0])
+        B_total_at_point = np.array([0.0j, 0.0j, 0.0j])
         for coil in coils:
             B_contrib_mtf = serial_biot_savart(
                 coil.segment_mtfs, coil.element_lengths, coil.direction_vectors,
@@ -277,7 +276,7 @@ def plot_field_on_plane(coils, center_point, normal_vector, size=(2, 2), resolut
             # Placeholder for Bx, By, Bz components if needed
             plot_data = B_magnitude
 
-        c = ax.contourf(u_grid, v_grid, plot_data, cmap='viridis')
+        ax.contourf(u_grid, v_grid, plot_data, cmap='viridis')
         # This requires transforming contour back to 3D, which is complex.
         # A simpler approach is to use plot_surface with colors.
         ax.plot_surface(points_3d[..., 0], points_3d[..., 1], points_3d[..., 2], facecolors=plt.cm.viridis(plot_data / plot_data.max()), rstride=1, cstride=1, shade=False)
@@ -342,9 +341,9 @@ def plot_field_vectors_3d(coils, points, refine_level=5, eval_order=0, scale=1.0
     # Placeholder for B-field calculation
     # Calculate B-field at each specified point
     points = np.array(points)
-    B_vectors = np.zeros_like(points, dtype=float)
+    B_vectors = np.zeros_like(points, dtype=np.complex128)
     for i, point in enumerate(points):
-        B_total_at_point = np.array([0.0, 0.0, 0.0])
+        B_total_at_point = np.array([0.0j, 0.0j, 0.0j])
         for coil in coils:
             B_contrib_mtf = serial_biot_savart(
                 coil.segment_mtfs, coil.element_lengths, coil.direction_vectors,
@@ -361,10 +360,10 @@ def plot_field_vectors_3d(coils, points, refine_level=5, eval_order=0, scale=1.0
 
     if color_by_magnitude and magnitudes.max() > 0:
         colors = plt.cm.viridis(magnitudes / magnitudes.max())
-        q = ax.quiver(X, Y, Z, U, V, W, length=scale, normalize=False, colors=colors, arrow_length_ratio=0.5)
+        ax.quiver(X, Y, Z, U, V, W, length=scale, normalize=False, colors=colors, arrow_length_ratio=0.5)
         fig.colorbar(plt.cm.ScalarMappable(norm=plt.Normalize(vmin=magnitudes.min(), vmax=magnitudes.max()), cmap='viridis'), ax=ax, shrink=0.5, label='B-Field Magnitude')
     else:
-        q = ax.quiver(X, Y, Z, U, V, W, length=scale, normalize=True, arrow_length_ratio=0.5)
+        ax.quiver(X, Y, Z, U, V, W, length=scale, normalize=True, arrow_length_ratio=0.5)
 
     ax.set_title('3D Field Vector Plot')
     ax.set_xlabel('X')
