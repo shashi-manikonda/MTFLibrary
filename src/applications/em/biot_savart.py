@@ -260,7 +260,7 @@ def _c_biot_savart_core(source_points, dl_vectors, field_points, order=None):
 
     return np.array(b_field_py)
 
-def serial_biot_savart(element_centers, element_lengths, element_directions, field_points, order=None, backend=None):
+def serial_biot_savart(element_centers, element_lengths, element_directions, field_points, order=None, backend='python'):
     """
     Serial Biot-Savart calculation with element inputs.
 
