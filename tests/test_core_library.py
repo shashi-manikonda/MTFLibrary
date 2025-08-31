@@ -6,7 +6,7 @@ import pandas as pd
 import mtflib
 from mtflib import (MultivariateTaylorFunction, Var, mtfarray,
                             convert_to_mtf,
-                            cos_taylor, sin_taylor, tan_taylor, exp_taylor,
+                            cos_taylor, sin_taylor, exp_taylor,
                             gaussian_taylor, log_taylor, arctan_taylor,
                             sinh_taylor, cosh_taylor, tanh_taylor,
                             arcsin_taylor, arccos_taylor, arctanh_taylor,
@@ -696,26 +696,35 @@ elementary_functions_list = [
 @pytest.mark.parametrize("func, func_name", elementary_functions_list)
 def test_elementary_functions_scalar(setup_function, func, func_name):
     global_dim, exponent_zero = setup_function
-    scalar_input = 0.5;
+    scalar_input = 0.5
     mtf_result = func(scalar_input)
     assert isinstance(mtf_result, MultivariateTaylorFunction) # Changed assertion here
     zero_point = tuple([0 for _ in range(global_dim)])
     scalar_eval_result = func(scalar_input).eval(zero_point) # Evaluate at 0 as Taylor series is around 0
 
-    if func_name == 'cos_taylor': expected_val = np.cos(scalar_input)
-    elif func_name == 'sin_taylor': expected_val = np.sin(scalar_input)
-    elif func_name == 'exp_taylor': expected_val = np.exp(scalar_input)
-    elif func_name == 'gaussian_taylor': expected_val = np.exp(-(scalar_input**2))
-    elif func_name == 'sqrt_taylor': expected_val = np.sqrt(scalar_input)
+    if func_name == 'cos_taylor':
+        expected_val = np.cos(scalar_input)
+    elif func_name == 'sin_taylor':
+        expected_val = np.sin(scalar_input)
+    elif func_name == 'exp_taylor':
+        expected_val = np.exp(scalar_input)
+    elif func_name == 'gaussian_taylor':
+        expected_val = np.exp(-(scalar_input**2))
+    elif func_name == 'sqrt_taylor':
+        expected_val = np.sqrt(scalar_input)
     elif func_name == 'log_taylor':
         if scalar_input > 0:
             expected_val = np.log(scalar_input)
         else:
             expected_val = np.nan # Or handle the domain issue appropriately
-    elif func_name == 'arctan_taylor': expected_val = np.arctan(scalar_input)
-    elif func_name == 'sinh_taylor': expected_val = np.sinh(scalar_input)
-    elif func_name == 'cosh_taylor': expected_val = np.cosh(scalar_input)
-    elif func_name == 'tanh_taylor': expected_val = np.tanh(scalar_input)
+    elif func_name == 'arctan_taylor':
+        expected_val = np.arctan(scalar_input)
+    elif func_name == 'sinh_taylor':
+        expected_val = np.sinh(scalar_input)
+    elif func_name == 'cosh_taylor':
+        expected_val = np.cosh(scalar_input)
+    elif func_name == 'tanh_taylor':
+        expected_val = np.tanh(scalar_input)
     elif func_name == 'arcsin_taylor':
         if -1 <= scalar_input <= 1:
             expected_val = np.arcsin(scalar_input)
@@ -837,7 +846,7 @@ def test_old_compose_is_gone():
     Test that the old standalone compose function is no longer available.
     """
     with pytest.raises(NameError):
-        compose(None, None)
+        compose(None, None)  # noqa: F821
 
 def test_mtfarray():
     """
@@ -864,7 +873,6 @@ def test_mtfarray():
     # So there should be 4 rows.
     # Actually, the constant term is not always present if the coefficient is zero.
     # Let's check the number of non-zero coefficients.
-    num_coeffs = mtf1.coeffs.size + mtf2.coeffs.size
     # There might be overlapping coefficients, but in this case there are not.
     # The mtfarray function will merge the terms, so the number of rows will be the number of unique exponents.
     # mtf1 has terms (1,0,0) and (0,1,0). mtf2 has term (2,0,0).

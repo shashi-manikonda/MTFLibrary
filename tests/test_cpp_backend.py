@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 from mtflib import MultivariateTaylorFunction
 from src.applications.em.biot_savart import serial_biot_savart
 

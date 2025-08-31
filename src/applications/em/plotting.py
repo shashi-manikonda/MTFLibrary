@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 from mtflib import MultivariateTaylorFunction
 from .biot_savart import serial_biot_savart
 
@@ -277,7 +276,7 @@ def plot_field_on_plane(coils, center_point, normal_vector, size=(2, 2), resolut
             # Placeholder for Bx, By, Bz components if needed
             plot_data = B_magnitude
 
-        c = ax.contourf(u_grid, v_grid, plot_data, cmap='viridis')
+        ax.contourf(u_grid, v_grid, plot_data, cmap='viridis')
         # This requires transforming contour back to 3D, which is complex.
         # A simpler approach is to use plot_surface with colors.
         ax.plot_surface(points_3d[..., 0], points_3d[..., 1], points_3d[..., 2], facecolors=plt.cm.viridis(plot_data / plot_data.max()), rstride=1, cstride=1, shade=False)
@@ -361,10 +360,10 @@ def plot_field_vectors_3d(coils, points, refine_level=5, eval_order=0, scale=1.0
 
     if color_by_magnitude and magnitudes.max() > 0:
         colors = plt.cm.viridis(magnitudes / magnitudes.max())
-        q = ax.quiver(X, Y, Z, U, V, W, length=scale, normalize=False, colors=colors, arrow_length_ratio=0.5)
+        ax.quiver(X, Y, Z, U, V, W, length=scale, normalize=False, colors=colors, arrow_length_ratio=0.5)
         fig.colorbar(plt.cm.ScalarMappable(norm=plt.Normalize(vmin=magnitudes.min(), vmax=magnitudes.max()), cmap='viridis'), ax=ax, shrink=0.5, label='B-Field Magnitude')
     else:
-        q = ax.quiver(X, Y, Z, U, V, W, length=scale, normalize=True, arrow_length_ratio=0.5)
+        ax.quiver(X, Y, Z, U, V, W, length=scale, normalize=True, arrow_length_ratio=0.5)
 
     ax.set_title('3D Field Vector Plot')
     ax.set_xlabel('X')
