@@ -7,6 +7,7 @@ import pandas as pd
 from functools import reduce
 
 from . import elementary_coefficients
+from .backend import get_backend
 
 # Try to import the C++ backend
 try:
@@ -250,21 +251,26 @@ class MultivariateTaylorFunction:
         :param evaluation_points: A 2D numpy array of shape (n_points, dimension).
         :return: A 1D numpy array of shape (n_points,) with the evaluation results.
         """
-        evaluation_points = np.atleast_2d(evaluation_points)
+        backend = get_backend(evaluation_points)
+        evaluation_points = backend.atleast_2d(evaluation_points)
         if evaluation_points.shape[1] != self.dimension:
             raise ValueError(f"Evaluation points array must have shape (n_points, {self.dimension}).")
 
         if self.coeffs.size == 0:
-            return np.zeros(evaluation_points.shape[0])
+            return backend.zeros(evaluation_points.shape[0])
+
+        # Convert coefficients and exponents to the correct tensor type
+        coeffs = backend.from_numpy(self.coeffs)
+        exponents = backend.from_numpy(self.exponents)
 
         # Reshape for broadcasting:
         # evaluation_points: (n_points, 1, dimension)
         # self.exponents:   (1, n_terms, dimension)
         # self.coeffs:      (n_terms,)
-        term_values = np.prod(np.power(evaluation_points[:, np.newaxis, :], self.exponents[np.newaxis, :, :]), axis=2)
+        term_values = backend.prod(backend.power(evaluation_points[:, np.newaxis, :], exponents[np.newaxis, :, :]), axis=2)
 
         # Dot product of term values and coefficients
-        results = np.dot(term_values, self.coeffs)
+        results = backend.dot(term_values, coeffs)
 
         return results
 

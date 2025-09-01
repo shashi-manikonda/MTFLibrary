@@ -1,5 +1,6 @@
 import pytest
 import numpy as np
+import torch
 from mtflib import MultivariateTaylorFunction
 
 # Old eval logic for comparison
@@ -7,7 +8,7 @@ def old_eval(mtf, evaluation_point):
     """The old eval logic for comparison."""
     evaluation_point = np.array(evaluation_point)
     term_values = np.prod(np.power(evaluation_point, mtf.exponents), axis=1)
-    result = np.einsum('i,i->', mtf.coeffs, term_values)
+    result = np.einsum('j,j->', mtf.coeffs, term_values)
     return result
 
 @pytest.fixture
@@ -26,7 +27,7 @@ def test_neval_single_point(sample_mtf):
     expected = old_eval(sample_mtf, point)
 
     # Result from neval
-    result = sample_mtf.neval([point])
+    result = sample_mtf.neval(point.reshape(1, -1))
 
     assert result.shape == (1,)
     assert np.allclose(result[0], expected)
@@ -54,11 +55,11 @@ def test_neval_error_handling(sample_mtf):
     """Tests the error handling of neval."""
     with pytest.raises(ValueError):
         # Incorrect dimension
-        sample_mtf.neval([[1.0]])
+        sample_mtf.neval(np.array([[1.0]]))
 
     with pytest.raises(ValueError):
         # Incorrect shape
-        sample_mtf.neval([1.0, 2.0, 3.0])
+        sample_mtf.neval(np.array([1.0, 2.0, 3.0]))
 
 def test_eval_wrapper(sample_mtf):
     """Tests the new eval wrapper."""
@@ -79,3 +80,23 @@ def test_eval_wrapper(sample_mtf):
     # Test error handling for 2D input with more than one point
     with pytest.raises(ValueError):
         sample_mtf.eval(np.array([[1.0, 2.0], [3.0, 4.0]]))
+
+def test_neval_torch_tensor(sample_mtf):
+    """Tests neval with a torch tensor."""
+    points = torch.tensor([
+        [1.0, 2.0],
+        [3.0, 4.0],
+        [0.0, 0.0]
+    ], dtype=torch.float64)
+
+    expected = np.array([
+        old_eval(sample_mtf, points[0].numpy()),
+        old_eval(sample_mtf, points[1].numpy()),
+        old_eval(sample_mtf, points[2].numpy())
+    ])
+
+    result = sample_mtf.neval(points)
+
+    assert isinstance(result, torch.Tensor)
+    assert result.shape == (3,)
+    assert np.allclose(result.numpy(), expected)

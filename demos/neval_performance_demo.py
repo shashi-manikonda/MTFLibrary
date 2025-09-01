@@ -1,5 +1,6 @@
 import numpy as np
 import time
+import torch
 from mtflib import MultivariateTaylorFunction
 
 def old_eval_loop(mtf, points):
@@ -51,17 +52,34 @@ def main():
     print(f"Time taken: {time_new:.4f} seconds")
     print("-" * 30)
 
+    # --- Benchmark PyTorch neval method ---
+    print("Benchmarking the new neval method with PyTorch tensors...")
+    points_torch = torch.from_numpy(points).to(torch.float64)
+    start_time = time.time()
+    results_torch = mtf.neval(points_torch)
+    end_time = time.time()
+    time_torch = end_time - start_time
+    print(f"Time taken: {time_torch:.4f} seconds")
+    print("-" * 30)
+
     # --- Comparison ---
     print("Performance Comparison:")
     if time_new > 0:
-        speedup = time_old / time_new
-        print(f"The new `neval` method is {speedup:.2f}x faster than the old `eval` loop.")
+        speedup_numpy = time_old / time_new
+        print(f"The numpy `neval` method is {speedup_numpy:.2f}x faster than the old `eval` loop.")
     else:
-        print("Could not calculate speedup (neval was too fast).")
+        print("Could not calculate numpy speedup (neval was too fast).")
+
+    if time_torch > 0:
+        speedup_torch = time_old / time_torch
+        print(f"The torch `neval` method is {speedup_torch:.2f}x faster than the old `eval` loop.")
+    else:
+        print("Could not calculate torch speedup (neval was too fast).")
 
     # Verify that the results are consistent
-    assert np.allclose(results_old, results_new), "Results from old and new methods do not match."
-    print("\nResults from both methods are consistent.")
+    assert np.allclose(results_old, results_new), "Results from numpy and old methods do not match."
+    assert np.allclose(results_old, results_torch.numpy()), "Results from torch and old methods do not match."
+    print("\nResults from all methods are consistent.")
 
 if __name__ == "__main__":
     main()

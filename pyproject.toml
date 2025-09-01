@@ -35,6 +35,7 @@ test = [
     "nbconvert",
     "ipykernel",
     "jupytext",
+    "torch",
 ]
 
 [project.urls]
