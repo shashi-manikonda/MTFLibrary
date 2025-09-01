@@ -1,6 +1,10 @@
 import pytest
 import numpy as np
-import torch
+try:
+    import torch
+    _TORCH_AVAILABLE = True
+except ImportError:
+    _TORCH_AVAILABLE = False
 from mtflib import MultivariateTaylorFunction
 
 # Old eval logic for comparison
@@ -81,6 +85,7 @@ def test_eval_wrapper(sample_mtf):
     with pytest.raises(ValueError):
         sample_mtf.eval(np.array([[1.0, 2.0], [3.0, 4.0]]))
 
+@pytest.mark.skipif(not _TORCH_AVAILABLE, reason="torch not installed")
 def test_neval_torch_tensor(sample_mtf):
     """Tests neval with a torch tensor."""
     points = torch.tensor([
