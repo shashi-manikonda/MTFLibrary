@@ -1,5 +1,6 @@
 # mtflib: Multivariate Taylor Function Library
 
+[![Documentation Status](https://readthedocs.org/projects/mtflibrary/badge/?version=latest)](https://mtflibrary.readthedocs.io/en/latest/?badge=latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A Python library for creating, manipulating, and composing Multivariate Taylor Functions, with a C++ backend for performance-critical applications and extensions for electromagnetism calculations.
