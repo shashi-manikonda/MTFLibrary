@@ -494,7 +494,7 @@ class MultivariateTaylorFunction:
         return type(self)((unique_exponents, summed_coeffs), self.dimension)
 
     def truncate_inplace(self, order=None):
-        """Truncates the MTF *in place* to a specified order."""
+        """Truncates the MTF **in place** to a specified order."""
         if order is None:
             order = self.get_max_order()
         elif not isinstance(order, int) or order < 0:
