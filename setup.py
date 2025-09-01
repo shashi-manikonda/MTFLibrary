@@ -29,34 +29,6 @@ extensions = [
 ]
 
 setup(
-    name='mtflib',
-    version='2.0.0',
-    description='Multivariate Taylor Expansion Library with C++ backend',
-    author='Shashikant Manikonda',
-    author_email='manikonda@outlook.com',
-    license='MIT',
-    package_dir={'': 'src'},
-    packages=find_packages(where='src'),
-    install_requires=['numpy', 'pandas'],
-    setup_requires=['numpy', 'pybind11'],
-    extras_require={
-        'test': [
-            'pytest',
-            'matplotlib',
-            'nbconvert',
-            'ipykernel',
-        ]
-    },
     ext_modules=extensions,
-    classifiers=[
-        'Development Status :: 4 - Beta',
-        'Intended Audience :: Developers',
-        'Intended Audience :: Science/Research',
-        'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: C++',
-        'Topic :: Scientific/Engineering :: Mathematics',
-        'Topic :: Software Development :: Libraries',
-    ],
     zip_safe=False,
 )

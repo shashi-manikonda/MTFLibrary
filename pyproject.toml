@@ -25,6 +25,7 @@ classifiers = [
 dependencies = [
     "numpy",
     "pandas",
+    "jupytext",
 ]
 
 [project.optional-dependencies]
@@ -33,6 +34,7 @@ test = [
     "matplotlib",
     "nbconvert",
     "ipykernel",
+    "jupytext",
 ]
 
 [project.urls]
