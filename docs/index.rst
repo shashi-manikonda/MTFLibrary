@@ -5,7 +5,7 @@ Welcome to mtflib's documentation!
 
 `mtflib` is a Python library for creating, manipulating, and composing
 Multivariate Taylor Functions, with a C++ backend for performance-critical
-applications and extensions for electromagnetism calculations.
+applications.
 
 .. toctree::
    :maxdepth: 2
