@@ -11,6 +11,7 @@ def run_demos():
     For .ipynb files, it converts them to .py using jupytext first.
     Saves text output and PNG files to 'demo/runoutput' folder.
     Shows execution status and timing on screen.
+    Keeps all temporary files (converted .py and wrapper scripts) in runoutput.
     """
     project_root = os.path.dirname(os.path.abspath(__file__))
     src_path = os.path.join(project_root, 'src')
@@ -43,6 +44,7 @@ def run_demos():
             total_demos += 1
             file_path = os.path.join(root, file)
             script_path = None
+            wrapper_script = None
             demo_start_time = time.time()
             
             # Create demo-specific output directory
@@ -93,8 +95,8 @@ def run_demos():
                         f.write("STDERR:\n")
                         f.write(result.stderr)
                 
-                # Clean up wrapper
-                os.remove(wrapper_script)
+                # Move temp files to output directory instead of deleting them
+                move_temp_files_to_output(script_path, wrapper_script, demo_output_dir, demo_name)
                 
                 # Display result
                 if result.returncode == 0:
@@ -130,9 +132,8 @@ def run_demos():
                     f.write(f"Status: TIMEOUT (exceeded 5 minute limit)\n")
                     f.write(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
                 
-                # Clean up wrapper if it exists
-                if 'wrapper_script' in locals() and os.path.exists(wrapper_script):
-                    os.remove(wrapper_script)
+                # Move temp files even on timeout
+                move_temp_files_to_output(script_path, wrapper_script, demo_output_dir, demo_name)
                     
             except FileNotFoundError as e:
                 demo_duration = time.time() - demo_start_time
@@ -148,6 +149,9 @@ def run_demos():
                     f.write(f"Execution Time: {demo_duration:.2f} seconds\n")
                     f.write(f"Error: {error_msg}\n")
                     f.write(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                
+                # Move temp files even on error (if they exist)
+                move_temp_files_to_output(script_path, wrapper_script, demo_output_dir, demo_name)
                 
                 if "jupytext" in str(e):
                     print("      Install with: pip install jupytext")
@@ -166,11 +170,9 @@ def run_demos():
                     f.write(f"Execution Time: {demo_duration:.2f} seconds\n")
                     f.write(f"Error: {str(e)}\n")
                     f.write(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-                    
-            finally:
-                # Clean up the generated .py file from a notebook
-                if script_path and os.path.exists(script_path):
-                    os.remove(script_path)
+                
+                # Move temp files even on error (if they exist)
+                move_temp_files_to_output(script_path, wrapper_script, demo_output_dir, demo_name)
 
     # Final summary
     total_duration = time.time() - total_start_time
@@ -184,6 +186,35 @@ def run_demos():
     print(f"Total Time: {total_duration:.2f} seconds")
     print(f"Average Time per Demo: {(total_duration/total_demos):.2f} seconds" if total_demos > 0 else "N/A")
     print(f"Output saved to: {runoutput_dir}")
+
+def move_temp_files_to_output(script_path, wrapper_script, demo_output_dir, demo_name):
+    """
+    Moves temporary files (converted .py from notebooks and wrapper scripts) 
+    to the demo output directory instead of deleting them.
+    """
+    try:
+        # Move the converted .py file from notebook (if it exists)
+        if script_path and os.path.exists(script_path):
+            converted_py_dest = os.path.join(demo_output_dir, f"{demo_name}_converted.py")
+            os.rename(script_path, converted_py_dest)
+            print(f"    Moved converted script to: {os.path.basename(converted_py_dest)}")
+        
+        # Move the wrapper script (if it exists)
+        if wrapper_script and os.path.exists(wrapper_script):
+            wrapper_dest = os.path.join(demo_output_dir, f"{demo_name}_wrapper.py")
+            os.rename(wrapper_script, wrapper_dest)
+            print(f"    Moved wrapper script to: {os.path.basename(wrapper_dest)}")
+            
+    except Exception as e:
+        print(f"    Warning: Could not move temp files: {str(e)}")
+        # If moving fails, fall back to deletion to avoid cluttering
+        try:
+            if script_path and os.path.exists(script_path):
+                os.remove(script_path)
+            if wrapper_script and os.path.exists(wrapper_script):
+                os.remove(wrapper_script)
+        except:
+            pass  # Ignore cleanup errors
 
 def create_matplotlib_wrapper(original_script, output_dir, demo_name):
     """
