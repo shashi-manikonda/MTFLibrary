@@ -3,7 +3,7 @@
 [![Documentation Status](https://readthedocs.org/projects/mtflibrary/badge/?version=latest)](https://mtflibrary.readthedocs.io/en/latest/?badge=latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A Python library for creating, manipulating, and composing Multivariate Taylor Functions, with a C++ backend for performance-critical applications and extensions for electromagnetism calculations.
+A Python library for creating, manipulating, and composing Multivariate Taylor Functions, with a C++ backend for performance-critical applications.
 
 ## Installation
 
@@ -67,14 +67,8 @@ pytest
 
 ## Running Benchmarks
 
-The repository includes scripts to benchmark the performance of different parts of the library. You can run them directly.
+The repository includes a script to benchmark the performance of the library. You can run it directly:
 
-For example, to run the Biot-Savart benchmark:
-```bash
-python benchmarks/biot_savart_benchmark.py
-```
-
-To run the general library benchmark:
 ```bash
 python benchmarks/benchmark.py
 ```

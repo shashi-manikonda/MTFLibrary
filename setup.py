@@ -15,7 +15,7 @@ else:
 
 extensions = [
     Extension('mtflib.backends.cpp.mtf_cpp',
-              ['src/mtflib/backends/cpp/mtf_data.cpp', 'src/mtflib/backends/cpp/pybind_wrapper.cpp', 'src/mtflib/backends/cpp/biot_savart_ops.cpp'],
+              ['src/mtflib/backends/cpp/mtf_data.cpp', 'src/mtflib/backends/cpp/pybind_wrapper.cpp'],
               include_dirs=[pybind11.get_include(), numpy.get_include(), 'src/mtflib/backends/cpp'],
               language='c++',
               extra_compile_args=cpp_args,

@@ -1,8 +1,6 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include "mtf_data.hpp"
-#include "biot_savart_ops.hpp"
-
 namespace py = pybind11;
 
 PYBIND11_MODULE(mtf_cpp, m) {
@@ -18,9 +16,6 @@ PYBIND11_MODULE(mtf_cpp, m) {
         .def("multiply", &MtfData::multiply, "Multiplies by another MtfData object.")
         .def("multiply_inplace", &MtfData::multiply_inplace, "Multiplies by another MtfData object in-place.")
         .def("negate", &MtfData::negate, "Negates the MtfData object.");
-
-    m.def("biot_savart_from_numpy", &biot_savart_from_numpy, "A function that computes the Biot-Savart law from numpy arrays");
-    m.def("biot_savart_from_flat_numpy", &biot_savart_from_flat_numpy, "A function that computes the Biot-Savart law from flat numpy arrays");
 
     m.def("switch_backend", [](const std::string& backend_name) {
         py::module_::import("mtflib").attr("MultivariateTaylorFunction").attr("_IMPLEMENTATION") = backend_name;

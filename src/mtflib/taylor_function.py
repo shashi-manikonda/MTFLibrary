@@ -7,6 +7,7 @@ import pandas as pd
 from functools import reduce
 
 from . import elementary_coefficients
+from .backend import get_backend
 
 # Try to import the C++ backend
 try:
@@ -225,18 +226,53 @@ class MultivariateTaylorFunction:
         return self.eval(evaluation_point)
 
     def eval(self, evaluation_point):
-        """Evaluates the MTF at a given evaluation point."""
-        if len(evaluation_point) != self.dimension:
-            raise ValueError(f"Evaluation point dimension must match MTF dimension ({self.dimension}).")
+        """
+        Evaluates the MTF at a single evaluation point.
+        This method is a wrapper around the vectorized `neval` method.
+        """
         evaluation_point = np.array(evaluation_point)
+        if evaluation_point.ndim == 1:
+            if evaluation_point.shape[0] != self.dimension:
+                raise ValueError(f"Evaluation point dimension must match MTF dimension ({self.dimension}).")
+            evaluation_points = evaluation_point.reshape(1, -1)
+            return self.neval(evaluation_points)
+        elif evaluation_point.ndim == 2:
+            if evaluation_point.shape[0] == 1 and evaluation_point.shape[1] == self.dimension:
+                return self.neval(evaluation_point)
+            else:
+                raise ValueError("For 2D input, eval() supports only a single evaluation point with shape (1, dimension).")
+        else:
+            raise ValueError("Evaluation point must be a 1D or 2D array.")
+
+    def neval(self, evaluation_points):
+        """
+        Evaluates the MTF at multiple evaluation points using a vectorized approach.
+
+        :param evaluation_points: A 2D numpy array of shape (n_points, dimension).
+        :return: A 1D numpy array of shape (n_points,) with the evaluation results.
+        """
+        backend = get_backend(evaluation_points)
+        evaluation_points = backend.atleast_2d(evaluation_points)
+        if evaluation_points.shape[1] != self.dimension:
+            raise ValueError(f"Evaluation points array must have shape (n_points, {self.dimension}).")
 
         if self.coeffs.size == 0:
-            return np.array([0.0]).reshape(1)
+            return backend.zeros(evaluation_points.shape[0])
 
-        # Optimized evaluation using np.power and np.einsum
-        term_values = np.prod(np.power(evaluation_point, self.exponents), axis=1)
-        result = np.einsum('i,i->', self.coeffs, term_values)
-        return np.array([result])
+        # Convert coefficients and exponents to the correct tensor type
+        coeffs = backend.from_numpy(self.coeffs)
+        exponents = backend.from_numpy(self.exponents)
+
+        # Reshape for broadcasting:
+        # evaluation_points: (n_points, 1, dimension)
+        # self.exponents:   (1, n_terms, dimension)
+        # self.coeffs:      (n_terms,)
+        term_values = backend.prod(backend.power(evaluation_points[:, np.newaxis, :], exponents[np.newaxis, :, :]), axis=2)
+
+        # Dot product of term values and coefficients
+        results = backend.dot(term_values, coeffs)
+
+        return results
 
     def __add__(self, other):
         """Defines addition (+) for MultivariateTaylorFunction objects."""

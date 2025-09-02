@@ -1,4 +1,6 @@
 import numpy as np
+import warnings
+from numpy.exceptions import ComplexWarning
 from .taylor_function import MultivariateTaylorFunction
 
 class TaylorMap:
@@ -280,7 +282,9 @@ class TaylorMap:
             for j in range(dim):
                 if abs(inv_jacobian[i, j]) > 1e-14:
                     var_mtf = MultivariateTaylorFunction.from_variable(j + 1, dim)
-                    comp_mtf += float(inv_jacobian[i, j]) * var_mtf
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore", ComplexWarning)
+                        comp_mtf += float(inv_jacobian[i, j]) * var_mtf
             inv_linear_components.append(comp_mtf)
         beta_inv = TaylorMap(inv_linear_components)
 
