@@ -1,4 +1,4 @@
-"""
+r"""
 Represents a vector-valued function using Taylor series.
 
 This module defines the `TaylorMap` class, which encapsulates a list of
@@ -150,7 +150,7 @@ class TaylorMap:
         return TaylorMap(list(new_components))
 
     def compose(self, other):
-        """
+        r"""
         Composes this map with another, calculating `self(other(x))`.
 
         If `self` is a map from :math:`\mathbb{R}^n \\to \mathbb{R}^m` and
@@ -396,7 +396,7 @@ class TaylorMap:
         return representation
 
     def invert(self):
-        """
+        r"""
         Computes the inverse of the TaylorMap using fixed-point iteration.
 
         This method finds the Taylor series for the inverse of a map `F`.

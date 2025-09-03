@@ -882,7 +882,7 @@ def arccos_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     return arccos_mtf.truncate(order)  # Truncate to the desired order
 
 def integrate(mtf_instance, integration_variable_index, lower_limit=None, upper_limit=None):
-    """
+    r"""
     Performs definite or indefinite integration of an MTF.
 
     This function corresponds to the inverse derivation operator
@@ -983,7 +983,7 @@ def integrate(mtf_instance, integration_variable_index, lower_limit=None, upper_
         return indefinite_integral_mtf
 
 def derivative(mtf_instance, deriv_dim):
-    """
+    r"""
     Computes the partial derivative of an MTF.
 
     This function corresponds to the derivation operator
