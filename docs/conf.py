@@ -27,8 +27,11 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
+    'myst_parser',
+    'sphinx.ext.mathjax',
 ]
 
+source_suffix = ['.rst', '.md']
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
@@ -39,3 +42,6 @@ language = 'en'
 
 html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
+
+# Enable the dollarmath extension to use $...$ for inline math
+myst_enable_extensions = ["dollarmath"]

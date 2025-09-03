@@ -10,6 +10,12 @@ This library is designed for scientists, engineers, and researchers who need
 to perform high-order differentiation, integration, and function composition
 in a computationally efficient manner.
 
+#### Features
+* **High Performance:** `mtflib` utilizes a C++ backend for key operations, ensuring fast, efficient computation.
+* **Backend Flexibility:** Supports both NumPy and PyTorch, automatically switching backends to leverage GPU acceleration when PyTorch tensors are used.
+* **Comprehensive Functionality:** Includes a wide range of elementary functions and core operations like composition, differentiation, and integration.
+
+
 .. toctree::
    :maxdepth: 2
    :caption: User Guide
@@ -27,7 +33,13 @@ in a computationally efficient manner.
    :maxdepth: 2
    :caption: Background
 
-   theory
+   mtf_background
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Advanced Topics
+
+   advanced_topics
 
 .. toctree::
    :maxdepth: 1
