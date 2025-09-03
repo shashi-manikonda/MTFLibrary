@@ -426,6 +426,32 @@ class TaylorMap:
         ValueError
             If the map is not square, contains constant terms, or if its
             linear part (Jacobian) is singular.
+
+        Examples
+        --------
+        >>> from mtflib import MultivariateTaylorFunction, TaylorMap, Var
+        >>> MultivariateTaylorFunction.initialize_mtf(max_order=3, max_dimension=2)
+        >>> x, y = Var(1), Var(2)
+        >>>
+        >>> # Define a map F(x, y) = [x + y^2, y - x^2]
+        >>> F = TaylorMap([x + y**2, y - x**2])
+        >>>
+        >>> # Compute the inverse map G = F_inv
+        >>> G = F.invert()
+        >>>
+        >>> # Compose F with its inverse G. The result should be the identity map.
+        >>> Identity = F.compose(G)
+        >>> print(Identity)
+        TaylorMap with 2 components (input dim: 2):
+        --- Component 1 ---
+           Coefficient  Order Exponents
+        0  1.000000e+00      1    (1, 0)
+        <BLANKLINE>
+        --- Component 2 ---
+           Coefficient  Order Exponents
+        0  1.000000e+00      1    (0, 1)
+        <BLANKLINE>
+        <BLANKLINE>
         """
         # --- Pre-condition Checks ---
         if self.map_dim == 0:

@@ -1,12 +1,48 @@
 # mtflib/__init__.py
-
 """
-A library for working with Multivariate Taylor Functions.
+mtflib: A Python Library for Multivariate Taylor Functions
+===========================================================
 
-This package provides tools for creating, manipulating, and analyzing
-Multivariate Taylor Series expansions. It includes classes for both
-real and complex-valued functions, elementary function implementations,
-and extended functionalities.
+This library provides a robust framework for working with multivariate
+Taylor series expansions, based on the principles of Differential Algebra (DA).
+It allows for the creation, manipulation, and analysis of functions
+represented by their Taylor series, supporting both real and complex
+coefficients.
+
+Core Features:
+- **MultivariateTaylorFunction**: The fundamental class for representing
+  a function as a DA vector of its Taylor coefficients.
+- **ComplexMultivariateTaylorFunction**: An extension for functions with
+  complex coefficients.
+- **TaylorMap**: Represents vector-valued functions (maps from R^n to R^m)
+  for coordinate transformations and systems of equations.
+- **Elementary Functions**: A rich set of elementary functions (sin, cos, exp,
+  log, etc.) defined for Taylor series objects.
+- **Differential Operators**: `derivative` and `integrate` functions that
+  act as the derivation operators of the Differential Algebra.
+
+Example:
+    >>> from mtflib import MultivariateTaylorFunction, sin_taylor, Var
+    >>>
+    >>> # It is crucial to initialize the library's global settings first.
+    >>> MultivariateTaylorFunction.initialize_mtf(max_order=4, max_dimension=2)
+    >>>
+    >>> # Create variables x and y
+    >>> x = Var(1)
+    >>> y = Var(2)
+    >>>
+    >>> # Create a function f(x, y) = sin(x + y)
+    >>> f = sin_taylor(x + y)
+    >>>
+    >>> print(f.get_tabular_dataframe())
+       Coefficient  Order Exponents
+    0  1.000000e+00      1    (0, 1)
+    1  1.000000e+00      1    (1, 0)
+    2 -1.666667e-01      3    (0, 3)
+    3 -5.000000e-01      3    (1, 2)
+    4 -5.000000e-01      3    (2, 1)
+    5 -1.666667e-01      3    (3, 0)
+
 """
 
 import pandas as pd
@@ -41,38 +77,30 @@ from .taylor_map import TaylorMap
 MTF = MultivariateTaylorFunction
 
 
-'''
-Purpose of __all__: The __all__ list defines what names are considered public
-when a user does from mtflib import *. It's crucial for controlling the
-public API of your library.
-'''
+# Defines the public API for the library.
 __all__ = [
-    'taylor_function',
-    'load_precomputed_coefficients',
-    'elementary_functions',
+    # Core Classes
     'MultivariateTaylorFunction',
-    'Var',
-    'mtfarray',
-    'MTF',
-    'convert_to_mtf',
+    'ComplexMultivariateTaylorFunction',
+    'TaylorMap',
+    'MTF',  # Alias for MultivariateTaylorFunction
+    'Var',  # Factory for creating variables
+
+    # Elementary Functions
+    'sin_taylor', 'cos_taylor', 'tan_taylor',
+    'arcsin_taylor', 'arccos_taylor', 'arctan_taylor',
+    'sinh_taylor', 'cosh_taylor', 'tanh_taylor',
+    'arctanh_taylor',
+    'exp_taylor', 'log_taylor', 'sqrt_taylor', 'isqrt_taylor',
+    'gaussian_taylor',
+
+    # Core Operators
     'integrate',
     'derivative',
-    'cos_taylor',
-    'sin_taylor',
-    'tan_taylor',
-    'exp_taylor',
-    'gaussian_taylor',
-    'sqrt_taylor',
-    'isqrt_taylor',
-    'log_taylor',
-    'arctan_taylor',
-    'sinh_taylor',
-    'cosh_taylor',
-    'tanh_taylor',
-    'arcsin_taylor',
-    'arccos_taylor',
-    'arctanh_taylor',
-    'ComplexMultivariateTaylorFunction',
+
+    # Utility Functions
+    'mtfarray',
+    'load_precomputed_coefficients',
+    'convert_to_mtf',
     'convert_to_cmtf',
-    'TaylorMap'
 ]

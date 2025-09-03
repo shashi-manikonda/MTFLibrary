@@ -26,30 +26,37 @@ class NumpyBackend:
     """
     @staticmethod
     def power(base, exp):
+        """Wraps `np.power`."""
         return np.power(base, exp)
 
     @staticmethod
     def prod(a, axis=None):
+        """Wraps `np.prod`."""
         return np.prod(a, axis=axis)
 
     @staticmethod
     def dot(a, b):
+        """Wraps `np.dot`."""
         return np.dot(a, b)
 
     @staticmethod
     def zeros(shape, dtype=None):
+        """Wraps `np.zeros`."""
         return np.zeros(shape, dtype=dtype)
 
     @staticmethod
     def atleast_2d(a):
+        """Wraps `np.atleast_2d`."""
         return np.atleast_2d(a)
 
     @staticmethod
     def from_numpy(a):
+        """Converts a NumPy-compatible array to a NumPy array."""
         return np.array(a)
 
     @staticmethod
     def to_numpy(a):
+        """Converts a NumPy array to a standard NumPy array (identity)."""
         return np.array(a)
 
 if _TORCH_AVAILABLE:
@@ -63,32 +70,39 @@ if _TORCH_AVAILABLE:
         """
         @staticmethod
         def power(base, exp):
+            """Wraps `torch.pow`."""
             return torch.pow(base, exp)
 
         @staticmethod
         def prod(a, axis=None):
+            """Wraps `torch.prod`."""
             return torch.prod(a, dim=axis)
 
         @staticmethod
         def dot(a, b):
+            """Wraps `torch.matmul` for dot product."""
             return torch.matmul(a, b)
 
         @staticmethod
         def zeros(shape, dtype=None):
+            """Wraps `torch.zeros`."""
             return torch.zeros(shape, dtype=dtype)
 
         @staticmethod
         def atleast_2d(a):
+            """Ensures the tensor is at least 2D."""
             if a.dim() >= 2:
                 return a
             return a.unsqueeze(0)
 
         @staticmethod
         def from_numpy(a):
+            """Wraps `torch.from_numpy`."""
             return torch.from_numpy(a)
 
         @staticmethod
         def to_numpy(a):
+            """Converts a PyTorch tensor to a NumPy array."""
             return a.numpy()
 
 _backends = {

@@ -29,13 +29,19 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+torch = ["torch"]
 test = [
     "pytest",
     "matplotlib",
     "nbconvert",
     "ipykernel",
     "jupytext",
-    "torch",
+    "sphinx",
+    "sphinx_rtd_theme",
+]
+dev = [
+    "mtflib[test]",
+    "mtflib[torch]",
 ]
 
 [project.urls]

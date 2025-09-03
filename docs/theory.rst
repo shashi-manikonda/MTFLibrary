@@ -1,9 +1,7 @@
-.. start-advanced
+.. _theory:
 
-Advanced Topics
-===============
-
-.. end-advanced
+Theoretical Background
+======================
 
 Backends and Performance
 ------------------------

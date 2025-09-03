@@ -1,38 +1,37 @@
-.. mtflib documentation master file.
-
-.. include:: getting_started.rst
-   :start-after: .. start-getting-started
-   :end-before: .. end-getting-started
-
-.. include:: advanced.rst
-   :start-after: .. start-advanced
-   :end-before: .. end-advanced
-
 Welcome to mtflib's documentation!
 ==================================
 
 `mtflib` is a Python library for creating, manipulating, and composing
 Multivariate Taylor Functions, with a C++ backend for performance-critical
-applications.
+applications. It provides a robust framework for working with multivariate
+Taylor series expansions based on the principles of Differential Algebra (DA).
 
-Features
---------
-
-- **High Performance:** `mtflib` utilizes a C++ backend for key operations, ensuring fast, efficient computation.
-- **Backend Flexibility:** Supports both NumPy and PyTorch, automatically switching backends to leverage GPU acceleration when PyTorch tensors are used.
-- **Comprehensive Functionality:** Includes a wide range of elementary functions and core operations like composition, differentiation, and integration.
+This library is designed for scientists, engineers, and researchers who need
+to perform high-order differentiation, integration, and function composition
+in a computationally efficient manner.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: User Guide
+
+   getting_started
+   examples
+
+.. toctree::
+   :maxdepth: 2
+   :caption: API
 
    api
-   getting_started
-   advanced
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Background
+
+   theory
 
 .. toctree::
    :maxdepth: 1
-   :caption: Indices and tables:
+   :caption: Project Info
 
 * :ref:`genindex`
 * :ref:`modindex`

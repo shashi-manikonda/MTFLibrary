@@ -7,6 +7,10 @@ which inherits from `MultivariateTaylorFunction` and is specialized for
 Taylor series with complex coefficients. It overloads arithmetic operations
 and provides complex-specific functionality like `conjugate`, `real_part`,
 and `imag_part`.
+
+The CMTF class is a powerful tool for analyzing the behavior of
+complex-valued functions, particularly in fields like physics and
+engineering where complex numbers are fundamental.
 """
 import numpy as np
 from collections import defaultdict
@@ -86,6 +90,16 @@ class ComplexMultivariateTaylorFunction(MultivariateTaylorFunction):
         -------
         ComplexMultivariateTaylorFunction
             A new CMTF instance representing the constant.
+
+        Examples
+        --------
+        >>> from mtflib import ComplexMultivariateTaylorFunction
+        >>> ComplexMultivariateTaylorFunction.initialize_mtf(max_order=1, max_dimension=1)
+        >>>
+        >>> # Create a complex constant
+        >>> c = ComplexMultivariateTaylorFunction.from_constant(3 + 4j)
+        >>> print(c.coeffs[0])
+        (3+4j)
         """
         if dimension is None:
             dimension = cls.get_max_dimension()

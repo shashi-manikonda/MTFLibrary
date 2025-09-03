@@ -1,66 +1,71 @@
-.. start-getting-started
+.. _getting_started:
 
 Getting Started
 ===============
 
-.. end-getting-started
+This guide will walk you through installing `mtflib` and running your
+first example.
 
 Installation
 ------------
 
-First, ensure you have Python 3.8+ installed.
+You can install `mtflib` using `pip`. There are two installation options
+depending on your needs.
 
-### Basic Installation
+Basic Installation
+~~~~~~~~~~~~~~~~~~
 
-You can install `mtflib` and its core dependencies using pip:
-
-.. code-block:: bash
-
-    pip install -r requirements.txt
-
-### Optional: Installation with PyTorch
-
-For GPU acceleration and improved performance, it is highly recommended to install PyTorch. The `neval` function will automatically detect and use the PyTorch backend if it is available.
+For standard usage with a NumPy backend, you can install the library
+directly from PyPI:
 
 .. code-block:: bash
 
-    pip install torch
+   pip install mtflib
 
-Quick-Start Example
--------------------
+Optional: PyTorch Backend for GPU Acceleration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Here is a simple example demonstrating how to create and evaluate a
-`MultivariateTaylorFunction`.
+If you have a CUDA-enabled GPU and want to leverage it for significant
+performance improvements, you can install `mtflib` with the optional
+PyTorch dependency:
+
+.. code-block:: bash
+
+   pip install mtflib[torch]
+
+This will install the necessary PyTorch libraries alongside `mtflib`,
+enabling the GPU-accelerated backend for `neval`.
+
+A Quick-Start Example
+---------------------
+
+Here is a simple example to get you started. This script initializes the
+library, creates a two-variable function, and evaluates it at a point.
 
 .. code-block:: python
 
-    import numpy as np
-    from mtflib.taylor_function import MultivariateTaylorFunction
+    from mtflib import MultivariateTaylorFunction, Var, sin_taylor
 
-    # Define a 2D Taylor function: f(x, y) = 1 + 2x + 3y + 4x^2 + 5xy + 6y^2
-    dimension = 2
-    coeffs = np.array([1, 2, 3, 4, 5, 6])
-    exponents = np.array([
-        [0, 0], # Order 0
-        [1, 0], # Order 1
-        [0, 1],
-        [2, 0], # Order 2
-        [1, 1],
-        [0, 2],
-    ])
+    # 1. Initialize the library's global settings. This is a crucial first step.
+    # We'll set a maximum order of 4 and 2 variables (dimensions).
+    MultivariateTaylorFunction.initialize_mtf(max_order=4, max_dimension=2)
 
-    f = MultivariateTaylorFunction(dimension, coeffs, exponents)
+    # 2. Create variables x and y.
+    # Var(1) corresponds to the first variable, Var(2) to the second.
+    x = Var(1)
+    y = Var(2)
 
-    # Evaluate at a single point (1, 2)
-    single_point = np.array([1.0, 2.0])
-    result = f.eval(single_point)
-    print(f"Value at single point {single_point}: {result}")
+    # 3. Define a function, for example, f(x, y) = sin(x + y**2)
+    f = sin_taylor(x + y**2)
 
-    # Evaluate on a batch of points
-    batch_points = np.array([
-        [1.0, 2.0],
-        [2.0, 3.0],
-        [0.5, 0.5],
-    ])
-    results_batch = f.neval(batch_points)
-    print(f"Values at batch points:\n{results_batch}")
+    # 4. Print the function's Taylor series coefficients in a readable format.
+    print("Taylor series for f(x, y) = sin(x + y^2):")
+    print(f.get_tabular_dataframe())
+
+    # 5. Evaluate the function at the point (x=2, y=3).
+    evaluation_point = [2, 3]
+    result = f.eval(evaluation_point)
+    print(f"\\nResult of f(2, 3): {result[0]}")
+
+This example demonstrates the basic workflow of defining a function and
+evaluating it. For more complex examples, see the :ref:`examples` page.

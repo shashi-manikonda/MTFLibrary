@@ -1,39 +1,59 @@
+.. _api_reference:
+
 API Reference
 =============
 
-This section provides the auto-generated API documentation for the `mtflib` core library.
-The classes and functions are grouped by their functionality to make navigation easier.
+This page provides a detailed reference for the `mtflib` public API. The
+documentation is automatically generated from the docstrings in the source
+code.
 
 Core Classes
 ------------
 
+These are the main classes for representing and manipulating Taylor series.
+
+.. autoclass:: mtflib.taylor_function.MultivariateTaylorFunction
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. autoclass:: mtflib.complex_taylor_function.ComplexMultivariateTaylorFunction
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. autoclass:: mtflib.taylor_map.TaylorMap
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Factory and Utility Functions
+-----------------------------
+
+These functions are used to create or manipulate core objects.
+
 .. automodule:: mtflib.taylor_function
-   :members: MultivariateTaylorFunction
-   :undoc-members:
-   :show-inheritance:
+   :members: Var, mtfarray
 
-.. automodule:: mtflib.complex_taylor_function
-   :members: ComplexMultivariateTaylorFunction
-   :undoc-members:
-   :show-inheritance:
+.. automodule:: mtflib.elementary_coefficients
+   :members: load_precomputed_coefficients
 
-.. automodule:: mtflib.taylor_map
-   :members: TaylorMap
-   :undoc-members:
-   :show-inheritance:
+Elementary Functions & Operators
+--------------------------------
 
-Elementary Functions
---------------------
+These functions provide the core mathematical operations of the Differential
+Algebra.
 
 .. automodule:: mtflib.elementary_functions
-   :members: cos_taylor, sin_taylor, tan_taylor, exp_taylor, gaussian_taylor, log_taylor, arctan_taylor, sinh_taylor, cosh_taylor, tanh_taylor, arcsin_taylor, arccos_taylor, arctanh_taylor, sqrt_taylor, isqrt_taylor, derivative, integrate
+   :members:
    :undoc-members:
-   :show-inheritance:
 
-Backend
--------
+Backend System
+--------------
+
+These classes and functions manage the computational backend for `mtflib`.
 
 .. automodule:: mtflib.backend
-   :members: get_backend
+   :members: get_backend, NumpyBackend, TorchBackend
    :undoc-members:
    :show-inheritance:

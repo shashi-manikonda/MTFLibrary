@@ -26,7 +26,26 @@ except ImportError:
     _CPP_BACKEND_AVAILABLE = False
 
 def _generate_exponent(order, var_index, dimension):
-    """Generates an exponent tuple for a monomial term."""
+    """
+    Generates an exponent tuple for a single-variable monomial term.
+
+    This helper function is used to create a standard basis exponent vector,
+    representing a term like `x_i^k`.
+
+    Parameters
+    ----------
+    order : int
+        The order of the monomial (the exponent value).
+    var_index : int
+        The 0-based index of the variable.
+    dimension : int
+        The total dimension of the exponent space.
+
+    Returns
+    -------
+    tuple
+        An exponent tuple, e.g., `(0, k, 0, ...)` for `var_index=1`.
+    """
     exponent = [0] * dimension
     exponent[var_index] = order
     return tuple(exponent)
@@ -54,6 +73,21 @@ class MultivariateTaylorFunction:
     var_name : str, optional
         An optional name for the function, often used for debugging or
         representation purposes.
+
+    Class Attributes
+    ----------------
+    _MAX_ORDER : int
+        Global setting for the maximum order of Taylor expansions. Set via
+        `initialize_mtf`.
+    _MAX_DIMENSION : int
+        Global setting for the maximum number of variables. Set via
+        `initialize_mtf`.
+    _ETOL : float
+        Global tolerance for floating-point comparisons. Coefficients
+        smaller than this value are considered zero.
+    _TRUNCATE_AFTER_OPERATION : bool
+        If True, coefficients smaller than `_ETOL` are automatically
+        removed after each operation.
 
     Examples
     --------
@@ -87,7 +121,37 @@ class MultivariateTaylorFunction:
 
     @classmethod
     def initialize_mtf(cls, max_order=None, max_dimension=None, implementation='cpp'):
-        """Initializes global settings and loads precomputed coefficients. Must be called once."""
+        """
+        Initializes global settings for the mtflib library.
+
+        This method must be called once at the beginning of a program before
+        creating or manipulating any `MultivariateTaylorFunction` objects. It
+        sets the global maximum order and dimension for all subsequent
+        Taylor series operations and pre-loads the necessary coefficients.
+
+        Parameters
+        ----------
+        max_order : int, optional
+            The default maximum order for Taylor series expansions.
+        max_dimension : int, optional
+            The default maximum number of variables for functions.
+        implementation : {'cpp', 'python'}, optional
+            The backend implementation to use for core operations. Defaults
+            to 'cpp' if available.
+
+        Examples
+        --------
+        >>> from mtflib import MultivariateTaylorFunction
+        >>> # Initialize for problems up to order 10 in 5 variables.
+        >>> MultivariateTaylorFunction.initialize_mtf(max_order=10, max_dimension=5)
+        Initializing MTF globals with: _MAX_ORDER=10, _MAX_DIMENSION=5
+        Loading/Precomputing Taylor coefficients up to order 10
+        Global precomputed coefficients loading/generation complete.
+        Size of precomputed_coefficients dictionary in memory: ...
+        MTF globals initialized: _MAX_ORDER=10, _MAX_DIMENSION=5, _INITIALIZED=True
+        Max coefficient count (order=10, nvars=5): 3003
+        Precomputed coefficients loaded and ready for use.
+        """
         if cls._INITIALIZED:
             print("MTF globals already initialized. Re-initializing with new settings.")
         if max_order is not None:
@@ -401,14 +465,38 @@ class MultivariateTaylorFunction:
 
         Returns
         -------
-        np.ndarray
-            A 1D numpy array of shape `(n_points,)` containing the evaluation
-            result for each input point.
+        np.ndarray or torch.Tensor
+            An array containing the evaluation result for each input point.
+            The return type matches the backend used (NumPy or PyTorch).
 
         Raises
         ------
         ValueError
             If the `evaluation_points` array has an incorrect shape.
+
+        Examples
+        --------
+        >>> from mtflib import MultivariateTaylorFunction, Var
+        >>> MultivariateTaylorFunction.initialize_mtf(max_order=2, max_dimension=2)
+        >>> x, y = Var(1), Var(2)
+        >>> f = 1 + x*y
+        >>>
+        >>> # --- NumPy Backend ---
+        >>> import numpy as np
+        >>> points_np = np.array([[1, 2], [3, 4], [5, 6]])
+        >>> result_np = f.neval(points_np)
+        >>> print(type(result_np), result_np)
+        <class 'numpy.ndarray'> [ 3. 13. 31.]
+        >>>
+        >>> # --- PyTorch Backend ---
+        >>> import torch
+        >>> # Check if torch is available and a GPU is present
+        >>> if torch.cuda.is_available():
+        ...     device = torch.device("cuda")
+        ...     points_torch = torch.tensor([[1, 2], [3, 4], [5, 6]], device=device)
+        ...     result_torch = f.neval(points_torch)
+        ...     print(type(result_torch), result_torch.device)
+        ...     # <class 'torch.Tensor'> cuda:0
         """
         backend = get_backend(evaluation_points)
         evaluation_points = backend.atleast_2d(evaluation_points)
@@ -1300,7 +1388,26 @@ def convert_to_mtf(input_val, dimension=None):
 
 
 def _split_constant_polynomial_part(input_mtf: MultivariateTaylorFunction) -> tuple[float, MultivariateTaylorFunction]:
-    """Helper: Splits MTF into constant and polynomial parts."""
+    """
+    Splits an MTF into its constant and polynomial parts.
+
+    This is a common operation in algorithms that use constant factoring,
+    such as the elementary function expansions. It separates the function
+    `f` into `C + p(x)`, where `C` is the constant term (order 0) and
+    `p(x)` contains all terms of order > 0.
+
+    Parameters
+    ----------
+    input_mtf : MultivariateTaylorFunction
+        The function to split.
+
+    Returns
+    -------
+    tuple[float, MultivariateTaylorFunction]
+        A tuple containing:
+        - The constant term value (`C`).
+        - A new MTF representing the polynomial part (`p(x)`).
+    """
     dimension = input_mtf.dimension
     const_exp = np.zeros(dimension, dtype=np.int32)
 

@@ -269,6 +269,23 @@ def load_precomputed_coefficients(max_order_config: int = None) -> dict:
         A dictionary where keys are function names (e.g., 'sin') and
         values are NumPy arrays of their Taylor coefficients up to the
         requested order.
+
+    Examples
+    --------
+    This function is typically called internally by
+    `MultivariateTaylorFunction.initialize_mtf`.
+
+    >>> from mtflib.elementary_coefficients import load_precomputed_coefficients
+    >>> # Load coefficients up to order 5
+    >>> coeffs = load_precomputed_coefficients(max_order_config=5)
+    Loading/Precomputing Taylor coefficients up to order 5
+    ...
+    Global precomputed coefficients loading/generation complete.
+    ...
+    >>> # Get the precomputed coefficients for sin
+    >>> sin_coeffs = coeffs.get('sin')
+    >>> print(sin_coeffs)
+    [ 0.          1.          0.         -0.16666667  0.          0.00833333]
     """
     global precomputed_coefficients, MAX_PRECOMPUTED_ORDER
 
