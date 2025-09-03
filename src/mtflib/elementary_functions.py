@@ -1,16 +1,11 @@
 """
-Taylor series for elementary functions.
+Taylor series for elementary functions, integration, and differentiation.
 
 This module provides functions for computing the Taylor series expansions of
-common elementary functions, such as trigonometric, exponential, and
-logarithmic functions. The computations are performed on
-`MultivariateTaylorFunction` objects.
-
-The functions generally use a "constant factoring" approach. For a function
-`f(x)` and an input MTF `C + p(x)` (where `C` is the constant part), they
-leverage trigonometric identities or other properties to relate `f(C + p(x))`
-to known Taylor series expansions around zero. This allows for efficient
-composition.
+common elementary functions (e.g., sin, exp, log). It also provides the
+core operators for differentiation and integration, which, together with the
+arithmetic operations in `MultivariateTaylorFunction`, form a complete
+Differential Algebra (DA).
 """
 
 import math
@@ -723,10 +718,9 @@ def integrate(mtf_instance, integration_variable_index, lower_limit=None, upper_
     """
     Performs definite or indefinite integration of an MTF.
 
-    This function integrates the Taylor series with respect to one of its
-    variables. If integration limits are provided, it computes the definite
-    integral, resulting in a new MTF where the integrated variable has been
-    substituted. If no limits are given, it computes the indefinite integral.
+    This function corresponds to the inverse derivation operator
+    :math:`\partial_{\bigcirc}^{-1}` of the Differential Algebra. It integrates
+    the Taylor series with respect to one of its variables.
 
     Parameters
     ----------
@@ -804,8 +798,9 @@ def derivative(mtf_instance, deriv_dim):
     """
     Computes the partial derivative of an MTF.
 
-    This function differentiates the Taylor series with respect to one of its
-    variables.
+    This function corresponds to the derivation operator
+    :math:`\partial_{\bigcirc}` of the Differential Algebra. It differentiates
+    the Taylor series with respect to one of its variables.
 
     Parameters
     ----------

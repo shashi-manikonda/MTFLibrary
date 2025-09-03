@@ -2,10 +2,10 @@
 Represents a vector-valued function using Taylor series.
 
 This module defines the `TaylorMap` class, which encapsulates a list of
-`MultivariateTaylorFunction` objects. It represents a function from
-:math:`\mathbb{R}^n` to :math:`\mathbb{R}^m`, where each component of the
-output vector is a Taylor series. This class provides methods for vector
-arithmetic, composition, and inversion of such maps.
+`MultivariateTaylorFunction` (DA vector) objects. It represents a function
+from :math:`\mathbb{R}^n` to :math:`\mathbb{R}^m`, where each component of
+the output vector is a Taylor series. This class provides methods for
+vector arithmetic, composition, and inversion of such maps.
 """
 import numpy as np
 import warnings
@@ -16,9 +16,9 @@ class TaylorMap:
     """
     Represents a function from R^n to R^m using Taylor series components.
 
-    Each component of the map is a `MultivariateTaylorFunction`, representing
-    one dimension of the output vector. The map can be evaluated, composed
-    with other maps, and, in some cases, inverted.
+    This class models a vector-valued function where each component is a
+    `MultivariateTaylorFunction` (a DA vector). It is the primary tool for
+    studying systems of equations and coordinate transformations.
 
     Attributes
     ----------

@@ -4,9 +4,9 @@ Core implementation of the MultivariateTaylorFunction class.
 
 This module defines the `MultivariateTaylorFunction` class, which is the
 fundamental data structure for representing and manipulating multivariate
-Taylor series expansions. It includes methods for arithmetic operations,
-function composition, evaluation, and substitution. The module also provides
-factory functions and helpers for creating and working with these objects.
+Taylor series expansions. It serves as an implementation of a Differential
+Algebra (DA) vector, and the operations defined on it form a Truncated
+Power Series Algebra (TPSA).
 """
 import numpy as np
 from collections import defaultdict
@@ -35,11 +35,11 @@ class MultivariateTaylorFunction:
     """
     A class to represent and manipulate multivariate Taylor series expansions.
 
-    This class stores the coefficients of a multivariate Taylor series and
-    provides a rich set of methods for arithmetic operations, function
-    composition, evaluation, and analysis. The Taylor series is represented
-    internally by its non-zero coefficients and corresponding multi-index
-    exponents.
+    This class provides an object-oriented implementation of a Differential
+    Algebra (DA) vector. It stores the Taylor coefficients of a function
+    up to a specified order and provides a rich set of methods for
+    arithmetic, composition, and analysis. The overloaded operators
+    (+, *, etc.) form a Truncated Power Series Algebra (TPSA).
 
     Attributes
     ----------
