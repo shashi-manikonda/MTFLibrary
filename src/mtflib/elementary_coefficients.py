@@ -1,30 +1,15 @@
 """
-Precomputed Taylor series coefficients for elementary functions around zero.
+Manages precomputed Taylor series coefficients.
 
-This module precomputes and stores Taylor series coefficients for a set of elementary
-# functions to enhance the performance of Taylor expansion calculations in `mtflib`.
+This module is responsible for computing, caching, and loading the Taylor
+series coefficients for various elementary functions. The coefficients are
+computed up to a specified order (`MAX_PRECOMPUTED_ORDER`) and stored in
+JSON files within the `precomputed_coefficients_data` directory.
 
-**Functions Included:**
-
-*   sin(x)
-*   cos(x)
-*   exp(x)
-*   gaussian(x) (exp(-x^2))
-*   sqrt(1+x)
-*   isqrt(1+x) (1/sqrt(1+x))
-*   log(1+x)
-*   arctan(x)
-*   arcsin(x)
-*   arccos(x)
-*   sinh(x)
-*   cosh(x)
-*   arctanh(x)
-*   inverse(1+x) (1/(1+x))  <- **NEW: Inverse function added**
-
-Coefficients are precomputed up to `MAX_PRECOMPUTED_ORDER` and stored as JSON files
-in the `precomputed_coefficients_data` directory for efficient loading and use.
-Dynamic computation is employed for orders exceeding the precomputed limit,
-though it is less performant.
+This precomputation avoids expensive recalculations during runtime,
+significantly speeding up the creation of Taylor series for elementary
+functions. The `load_precomputed_coefficients` function handles the logic
+of loading from files or recomputing if necessary.
 """
 
 import math
@@ -266,9 +251,24 @@ def load_precomputed_coefficients(max_order_config: int = None) -> dict:
     """
     Loads or precomputes Taylor coefficients for elementary functions.
 
-    Coefficients are loaded or precomputed up to `max_order_config`.
-    They are stored in the global `precomputed_coefficients` dictionary and returned.
-    If `max_order_config` is None, it defaults to `MAX_PRECOMPUTED_ORDER` defined in this module.
+    This function checks for cached coefficients in JSON files. If a file
+    exists and its order is sufficient, the coefficients are loaded from it.
+    Otherwise, they are recomputed, saved to a JSON file, and then loaded.
+    The loaded coefficients are stored in the global `precomputed_coefficients`
+    dictionary.
+
+    Parameters
+    ----------
+    max_order_config : int, optional
+        The maximum order required for the coefficients. If not provided,
+        the module's `MAX_PRECOMPUTED_ORDER` is used.
+
+    Returns
+    -------
+    dict
+        A dictionary where keys are function names (e.g., 'sin') and
+        values are NumPy arrays of their Taylor coefficients up to the
+        requested order.
     """
     global precomputed_coefficients, MAX_PRECOMPUTED_ORDER
 

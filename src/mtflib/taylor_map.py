@@ -1,3 +1,12 @@
+"""
+Represents a vector-valued function using Taylor series.
+
+This module defines the `TaylorMap` class, which encapsulates a list of
+`MultivariateTaylorFunction` objects. It represents a function from
+:math:`\mathbb{R}^n` to :math:`\mathbb{R}^m`, where each component of the
+output vector is a Taylor series. This class provides methods for vector
+arithmetic, composition, and inversion of such maps.
+"""
 import numpy as np
 import warnings
 from numpy.exceptions import ComplexWarning
@@ -5,16 +14,69 @@ from .taylor_function import MultivariateTaylorFunction
 
 class TaylorMap:
     """
-    Represents a function from an N-dimensional space to an M-dimensional space
-    using an array of MultivariateTaylorFunction objects.
+    Represents a function from R^n to R^m using Taylor series components.
+
+    Each component of the map is a `MultivariateTaylorFunction`, representing
+    one dimension of the output vector. The map can be evaluated, composed
+    with other maps, and, in some cases, inverted.
+
+    Attributes
+    ----------
+    components : np.ndarray
+        A NumPy array of `MultivariateTaylorFunction` objects that form the
+        components of the map.
+    map_dim : int
+        The dimension of the output space (m), which is the number of
+        components.
+
+    Examples
+    --------
+    >>> from mtflib import MultivariateTaylorFunction, TaylorMap
+    >>> MultivariateTaylorFunction.initialize_mtf(max_order=2, max_dimension=2)
+    >>>
+    >>> # Create variables
+    >>> x1 = MultivariateTaylorFunction.from_variable(1, 2)
+    >>> x2 = MultivariateTaylorFunction.from_variable(2, 2)
+    >>>
+    >>> # Create a map F(x1, x2) = [x1 + x2, x1 - x2]
+    >>> f1 = x1 + x2
+    >>> f2 = x1 - x2
+    >>> F = TaylorMap([f1, f2])
+    >>>
+    >>> # Create another map G(y1, y2) = [y1*y2, y1]
+    >>> y1 = MultivariateTaylorFunction.from_variable(1, 2)
+    >>> y2 = MultivariateTaylorFunction.from_variable(2, 2)
+    >>> g1 = y1 * y2
+    >>> g2 = y1
+    >>> G = TaylorMap([g1, g2])
+    >>>
+    >>> # Compose the maps: H(x1, x2) = G(F(x1, x2))
+    >>> H = G.compose(F)
+    >>>
+    >>> print(H)
+    TaylorMap with 2 components (input dim: 2):
+    --- Component 1 ---
+       Coefficient  Order Exponents
+    0          1.0      2    (2, 0)
+    1         -1.0      2    (0, 2)
+    <BLANKLINE>
+    --- Component 2 ---
+       Coefficient  Order Exponents
+    0          1.0      1    (1, 0)
+    1          1.0      1    (0, 1)
+    <BLANKLINE>
+    <BLANKLINE>
     """
 
     def __init__(self, components: list[MultivariateTaylorFunction]):
         """
         Initializes a TaylorMap object.
 
-        Args:
-            components: A list of MultivariateTaylorFunction objects.
+        Parameters
+        ----------
+        components : list[MultivariateTaylorFunction]
+            A list of `MultivariateTaylorFunction` objects that define the
+            components of the map.
         """
         self.components = np.array(components)
         self.map_dim = len(components)
@@ -22,6 +84,16 @@ class TaylorMap:
     def __add__(self, other):
         """
         Performs element-wise addition with another TaylorMap.
+
+        Parameters
+        ----------
+        other : TaylorMap
+            The TaylorMap to add. It must have the same `map_dim`.
+
+        Returns
+        -------
+        TaylorMap
+            A new TaylorMap representing the element-wise sum.
         """
         if not isinstance(other, TaylorMap):
             raise TypeError("Can only add a TaylorMap to another TaylorMap.")
@@ -34,6 +106,16 @@ class TaylorMap:
     def __sub__(self, other):
         """
         Performs element-wise subtraction with another TaylorMap.
+
+        Parameters
+        ----------
+        other : TaylorMap
+            The TaylorMap to subtract. It must have the same `map_dim`.
+
+        Returns
+        -------
+        TaylorMap
+            A new TaylorMap representing the element-wise difference.
         """
         if not isinstance(other, TaylorMap):
             raise TypeError("Can only subtract a TaylorMap from another TaylorMap.")
@@ -46,6 +128,18 @@ class TaylorMap:
     def __mul__(self, other):
         """
         Performs element-wise multiplication with another TaylorMap.
+
+        This is the Hadamard product, not matrix multiplication.
+
+        Parameters
+        ----------
+        other : TaylorMap
+            The TaylorMap to multiply by. It must have the same `map_dim`.
+
+        Returns
+        -------
+        TaylorMap
+            A new TaylorMap representing the element-wise product.
         """
         if not isinstance(other, TaylorMap):
             raise TypeError("Can only multiply a TaylorMap by another TaylorMap.")
@@ -57,10 +151,29 @@ class TaylorMap:
 
     def compose(self, other):
         """
-        Performs composition self(other(x)).
-        'other' is a map from K -> N, where N is the input dimension of 'self'.
-        'self' is a map from N -> M.
-        The result is a map from K -> M.
+        Composes this map with another, calculating `self(other(x))`.
+
+        If `self` is a map from :math:`\mathbb{R}^n \\to \mathbb{R}^m` and
+        `other` is a map from :math:`\mathbb{R}^k \\to \mathbb{R}^n`, the
+        resulting composition is a map from :math:`\mathbb{R}^k \\to \mathbb{R}^m`.
+
+        Parameters
+        ----------
+        other : TaylorMap
+            The inner map in the composition. The output dimension of `other`
+            must match the input dimension of `self`.
+
+        Returns
+        -------
+        TaylorMap
+            A new TaylorMap representing the composed function.
+
+        Raises
+        ------
+        TypeError
+            If `other` is not a TaylorMap.
+        ValueError
+            If the dimensions are incompatible for composition.
         """
         if not isinstance(other, TaylorMap):
             raise TypeError("Composition is only defined between two TaylorMap objects.")
@@ -97,39 +210,90 @@ class TaylorMap:
 
     def get_component(self, index: int) -> MultivariateTaylorFunction:
         """
-        Returns the MultivariateTaylorFunction at the given index.
+        Retrieves a component function from the map.
+
+        Parameters
+        ----------
+        index : int
+            The 0-based index of the component to retrieve.
+
+        Returns
+        -------
+        MultivariateTaylorFunction
+            The component at the specified index.
         """
         return self.components[index]
 
     def get_coefficient(self, component_index: int, exponent_array: np.ndarray):
         """
-        Returns the coefficient for a specific term in a specific component.
+        Gets the coefficient of a specific term in a component function.
+
+        Parameters
+        ----------
+        component_index : int
+            The 0-based index of the component function.
+        exponent_array : np.ndarray
+            The multi-index exponent of the term.
+
+        Returns
+        -------
+        float or complex
+            The value of the coefficient.
         """
         return self.components[component_index].extract_coefficient(tuple(exponent_array)).item()
 
     def set_coefficient(self, component_index: int, exponent_array: np.ndarray, new_value):
         """
-        Sets the coefficient for a specific term in a specific component.
+        Sets the coefficient of a specific term in a component function.
+
+        Parameters
+        ----------
+        component_index : int
+            The 0-based index of the component function.
+        exponent_array : np.ndarray
+            The multi-index exponent of the term.
+        new_value : float or complex
+            The new value for the coefficient.
         """
         self.components[component_index].set_coefficient(tuple(exponent_array), new_value)
 
     def add_component(self, new_component: MultivariateTaylorFunction):
         """
-        Adds a new component to the map.
+        Adds a new component function to the map.
+
+        Parameters
+        ----------
+        new_component : MultivariateTaylorFunction
+            The new component to add to the end of the map.
         """
         self.components = np.append(self.components, new_component)
         self.map_dim = len(self.components)
 
     def remove_component(self, index: int):
         """
-        Removes a component from the map.
+        Removes a component function from the map by its index.
+
+        Parameters
+        ----------
+        index : int
+            The 0-based index of the component to remove.
         """
         self.components = np.delete(self.components, index)
         self.map_dim = len(self.components)
 
     def truncate(self, order: int):
         """
-        Returns a new TaylorMap with all components truncated to a given order.
+        Truncates all component functions to a specified order.
+
+        Parameters
+        ----------
+        order : int
+            The maximum order to which all components will be truncated.
+
+        Returns
+        -------
+        TaylorMap
+            A new TaylorMap with the truncated components.
         """
         new_components = [c.truncate(order) for c in self.components]
         return TaylorMap(new_components)
@@ -233,19 +397,35 @@ class TaylorMap:
 
     def invert(self):
         """
-        Computes the inverse of the TaylorMap object using a fixed-point iteration.
+        Computes the inverse of the TaylorMap using fixed-point iteration.
 
-        This method is based on the inversion of a transfer map using a
-        Differential Algebraic (DA) approach. The formula used is the standard
-        iterative method F⁻¹_{n+1} = β⁻¹ ∘ (I - G ∘ F⁻¹_n), where β is the
-        linear part of the map and G is the non-linear part.
+        This method finds the Taylor series for the inverse of a map `F`.
+        The map `F` must be a square map (from :math:`\mathbb{R}^n` to
+        :math:`\mathbb{R}^n`) with no constant term and an invertible
+        linear part (Jacobian).
 
-        Returns:
-            A new TaylorMap object representing the inverse map F⁻¹.
+        The inversion is performed using the iterative formula:
+        :math:`F^{-1}_{k+1} = \\beta^{-1} \\circ (I - G \\circ F^{-1}_k)`
+        where:
+        - :math:`F = \\beta + G` (decomposition into linear and non-linear parts)
+        - :math:`\\beta` is the linear part of `F`.
+        - :math:`G` is the non-linear part of `F` (orders > 1).
+        - :math:`I` is the identity map.
+        - :math:`F^{-1}_k` is the k-th order approximation of the inverse.
 
-        Raises:
-            ValueError: If the map is not a square map, has constant terms, or
-                        if its linear part is not invertible.
+        The iteration starts with :math:`F^{-1}_1 = \\beta^{-1}` and proceeds
+        up to the maximum order defined in the global settings.
+
+        Returns
+        -------
+        TaylorMap
+            A new TaylorMap representing the inverse map :math:`F^{-1}`.
+
+        Raises
+        ------
+        ValueError
+            If the map is not square, contains constant terms, or if its
+            linear part (Jacobian) is singular.
         """
         # --- Pre-condition Checks ---
         if self.map_dim == 0:

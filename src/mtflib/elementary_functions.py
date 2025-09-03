@@ -1,12 +1,16 @@
 """
-Taylor series expansions for elementary functions around zero, using MultivariateTaylorFunction.
+Taylor series for elementary functions.
 
-Includes functions for sine, cosine, tangent, exponential, Gaussian, square root,
-inverse square root, logarithm, arctangent, arcsin, arccos, sinh, cosh, arctanh Taylor series and integration.
+This module provides functions for computing the Taylor series expansions of
+common elementary functions, such as trigonometric, exponential, and
+logarithmic functions. The computations are performed on
+`MultivariateTaylorFunction` objects.
 
-Leverages Taylor series composition and constant factoring for efficiency.
-
-Refactored for reduced redundancy and using precomputed coefficients.
+The functions generally use a "constant factoring" approach. For a function
+`f(x)` and an input MTF `C + p(x)` (where `C` is the constant part), they
+leverage trigonometric identities or other properties to relate `f(C + p(x))`
+to known Taylor series expansions around zero. This allows for efficient
+composition.
 """
 
 import math
@@ -47,7 +51,24 @@ def _apply_constant_factoring(
     return result_mtf
 
 def sin_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
-    """Taylor expansion of sin(x) using constant factoring."""
+    """
+    Computes the Taylor expansion of `sin(x)`.
+
+    Uses the identity `sin(C + p) = sin(C)cos(p) + cos(C)sin(p)`.
+
+    Parameters
+    ----------
+    variable : MultivariateTaylorFunction or numeric
+        The input function `x`.
+    order : int, optional
+        The truncation order for the result. If None, the global default
+        is used.
+
+    Returns
+    -------
+    MultivariateTaylorFunction
+        The Taylor series for `sin(x)`.
+    """
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
     input_mtf = convert_to_mtf(variable)
@@ -63,7 +84,24 @@ def sin_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 
 
 def cos_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
-    """Taylor expansion of cos(x) using constant factoring."""
+    """
+    Computes the Taylor expansion of `cos(x)`.
+
+    Uses the identity `cos(C + p) = cos(C)cos(p) - sin(C)sin(p)`.
+
+    Parameters
+    ----------
+    variable : MultivariateTaylorFunction or numeric
+        The input function `x`.
+    order : int, optional
+        The truncation order for the result. If None, the global default
+        is used.
+
+    Returns
+    -------
+    MultivariateTaylorFunction
+        The Taylor series for `cos(x)`.
+    """
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
     input_mtf = convert_to_mtf(variable)
@@ -141,7 +179,24 @@ def cos_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFun
 
 
 def tan_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
-    """Taylor expansion of tan(x) using tan(x) = sin(x) / cos(x)."""
+    """
+    Computes the Taylor expansion of `tan(x)`.
+
+    Calculated as `sin(x) / cos(x)`.
+
+    Parameters
+    ----------
+    variable : MultivariateTaylorFunction or numeric
+        The input function `x`.
+    order : int, optional
+        The truncation order for the result. If None, the global default
+        is used.
+
+    Returns
+    -------
+    MultivariateTaylorFunction
+        The Taylor series for `tan(x)`.
+    """
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
     sin_mtf = sin_taylor(variable, order=order)
@@ -151,7 +206,24 @@ def tan_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 
 
 def exp_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
-    """Taylor expansion of exp(x) using constant factoring."""
+    """
+    Computes the Taylor expansion of `exp(x)`.
+
+    Uses the identity `exp(C + p) = exp(C) * exp(p)`.
+
+    Parameters
+    ----------
+    variable : MultivariateTaylorFunction or numeric
+        The input function `x`.
+    order : int, optional
+        The truncation order for the result. If None, the global default
+        is used.
+
+    Returns
+    -------
+    MultivariateTaylorFunction
+        The Taylor series for `exp(x)`.
+    """
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
     input_mtf = convert_to_mtf(variable)
@@ -207,7 +279,29 @@ def gaussian_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 
 
 def log_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
-    """Taylor expansion of log(x) using constant factoring."""
+    """
+    Computes the Taylor expansion of `log(x)`.
+
+    Uses the identity `log(C + p) = log(C) + log(1 + p/C)`.
+
+    Parameters
+    ----------
+    variable : MultivariateTaylorFunction or numeric
+        The input function `x`. Must have a positive constant term.
+    order : int, optional
+        The truncation order for the result. If None, the global default
+        is used.
+
+    Returns
+    -------
+    MultivariateTaylorFunction
+        The Taylor series for `log(x)`.
+
+    Raises
+    ------
+    ValueError
+        If the constant term of the input is not positive.
+    """
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
     input_mtf = convert_to_mtf(variable)
@@ -270,7 +364,22 @@ def log_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylorFu
 
 
 def arctan_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
-    """Taylor expansion of arctan(x) using constant factoring."""
+    """
+    Computes the Taylor expansion of `arctan(x)`.
+
+    Parameters
+    ----------
+    variable : MultivariateTaylorFunction or numeric
+        The input function `x`.
+    order : int, optional
+        The truncation order for the result. If None, the global default
+        is used.
+
+    Returns
+    -------
+    MultivariateTaylorFunction
+        The Taylor series for `arctan(x)`.
+    """
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
     input_mtf = convert_to_mtf(variable)
@@ -324,7 +433,24 @@ def arctan_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylo
     return composed_mtf.truncate(order)
 
 def sinh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
-    """Taylor expansion of sinh(x) using constant factoring."""
+    """
+    Computes the Taylor expansion of `sinh(x)`.
+
+    Uses the identity `sinh(C + p) = sinh(C)cosh(p) + cosh(C)sinh(p)`.
+
+    Parameters
+    ----------
+    variable : MultivariateTaylorFunction or numeric
+        The input function `x`.
+    order : int, optional
+        The truncation order for the result. If None, the global default
+        is used.
+
+    Returns
+    -------
+    MultivariateTaylorFunction
+        The Taylor series for `sinh(x)`.
+    """
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
     input_mtf = convert_to_mtf(variable)
@@ -340,7 +466,24 @@ def sinh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 
 
 def cosh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
-    """Taylor expansion of cosh(x) using constant factoring."""
+    """
+    Computes the Taylor expansion of `cosh(x)`.
+
+    Uses the identity `cosh(C + p) = cosh(C)cosh(p) + sinh(C)sinh(p)`.
+
+    Parameters
+    ----------
+    variable : MultivariateTaylorFunction or numeric
+        The input function `x`.
+    order : int, optional
+        The truncation order for the result. If None, the global default
+        is used.
+
+    Returns
+    -------
+    MultivariateTaylorFunction
+        The Taylor series for `cosh(x)`.
+    """
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
     input_mtf = convert_to_mtf(variable)
@@ -426,7 +569,24 @@ def cosh_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFu
 
 
 def tanh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
-    """Taylor expansion of tanh(x) using tanh(x) = sinh(x) / cosh(x)."""
+    """
+    Computes the Taylor expansion of `tanh(x)`.
+
+    Calculated as `sinh(x) / cosh(x)`.
+
+    Parameters
+    ----------
+    variable : MultivariateTaylorFunction or numeric
+        The input function `x`.
+    order : int, optional
+        The truncation order for the result. If None, the global default
+        is used.
+
+    Returns
+    -------
+    MultivariateTaylorFunction
+        The Taylor series for `tanh(x)`.
+    """
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
     sinh_mtf = sinh_taylor(variable, order=order)
@@ -435,7 +595,22 @@ def tanh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     return tanh_mtf.truncate(order)
 
 def arctanh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
-    """Taylor expansion of arctanh(x) using constant factoring."""
+    """
+    Computes the Taylor expansion of `arctanh(x)`.
+
+    Parameters
+    ----------
+    variable : MultivariateTaylorFunction or numeric
+        The input function `x`.
+    order : int, optional
+        The truncation order for the result. If None, the global default
+        is used.
+
+    Returns
+    -------
+    MultivariateTaylorFunction
+        The Taylor series for `arctanh(x)`.
+    """
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
     input_mtf = convert_to_mtf(variable)
@@ -491,7 +666,22 @@ def arctanh_taylor_1D_expansion(variable, order: int = None) -> MultivariateTayl
 
 def arcsin_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """
-    Taylor expansion of arcsine function, using arctan_taylor and relation arcsin(x) = arctan(x/sqrt(1-x^2)).
+    Computes the Taylor expansion of `arcsin(x)`.
+
+    Uses the identity `arcsin(x) = arctan(x / sqrt(1 - x^2))`.
+
+    Parameters
+    ----------
+    variable : MultivariateTaylorFunction or numeric
+        The input function `x`.
+    order : int, optional
+        The truncation order for the result. If None, the global default
+        is used.
+
+    Returns
+    -------
+    MultivariateTaylorFunction
+        The Taylor series for `arcsin(x)`.
     """
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
@@ -505,7 +695,22 @@ def arcsin_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 
 def arccos_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """
-    Taylor expansion of arccosine function using the relation arccos(x) = pi/2 - arcsin(x).
+    Computes the Taylor expansion of `arccos(x)`.
+
+    Uses the identity `arccos(x) = pi/2 - arcsin(x)`.
+
+    Parameters
+    ----------
+    variable : MultivariateTaylorFunction or numeric
+        The input function `x`.
+    order : int, optional
+        The truncation order for the result. If None, the global default
+        is used.
+
+    Returns
+    -------
+    MultivariateTaylorFunction
+        The Taylor series for `arccos(x)`.
     """
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
@@ -516,24 +721,37 @@ def arccos_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 
 def integrate(mtf_instance, integration_variable_index, lower_limit=None, upper_limit=None):
     """
-    Performs definite or indefinite integration of an MTF with respect to a variable,
-    following these steps for definite integration in the specified order:
-    (1) Increment computation order by one.
-    (2) Perform indefinite integral.
-    (3) substitute variable that integration was performed on with upper and lower limit resulting in upper Taylor function and lower taylor function
-    (4) Take difference of the two
-    (5) reduce order by one and truncate
+    Performs definite or indefinite integration of an MTF.
 
-    Args:
-        mtf_instance (MultivariateTaylorFunction): The MTF object to integrate.
-        integration_variable_index (int): Dimension index (1-based integer) of the variable to integrate with respect to.
-        lower_limit (float, optional): Lower limit for definite integration.
-        upper_limit (float, optional): Upper limit for definite integration.
+    This function integrates the Taylor series with respect to one of its
+    variables. If integration limits are provided, it computes the definite
+    integral, resulting in a new MTF where the integrated variable has been
+    substituted. If no limits are given, it computes the indefinite integral.
 
-    Returns:
-        MultivariateTaylorFunction or np.ndarray:
-            - If lower_limit and upper_limit are None: Returns indefinite integral MTF.
-            - If limits are provided: Returns definite integral MTF (as a Taylor function).
+    Parameters
+    ----------
+    mtf_instance : MultivariateTaylorFunction
+        The function to integrate.
+    integration_variable_index : int
+        The 1-based index of the variable to integrate with respect to.
+    lower_limit : float, optional
+        The lower limit for definite integration.
+    upper_limit : float, optional
+        The upper limit for definite integration.
+
+    Returns
+    -------
+    MultivariateTaylorFunction
+        If an indefinite integral, a new MTF representing the integral.
+        If a definite integral, a new MTF representing the result after
+        integrating and substituting the bounds.
+
+    Raises
+    ------
+    ValueError
+        If limits are partially provided or if the variable index is invalid.
+    TypeError
+        If inputs have incorrect types.
     """
     if not isinstance(mtf_instance, (MultivariateTaylorFunction, ComplexMultivariateTaylorFunction)):
         raise TypeError("mtf_instance must be a MultivariateTaylorFunction or ComplexMultivariateTaylorFunction.")
@@ -584,19 +802,29 @@ def integrate(mtf_instance, integration_variable_index, lower_limit=None, upper_
 
 def derivative(mtf_instance, deriv_dim):
     """
-    Calculates the derivative of a MultivariateTaylorFunction with respect to a specified dimension.
+    Computes the partial derivative of an MTF.
 
-    Args:
-        mtf_instance (MultivariateTaylorFunction): The MultivariateTaylorFunction to differentiate.
-        deriv_dim (int): The dimension index (1-based) with respect to which to differentiate.
-                         Values should be from 1 to mtf_instance.dimension.
+    This function differentiates the Taylor series with respect to one of its
+    variables.
 
-    Returns:
-        MultivariateTaylorFunction: A new MTF representing the derivative.
+    Parameters
+    ----------
+    mtf_instance : MultivariateTaylorFunction
+        The function to differentiate.
+    deriv_dim : int
+        The 1-based index of the variable to differentiate with respect to.
 
-    Raises:
-        TypeError: if mtf_instance is not a MultivariateTaylorFunction.
-        ValueError: if deriv_dim is not a valid dimension index for the MTF.
+    Returns
+    -------
+    MultivariateTaylorFunction
+        A new MTF representing the partial derivative.
+
+    Raises
+    ------
+    TypeError
+        If `mtf_instance` is not a `MultivariateTaylorFunction`.
+    ValueError
+        If `deriv_dim` is not a valid dimension index.
     """
     if not isinstance(mtf_instance, MultivariateTaylorFunction):
         raise TypeError("mtf_instance must be a MultivariateTaylorFunction object.")

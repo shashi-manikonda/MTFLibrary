@@ -1,20 +1,69 @@
 # mtflib/complex_taylor_function.py
+"""
+Extends Taylor series to handle complex coefficients.
+
+This module provides the `ComplexMultivariateTaylorFunction` (CMTF) class,
+which inherits from `MultivariateTaylorFunction` and is specialized for
+Taylor series with complex coefficients. It overloads arithmetic operations
+and provides complex-specific functionality like `conjugate`, `real_part`,
+and `imag_part`.
+"""
 import numpy as np
 from collections import defaultdict
 from .taylor_function import (MultivariateTaylorFunction, convert_to_mtf)
 
 class ComplexMultivariateTaylorFunction(MultivariateTaylorFunction):
     """
-    Represents a multivariate Taylor function with complex coefficients.
+    Represents a multivariate Taylor series with complex coefficients.
 
-    This class extends the concept of MultivariateTaylorFunction to handle
-    Taylor expansions where coefficients are complex numbers. It supports
-    similar operations as MultivariateTaylorFunction, adapted for complex arithmetic.
+    This class extends `MultivariateTaylorFunction` to support complex
+    arithmetic. All arithmetic operations (`+`, `-`, `*`, `/`, `**`) are
+    overloaded to handle complex coefficients correctly.
+
+    Attributes
+    ----------
+    coeffs : np.ndarray
+        A 1D numpy array of dtype `complex128` containing the coefficients.
+
+    Examples
+    --------
+    >>> from mtflib import ComplexMultivariateTaylorFunction
+    >>>
+    >>> # Initialize global settings
+    >>> ComplexMultivariateTaylorFunction.initialize_mtf(max_order=2, max_dimension=1)
+    >>>
+    >>> # Create a complex constant
+    >>> f = ComplexMultivariateTaylorFunction.from_constant(1 + 2j)
+    >>>
+    >>> # Create a variable
+    >>> x = ComplexMultivariateTaylorFunction.from_variable(1, 1)
+    >>>
+    >>> # Perform complex arithmetic
+    >>> g = f + x * (3j)
+    >>>
+    >>> print(g.get_tabular_dataframe())
+       Coefficient  Order Exponents
+    0     (1+2j)      0    (0,)
+    1     (0+3j)      1    (1,)
     """
 
     def __init__(self, coefficients, dimension=None, var_name=None, mtf_data=None):
         """
-        Initializes a ComplexMultivariateTaylorFunction object.
+        Initializes a ComplexMultivariateTaylorFunction.
+
+        Ensures that the coefficients are of a complex data type.
+
+        Parameters
+        ----------
+        coefficients : dict or tuple
+            The coefficients of the Taylor series, in the same format as
+            `MultivariateTaylorFunction.__init__`.
+        dimension : int, optional
+            The number of variables. Inferred if not provided.
+        var_name : str, optional
+            An optional name for the function.
+        mtf_data : object, optional
+            Internal data for C++ backend. Not for user consumption.
         """
         super().__init__(coefficients, dimension, var_name, mtf_data=mtf_data)
         if self.coeffs.dtype != np.complex128:
@@ -23,7 +72,20 @@ class ComplexMultivariateTaylorFunction(MultivariateTaylorFunction):
     @classmethod
     def from_constant(cls, constant_value, dimension=None):
         """
-        Creates a ComplexMultivariateTaylorFunction representing a constant value.
+        Creates a CMTF representing a constant complex value.
+
+        Parameters
+        ----------
+        constant_value : complex, float, or int
+            The constant value. It will be cast to a complex number.
+        dimension : int, optional
+            The dimension of the function's domain. If None, the global
+            `_MAX_DIMENSION` is used.
+
+        Returns
+        -------
+        ComplexMultivariateTaylorFunction
+            A new CMTF instance representing the constant.
         """
         if dimension is None:
             dimension = cls.get_max_dimension()
@@ -34,7 +96,21 @@ class ComplexMultivariateTaylorFunction(MultivariateTaylorFunction):
     @classmethod
     def from_variable(cls, var_index, dimension):
         """
-        Creates a ComplexMultivariateTaylorFunction representing a single variable.
+        Creates a CMTF representing a single variable.
+
+        The variable has a coefficient of `1.0 + 0.0j`.
+
+        Parameters
+        ----------
+        var_index : int
+            The 1-based index of the variable to create.
+        dimension : int
+            The total number of variables.
+
+        Returns
+        -------
+        ComplexMultivariateTaylorFunction
+            A new CMTF instance representing the variable.
         """
         if not (1 <= var_index <= dimension):
             raise ValueError(f"Variable index must be in range [1, dimension], got {var_index} for dimension {dimension}.")
@@ -46,19 +122,38 @@ class ComplexMultivariateTaylorFunction(MultivariateTaylorFunction):
 
     def conjugate(self):
         """
-        Returns the complex conjugate of the ComplexMultivariateTaylorFunction.
+        Computes the complex conjugate of the Taylor function.
+
+        This is done by taking the conjugate of each coefficient.
+
+        Returns
+        -------
+        ComplexMultivariateTaylorFunction
+            A new CMTF representing the complex conjugate.
         """
         return ComplexMultivariateTaylorFunction((self.exponents, np.conjugate(self.coeffs)), self.dimension)
 
     def real_part(self):
         """
-        Returns the real part of the ComplexMultivariateTaylorFunction as a MultivariateTaylorFunction.
+        Extracts the real part of the Taylor function.
+
+        Returns
+        -------
+        MultivariateTaylorFunction
+            A new MTF (with real coefficients) representing the real part
+            of the function.
         """
         return MultivariateTaylorFunction((self.exponents, np.real(self.coeffs)), self.dimension)
 
     def imag_part(self):
         """
-        Returns the imaginary part of the ComplexMultivariateTaylorFunction as a MultivariateTaylorFunction.
+        Extracts the imaginary part of the Taylor function.
+
+        Returns
+        -------
+        MultivariateTaylorFunction
+            A new MTF (with real coefficients) representing the imaginary
+            part of the function.
         """
         return MultivariateTaylorFunction((self.exponents, np.imag(self.coeffs)), self.dimension)
 
@@ -137,19 +232,30 @@ def _add_coefficient_dicts(dict1, dict2, subtract=False):
 
 def convert_to_cmtf(variable):
     """
-    Converts a variable into a ComplexMultivariateTaylorFunction object.
+    Converts a given variable into a ComplexMultivariateTaylorFunction.
 
-    Handles input types:
-    - ComplexMultivariateTaylorFunction: Returns the input as is.
-    - MultivariateTaylorFunction: Converts to ComplexMultivariateTaylorFunction.
-    - Scalar (int, float, complex, np.number): Creates a constant ComplexMultivariateTaylorFunction.
+    This function handles three types of inputs:
+    1. If the input is already a `ComplexMultivariateTaylorFunction`, it is
+       returned unchanged.
+    2. If the input is a `MultivariateTaylorFunction`, its coefficients are
+       cast to complex numbers to create a new `ComplexMultivariateTaylorFunction`.
+    3. If the input is a scalar (int, float, complex), it is converted into
+       a constant `ComplexMultivariateTaylorFunction`.
 
-    Args:
-        variable: The variable to convert. Can be a ComplexMultivariateTaylorFunction,
-                  MultivariateTaylorFunction, or a scalar.
+    Parameters
+    ----------
+    variable : MultivariateTaylorFunction, ComplexMultivariateTaylorFunction, or numeric
+        The variable to be converted.
 
-    Returns:
-        ComplexMultivariateTaylorFunction: The converted ComplexMultivariateTaylorFunction object.
+    Returns
+    -------
+    ComplexMultivariateTaylorFunction
+        The resulting CMTF object.
+
+    Raises
+    ------
+    TypeError
+        If the input type is not supported for conversion.
     """
     if isinstance(variable, ComplexMultivariateTaylorFunction):
         return variable  # Already a CMTF, return as is
