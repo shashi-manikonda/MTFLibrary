@@ -127,7 +127,11 @@ class MultivariateTaylorFunction:
         This method must be called once at the beginning of a program before
         creating or manipulating any `MultivariateTaylorFunction` objects. It
         sets the global maximum order and dimension for all subsequent
-        Taylor series operations and pre-loads the necessary coefficients.
+        Taylor series operations.
+
+        If the library is already initialized, this method will do nothing if
+        called with the same `max_order` and `max_dimension`. However, attempting
+        to re-initialize with different settings will raise a RuntimeError.
 
         Parameters
         ----------
@@ -151,30 +155,39 @@ class MultivariateTaylorFunction:
         MTF globals initialized: _MAX_ORDER=10, _MAX_DIMENSION=5, _INITIALIZED=True
         Max coefficient count (order=10, nvars=5): 3003
         Precomputed coefficients loaded and ready for use.
+
+        >>> # This will raise an error because initialization with new settings is not allowed
+        >>> MultivariateTaylorFunction.initialize_mtf(max_order=12, max_dimension=5)
+        Traceback (most recent call last):
+        ...
+        RuntimeError: MTF Globals are already initialized with different settings. Re-initialization with different max_order or max_dimension is not allowed.
         """
-        if cls._INITIALIZED:
-            print("MTF globals already initialized. Re-initializing with new settings.")
-        if max_order is not None:
-            if not isinstance(max_order, int) or max_order <= 0:
-                raise ValueError("max_order must be a positive integer.")
-            cls._MAX_ORDER = max_order
-        if max_dimension is not None:
-            if not isinstance(max_dimension, int) or max_dimension <= 0:
-                raise ValueError("max_dimension must be a positive integer.")
-            cls._MAX_DIMENSION = max_dimension
+        if (not cls._INITIALIZED) or (cls._INITIALIZED and
+                                    cls._MAX_ORDER == max_order and
+                                    cls._MAX_DIMENSION == max_dimension):
+            if max_order is not None:
+                if not isinstance(max_order, int) or max_order <= 0:
+                    raise ValueError("max_order must be a positive integer.")
+                cls._MAX_ORDER = max_order
+            if max_dimension is not None:
+                if not isinstance(max_dimension, int) or max_dimension <= 0:
+                    raise ValueError("max_dimension must be a positive integer.")
+                cls._MAX_DIMENSION = max_dimension
 
-        if implementation == 'cpp' and not _CPP_BACKEND_AVAILABLE:
-            cls._IMPLEMENTATION = 'python'
+            if implementation == 'cpp' and not _CPP_BACKEND_AVAILABLE:
+                cls._IMPLEMENTATION = 'python'
+            else:
+                cls._IMPLEMENTATION = implementation
+
+            print(f"Initializing MTF globals with: _MAX_ORDER={cls._MAX_ORDER}, _MAX_DIMENSION={cls._MAX_DIMENSION}")
+            cls._PRECOMPUTED_COEFFICIENTS = elementary_coefficients.load_precomputed_coefficients(max_order_config=cls._MAX_ORDER)
+            cls._INITIALIZED = True
+            print(f"MTF globals initialized: _MAX_ORDER={cls._MAX_ORDER}, _MAX_DIMENSION={cls._MAX_DIMENSION}, _INITIALIZED={cls._INITIALIZED}")
+            print(f"Max coefficient count (order={cls._MAX_ORDER}, nvars={cls._MAX_DIMENSION}): {cls.get_max_coefficient_count()}")
+            print(f"Precomputed coefficients loaded and ready for use.")
         else:
-            cls._IMPLEMENTATION = implementation
-
-        print(f"Initializing MTF globals with: _MAX_ORDER={cls._MAX_ORDER}, _MAX_DIMENSION={cls._MAX_DIMENSION}")
-        cls._PRECOMPUTED_COEFFICIENTS = elementary_coefficients.load_precomputed_coefficients(max_order_config=cls._MAX_ORDER)
-        cls._INITIALIZED = True
-        print(f"MTF globals initialized: _MAX_ORDER={cls._MAX_ORDER}, _MAX_DIMENSION={cls._MAX_DIMENSION}, _INITIALIZED={cls._INITIALIZED}")
-        print(f"Max coefficient count (order={cls._MAX_ORDER}, nvars={cls._MAX_DIMENSION}): {cls.get_max_coefficient_count()}")
-        print(f"Precomputed coefficients loaded and ready for use.")
-
+            raise RuntimeError("Re-initialization with different max_order or max_dimension is not allowed.")
+    
     @classmethod
     def get_max_coefficient_count(cls, max_order=None, max_dimension=None):
         """Calculates max coefficient count for given order/dimension."""
@@ -1244,6 +1257,63 @@ class MultivariateTaylorFunction:
         """Returns a detailed string representation of the MTF (for debugging)."""
         df = self.get_tabular_dataframe()
         return f'{df}\n'
+
+    def symprint(
+        self,
+        symbols=None,
+        precision=6,
+        coeff_formatter=None
+    ):
+        """
+        Converts the MultivariateTaylorFunction or ComplexMultivariateTaylorFunction
+        object to a SymPy expression for pretty printing.
+        Args:
+            symbols (list, optional): A list of symbolic names for the dimensions.
+                Defaults to ['x', 'y', 'z', 'u', 'v', 'w', 'p', 'q', 's', 't'].
+            precision (int, optional): The number of decimal digits to use for
+                the coefficients when using the default formatter. Defaults to 6.
+            coeff_formatter (callable, optional): A function to format the
+                coefficients. It should take a coefficient and precision as input
+                and return a SymPy-compatible number. If None, a default
+                formatter is used which handles real and complex numbers.
+        Returns:
+            sympy.Expr: A SymPy expression representing the function.
+        Raises:
+            ImportError: If SymPy is not installed.
+            ValueError: If not enough symbols are provided for the function's dimension.
+        """
+        try:
+            import sympy as sp
+        except ImportError:
+            raise ImportError("SymPy is required for the symprint method. Please install it using 'pip install sympy'.")
+
+        if symbols is None:
+            symbols = ['x', 'y', 'z', 'u', 'v', 'w', 'p', 'q', 's', 't']
+
+        if self.dimension > len(symbols):
+            raise ValueError(f"Not enough symbols provided for the {self.dimension}-dimensional function.")
+
+        sympy_vars = sp.symbols(symbols[:self.dimension])
+
+        if coeff_formatter is None:
+            def default_formatter(c, p):
+                if np.iscomplexobj(c):
+                    return sp.Float(c.real, p) + sp.I * sp.Float(c.imag, p)
+                else:
+                    return sp.Float(c, p)
+            coeff_formatter = default_formatter
+
+        sympy_expression = sum(
+            coeff_formatter(coeff, precision)
+            * sp.prod(
+                sympy_vars[j]**power
+                for j, power in enumerate(exp_tuple)
+                if power > 0
+            )
+            for coeff, exp_tuple in zip(self.coeffs, self.exponents)
+        )
+
+        return sympy_expression
     
     def copy(self):
         """Returns a copy of the MTF."""
