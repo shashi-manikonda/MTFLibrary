@@ -1244,6 +1244,63 @@ class MultivariateTaylorFunction:
         """Returns a detailed string representation of the MTF (for debugging)."""
         df = self.get_tabular_dataframe()
         return f'{df}\n'
+
+    def symprint(
+        self,
+        symbols=None,
+        precision=6,
+        coeff_formatter=None
+    ):
+        """
+        Converts the MultivariateTaylorFunction or ComplexMultivariateTaylorFunction
+        object to a SymPy expression for pretty printing.
+        Args:
+            symbols (list, optional): A list of symbolic names for the dimensions.
+                Defaults to ['x', 'y', 'z', 'u', 'v', 'w', 'p', 'q', 's', 't'].
+            precision (int, optional): The number of decimal digits to use for
+                the coefficients when using the default formatter. Defaults to 6.
+            coeff_formatter (callable, optional): A function to format the
+                coefficients. It should take a coefficient and precision as input
+                and return a SymPy-compatible number. If None, a default
+                formatter is used which handles real and complex numbers.
+        Returns:
+            sympy.Expr: A SymPy expression representing the function.
+        Raises:
+            ImportError: If SymPy is not installed.
+            ValueError: If not enough symbols are provided for the function's dimension.
+        """
+        try:
+            import sympy as sp
+        except ImportError:
+            raise ImportError("SymPy is required for the symprint method. Please install it using 'pip install sympy'.")
+
+        if symbols is None:
+            symbols = ['x', 'y', 'z', 'u', 'v', 'w', 'p', 'q', 's', 't']
+
+        if self.dimension > len(symbols):
+            raise ValueError(f"Not enough symbols provided for the {self.dimension}-dimensional function.")
+
+        sympy_vars = sp.symbols(symbols[:self.dimension])
+
+        if coeff_formatter is None:
+            def default_formatter(c, p):
+                if np.iscomplexobj(c):
+                    return sp.Float(c.real, p) + sp.I * sp.Float(c.imag, p)
+                else:
+                    return sp.Float(c, p)
+            coeff_formatter = default_formatter
+
+        sympy_expression = sum(
+            coeff_formatter(coeff, precision)
+            * sp.prod(
+                sympy_vars[j]**power
+                for j, power in enumerate(exp_tuple)
+                if power > 0
+            )
+            for coeff, exp_tuple in zip(self.coeffs, self.exponents)
+        )
+
+        return sympy_expression
     
     def copy(self):
         """Returns a copy of the MTF."""
