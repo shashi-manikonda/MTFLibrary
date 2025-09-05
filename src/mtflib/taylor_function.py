@@ -58,7 +58,7 @@ class MultivariateTaylorFunction:
     Algebra (DA) vector. It stores the Taylor coefficients of a function
     up to a specified order and provides a rich set of methods for
     arithmetic, composition, and analysis. The overloaded operators
-    (+, *, etc.) form a Truncated Power Series Algebra (TPSA).
+    (+, \*, etc.) form a Truncated Power Series Algebra (TPSA).
 
     Attributes
     ----------
@@ -1265,22 +1265,32 @@ class MultivariateTaylorFunction:
         coeff_formatter=None
     ):
         """
-        Converts the MultivariateTaylorFunction or ComplexMultivariateTaylorFunction
-        object to a SymPy expression for pretty printing.
-        Args:
-            symbols (list, optional): A list of symbolic names for the dimensions.
-                Defaults to ['x', 'y', 'z', 'u', 'v', 'w', 'p', 'q', 's', 't'].
-            precision (int, optional): The number of decimal digits to use for
-                the coefficients when using the default formatter. Defaults to 6.
-            coeff_formatter (callable, optional): A function to format the
-                coefficients. It should take a coefficient and precision as input
-                and return a SymPy-compatible number. If None, a default
-                formatter is used which handles real and complex numbers.
-        Returns:
-            sympy.Expr: A SymPy expression representing the function.
-        Raises:
-            ImportError: If SymPy is not installed.
-            ValueError: If not enough symbols are provided for the function's dimension.
+        Converts the MTF to a SymPy expression for pretty printing.
+
+        Parameters
+        ----------
+        symbols : list of str, optional
+            A list of symbolic names for the variables. If not provided,
+            defaults like 'x', 'y', 'z' are used.
+        precision : int, optional
+            The number of decimal digits for coefficients when using the
+            default formatter. Defaults to 6.
+        coeff_formatter : callable, optional
+            A custom function to format coefficients into SymPy-compatible
+            numbers. It should accept a coefficient and precision.
+
+        Returns
+        -------
+        sympy.Expr
+            A SymPy expression representing the Taylor series.
+
+        Raises
+        ------
+        ImportError
+            If SymPy is not installed.
+        ValueError
+            If the number of provided symbols is less than the function's
+            dimension.
         """
         try:
             import sympy as sp

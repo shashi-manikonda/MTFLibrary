@@ -7,10 +7,12 @@ from :math:`\mathbb{R}^n` to :math:`\mathbb{R}^m`, where each component of
 the output vector is a Taylor series. This class provides methods for
 vector arithmetic, composition, and inversion of such maps.
 """
+
 import numpy as np
 import warnings
 from numpy.exceptions import ComplexWarning
 from .taylor_function import MultivariateTaylorFunction
+
 
 class TaylorMap:
     """
@@ -176,7 +178,9 @@ class TaylorMap:
             If the dimensions are incompatible for composition.
         """
         if not isinstance(other, TaylorMap):
-            raise TypeError("Composition is only defined between two TaylorMap objects.")
+            raise TypeError(
+                "Composition is only defined between two TaylorMap objects."
+            )
 
         if self.map_dim == 0:
             return TaylorMap([])
@@ -184,20 +188,26 @@ class TaylorMap:
         self_input_dim = self.components[0].dimension
 
         if self_input_dim != other.map_dim:
-            raise ValueError(f"Cannot compose maps: self input dimension ({self_input_dim}) "
-                             f"must equal other output dimension ({other.map_dim}).")
+            raise ValueError(
+                f"Cannot compose maps: self input dimension ({self_input_dim}) "
+                f"must equal other output dimension ({other.map_dim})."
+            )
 
         new_components = []
         # The new dimension will be the input dimension of the 'other' map.
         new_dimension = other.components[0].dimension if other.map_dim > 0 else 0
 
         for component_mtf in self.components:
-            composed_component = MultivariateTaylorFunction.from_constant(0.0, dimension=new_dimension)
+            composed_component = MultivariateTaylorFunction.from_constant(
+                0.0, dimension=new_dimension
+            )
             for i in range(len(component_mtf.coeffs)):
                 exponent = component_mtf.exponents[i]
                 coeff = component_mtf.coeffs[i]
 
-                term_mtf = MultivariateTaylorFunction.from_constant(1.0, dimension=new_dimension)
+                term_mtf = MultivariateTaylorFunction.from_constant(
+                    1.0, dimension=new_dimension
+                )
                 for var_idx, power in enumerate(exponent):
                     if power > 0:
                         term_mtf *= other.components[var_idx] ** power
@@ -206,7 +216,9 @@ class TaylorMap:
 
             new_components.append(composed_component)
 
-        return TaylorMap(new_components).truncate(MultivariateTaylorFunction.get_max_order())
+        return TaylorMap(new_components).truncate(
+            MultivariateTaylorFunction.get_max_order()
+        )
 
     def get_component(self, index: int) -> MultivariateTaylorFunction:
         """
@@ -240,9 +252,15 @@ class TaylorMap:
         float or complex
             The value of the coefficient.
         """
-        return self.components[component_index].extract_coefficient(tuple(exponent_array)).item()
+        return (
+            self.components[component_index]
+            .extract_coefficient(tuple(exponent_array))
+            .item()
+        )
 
-    def set_coefficient(self, component_index: int, exponent_array: np.ndarray, new_value):
+    def set_coefficient(
+        self, component_index: int, exponent_array: np.ndarray, new_value
+    ):
         """
         Sets the coefficient of a specific term in a component function.
 
@@ -255,7 +273,9 @@ class TaylorMap:
         new_value : float or complex
             The new value for the coefficient.
         """
-        self.components[component_index].set_coefficient(tuple(exponent_array), new_value)
+        self.components[component_index].set_coefficient(
+            tuple(exponent_array), new_value
+        )
 
     def add_component(self, new_component: MultivariateTaylorFunction):
         """
@@ -307,7 +327,9 @@ class TaylorMap:
             return 0.0
 
         if self.map_dim != self.components[0].dimension:
-            raise ValueError("Trace is only defined for maps from N-dim to N-dim space.")
+            raise ValueError(
+                "Trace is only defined for maps from N-dim to N-dim space."
+            )
 
         trace_val = 0.0j
         for i in range(self.map_dim):
@@ -332,7 +354,10 @@ class TaylorMap:
                 scaling_factor = np.prod(np.array(scaling_factors) ** exponent)
                 new_coeffs[i] *= scaling_factor
 
-            new_component = MultivariateTaylorFunction((component.exponents.copy(), new_coeffs), dimension=component.dimension)
+            new_component = MultivariateTaylorFunction(
+                (component.exponents.copy(), new_coeffs),
+                dimension=component.dimension,
+            )
             new_map_components.append(new_component)
 
         return TaylorMap(new_map_components)
@@ -352,13 +377,18 @@ class TaylorMap:
         if self.map_dim == 0:
             return np.array([])
 
-        is_full_numeric = all(isinstance(v, (int, float, complex, np.number)) for v in variable_map.values()) and \
-                          len(variable_map) == self.components[0].dimension
+        is_full_numeric = (
+            all(
+                isinstance(v, (int, float, complex, np.number))
+                for v in variable_map.values()
+            )
+            and len(variable_map) == self.components[0].dimension
+        )
 
         if is_full_numeric:
             eval_point = [0] * self.components[0].dimension
             for i, val in variable_map.items():
-                eval_point[i-1] = val
+                eval_point[i - 1] = val
 
             return np.array([c.eval(eval_point).item() for c in self.components])
 
@@ -369,7 +399,10 @@ class TaylorMap:
                 if isinstance(value, (int, float, complex, np.number)):
                     new_component.substitute_variable_inplace(var_index, value)
                 else:
-                    raise TypeError(f"Unsupported substitution type: {type(value)}. Only numeric values are supported in substitute.")
+                    raise TypeError(
+                        f"Unsupported substitution type: {type(value)}. "
+                        "Only numeric values are supported in substitute."
+                    )
             new_components.append(new_component)
 
         return TaylorMap(new_components)
@@ -379,7 +412,10 @@ class TaylorMap:
         Returns a concise string representation of the TaylorMap.
         """
         if self.map_dim > 0:
-            return f"TaylorMap(map_dim={self.map_dim}, input_dim={self.components[0].dimension})"
+            return (
+                f"TaylorMap(map_dim={self.map_dim}, "
+                f"input_dim={self.components[0].dimension})"
+            )
         return "TaylorMap(map_dim=0, input_dim=N/A)"
 
     def __str__(self):
@@ -389,7 +425,10 @@ class TaylorMap:
         if self.map_dim == 0:
             return "Empty TaylorMap"
 
-        representation = f"TaylorMap with {self.map_dim} components (input dim: {self.components[0].dimension}):\n"
+        representation = (
+            f"TaylorMap with {self.map_dim} components "
+            f"(input dim: {self.components[0].dimension}):\n"
+        )
         for i, component in enumerate(self.components):
             representation += f"--- Component {i+1} ---\n"
             representation += str(component) + "\n"
@@ -455,18 +494,24 @@ class TaylorMap:
         """
         # --- Pre-condition Checks ---
         if self.map_dim == 0:
-            return TaylorMap([]) # Inverse of an empty map is an empty map
+            return TaylorMap([])  # Inverse of an empty map is an empty map
 
         dim = self.components[0].dimension
         if self.map_dim != dim:
-            raise ValueError(f"Map must be square to be invertible (input_dim={dim}, output_dim={self.map_dim}).")
+            raise ValueError(
+                f"Map must be square to be invertible (input_dim={dim}, "
+                f"output_dim={self.map_dim})."
+            )
 
         # Check for constant terms
         zero_exp = tuple([0] * dim)
         for i, component in enumerate(self.components):
             const_term = component.extract_coefficient(zero_exp).item()
-            if abs(const_term) > 1e-14: # Use a tolerance for floating point
-                raise ValueError(f"Map must have no constant terms to be invertible. Component {i} has constant term {const_term}.")
+            if abs(const_term) > 1e-14:  # Use a tolerance for floating point
+                raise ValueError(
+                    f"Map must have no constant terms to be invertible. "
+                    f"Component {i} has constant term {const_term}."
+                )
 
         # --- Algorithm Step 1: Extract Linear Part (β) and Jacobian ---
         jacobian = np.zeros((dim, dim), dtype=np.complex128)
@@ -478,7 +523,9 @@ class TaylorMap:
 
         # Check for invertible linear part
         if abs(np.linalg.det(jacobian)) < 1e-14:
-            raise ValueError("The linear part of the map is not invertible (Jacobian is singular).")
+            raise ValueError(
+                "The linear part of the map is not invertible (Jacobian is singular)."
+            )
 
         # --- Algorithm Step 4 (early): Invert Linear Part (β⁻¹) ---
         inv_jacobian = np.linalg.inv(jacobian)
@@ -507,14 +554,18 @@ class TaylorMap:
                 exp = tuple(component.exponents[k])
                 if sum(exp) > 1:
                     nl_coeffs[exp] = component.coeffs[k]
-            non_linear_components.append(MultivariateTaylorFunction(nl_coeffs, dimension=dim))
+            non_linear_components.append(
+                MultivariateTaylorFunction(nl_coeffs, dimension=dim)
+            )
         G = TaylorMap(non_linear_components)
 
-        identity_components = [MultivariateTaylorFunction.from_variable(i + 1, dim) for i in range(dim)]
+        identity_components = [
+            MultivariateTaylorFunction.from_variable(i + 1, dim) for i in range(dim)
+        ]
         identity_map = TaylorMap(identity_components)
 
         # --- Algorithm Step 5: Fixed-Point Iteration ---
-        F_inv = beta_inv # Initial guess
+        F_inv = beta_inv  # Initial guess
 
         max_order = MultivariateTaylorFunction.get_max_order()
         for _ in range(max_order - 1):

@@ -7,14 +7,17 @@ function dynamically selects the appropriate backend based on the type of
 the input array. Each backend class (`NumpyBackend`, `TorchBackend`) wraps
 the corresponding library's functions in a common interface.
 """
+
 import numpy as np
 
 _TORCH_AVAILABLE = False
 try:
     import torch
+
     _TORCH_AVAILABLE = True
 except ImportError:
     pass
+
 
 class NumpyBackend:
     """
@@ -24,6 +27,7 @@ class NumpyBackend:
     functions, conforming to the interface expected by the `neval` method
     and other parts of `mtflib`.
     """
+
     @staticmethod
     def power(base, exp):
         """Wraps `np.power`."""
@@ -59,7 +63,9 @@ class NumpyBackend:
         """Converts a NumPy array to a standard NumPy array (identity)."""
         return np.array(a)
 
+
 if _TORCH_AVAILABLE:
+
     class TorchBackend:
         """
         A backend that uses PyTorch for array operations.
@@ -68,6 +74,7 @@ if _TORCH_AVAILABLE:
         functions, conforming to the interface expected by the `neval` method.
         It is only available if PyTorch is installed.
         """
+
         @staticmethod
         def power(base, exp):
             """Wraps `torch.pow`."""
@@ -105,11 +112,13 @@ if _TORCH_AVAILABLE:
             """Converts a PyTorch tensor to a NumPy array."""
             return a.numpy()
 
+
 _backends = {
     np.ndarray: NumpyBackend,
 }
 if _TORCH_AVAILABLE:
     _backends[torch.Tensor] = TorchBackend
+
 
 def get_backend(array):
     """

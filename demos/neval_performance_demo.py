@@ -3,6 +3,7 @@ import time
 import torch
 from mtflib import MultivariateTaylorFunction
 
+
 def old_eval_loop(mtf, points):
     """
     Evaluates the MTF at each point in a loop using the old eval logic.
@@ -10,8 +11,9 @@ def old_eval_loop(mtf, points):
     results = np.empty(points.shape[0])
     for i, point in enumerate(points):
         term_values = np.prod(np.power(point, mtf.exponents), axis=1)
-        results[i] = np.einsum('j,j->', mtf.coeffs, term_values)
+        results[i] = np.einsum("j,j->", mtf.coeffs, term_values)
     return results
+
 
 def main():
     """
@@ -66,20 +68,31 @@ def main():
     print("Performance Comparison:")
     if time_new > 0:
         speedup_numpy = time_old / time_new
-        print(f"The numpy `neval` method is {speedup_numpy:.2f}x faster than the old `eval` loop.")
+        print(
+            f"The numpy `neval` method is {speedup_numpy:.2f}x faster "
+            "than the old `eval` loop."
+        )
     else:
         print("Could not calculate numpy speedup (neval was too fast).")
 
     if time_torch > 0:
         speedup_torch = time_old / time_torch
-        print(f"The torch `neval` method is {speedup_torch:.2f}x faster than the old `eval` loop.")
+        print(
+            f"The torch `neval` method is {speedup_torch:.2f}x faster "
+            "than the old `eval` loop."
+        )
     else:
         print("Could not calculate torch speedup (neval was too fast).")
 
     # Verify that the results are consistent
-    assert np.allclose(results_old, results_new), "Results from numpy and old methods do not match."
-    assert np.allclose(results_old, results_torch.numpy()), "Results from torch and old methods do not match."
+    assert np.allclose(
+        results_old, results_new
+    ), "Results from numpy and old methods do not match."
+    assert np.allclose(
+        results_old, results_torch.numpy()
+    ), "Results from torch and old methods do not match."
     print("\nResults from all methods are consistent.")
+
 
 if __name__ == "__main__":
     main()

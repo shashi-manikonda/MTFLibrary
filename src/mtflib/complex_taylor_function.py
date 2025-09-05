@@ -14,7 +14,8 @@ engineering where complex numbers are fundamental.
 """
 import numpy as np
 from collections import defaultdict
-from .taylor_function import (MultivariateTaylorFunction, convert_to_mtf)
+from .taylor_function import MultivariateTaylorFunction
+
 
 class ComplexMultivariateTaylorFunction(MultivariateTaylorFunction):
     """
@@ -94,7 +95,7 @@ class ComplexMultivariateTaylorFunction(MultivariateTaylorFunction):
         Examples
         --------
         >>> from mtflib import ComplexMultivariateTaylorFunction
-        >>> ComplexMultivariateTaylorFunction.initialize_mtf(max_order=1, max_dimension=1)
+        >>> ComplexMultivariateTaylorFunction.initialize_mtf(max_order=1, dimension=1)
         >>>
         >>> # Create a complex constant
         >>> c = ComplexMultivariateTaylorFunction.from_constant(3 + 4j)
@@ -103,7 +104,9 @@ class ComplexMultivariateTaylorFunction(MultivariateTaylorFunction):
         """
         if dimension is None:
             dimension = cls.get_max_dimension()
-        constant_value_complex = np.array([complex(constant_value)], dtype=np.complex128)
+        constant_value_complex = np.array(
+            [complex(constant_value)], dtype=np.complex128
+        )
         coeffs = {(0,) * dimension: constant_value_complex}
         return cls(coefficients=coeffs, dimension=dimension)
 
@@ -127,7 +130,10 @@ class ComplexMultivariateTaylorFunction(MultivariateTaylorFunction):
             A new CMTF instance representing the variable.
         """
         if not (1 <= var_index <= dimension):
-            raise ValueError(f"Variable index must be in range [1, dimension], got {var_index} for dimension {dimension}.")
+            raise ValueError(
+                f"Variable index must be in range [1, dimension], "
+                f"got {var_index} for dimension {dimension}."
+            )
 
         exponent = [0] * dimension
         exponent[var_index - 1] = 1
@@ -145,7 +151,9 @@ class ComplexMultivariateTaylorFunction(MultivariateTaylorFunction):
         ComplexMultivariateTaylorFunction
             A new CMTF representing the complex conjugate.
         """
-        return ComplexMultivariateTaylorFunction((self.exponents, np.conjugate(self.coeffs)), self.dimension)
+        return ComplexMultivariateTaylorFunction(
+            (self.exponents, np.conjugate(self.coeffs)), self.dimension
+        )
 
     def real_part(self):
         """
@@ -157,7 +165,9 @@ class ComplexMultivariateTaylorFunction(MultivariateTaylorFunction):
             A new MTF (with real coefficients) representing the real part
             of the function.
         """
-        return MultivariateTaylorFunction((self.exponents, np.real(self.coeffs)), self.dimension)
+        return MultivariateTaylorFunction(
+            (self.exponents, np.real(self.coeffs)), self.dimension
+        )
 
     def imag_part(self):
         """
@@ -169,30 +179,39 @@ class ComplexMultivariateTaylorFunction(MultivariateTaylorFunction):
             A new MTF (with real coefficients) representing the imaginary
             part of the function.
         """
-        return MultivariateTaylorFunction((self.exponents, np.imag(self.coeffs)), self.dimension)
+        return MultivariateTaylorFunction(
+            (self.exponents, np.imag(self.coeffs)), self.dimension
+        )
 
     def __repr__(self):
         """Returns a detailed string representation of the MTF (for debugging)."""
         df = self.get_tabular_dataframe()
-        return f'{df}\n'
+        return f"{df}\n"
 
     def __str__(self):
-        if self.var_name: # Use var_name if available for concise representation
+        if self.var_name:  # Use var_name if available for concise representation
             return f"ComplexMultivariateTaylorFunction({self.var_name})"
         df = self.get_tabular_dataframe()
-        return f'\n{df}'
+        return f"\n{df}"
 
     def magnitude(self):
         """
         Raises NotImplementedError as magnitude is not directly representable as a CMTF.
         """
-        raise NotImplementedError("Magnitude of a ComplexMultivariateTaylorFunction is generally not a ComplexMultivariateTaylorFunction.")
+        raise NotImplementedError(
+            "Magnitude of a ComplexMultivariateTaylorFunction is generally not a "
+            "ComplexMultivariateTaylorFunction."
+        )
 
     def phase(self):
         """
         Raises NotImplementedError as phase is not directly representable as a CMTF.
         """
-        raise NotImplementedError("Phase of a ComplexMultivariateTaylorFunction is generally not a ComplexMultivariateTaylorFunction.")
+        raise NotImplementedError(
+            "Phase of a ComplexMultivariateTaylorFunction is generally not a "
+            "ComplexMultivariateTaylorFunction."
+        )
+
 
 def _generate_exponent_combinations(dimension, order):
     """
@@ -228,19 +247,38 @@ def _add_coefficient_dicts(dict1, dict2, subtract=False):
     Args:
         dict1 (defaultdict): First coefficient dictionary.
         dict2 (defaultdict): Second coefficient dictionary.
-        subtract (bool, optional): If True, subtract dict2 from dict1. Defaults to False (add).
+        subtract (bool, optional): If True, subtract dict2 from dict1.
+                                   Defaults to False (add).
 
     Returns:
-        defaultdict: A new coefficient dictionary with the sum (or difference) of coefficients.
+        defaultdict: A new coefficient dictionary with the sum (or difference)
+                     of coefficients.
     """
-    sum_coeffs = defaultdict(lambda: np.array([0.0j]).reshape(1) if any(isinstance(coeff[0], complex) for coeff in dict1.values()) or any(isinstance(coeff[0], complex) for coeff in dict2.values()) else np.array([0.0]).reshape(1)) #Default to complex 0 if either dict is complex
-    for exponents in set(dict1.keys()) | set(dict2.keys()): # Iterate over all unique exponents
-        coeff1 = dict1.get(exponents, sum_coeffs.default_factory()) # Get coeff1, default to zero array if missing
-        coeff2 = dict2.get(exponents, sum_coeffs.default_factory()) # Get coeff2, default to zero array if missing
+    sum_coeffs = defaultdict(
+        lambda: (
+            np.array([0.0j]).reshape(1)
+            if any(isinstance(coeff[0], complex) for coeff in dict1.values())
+            or any(isinstance(coeff[0], complex) for coeff in dict2.values())
+            else np.array([0.0]).reshape(1)
+        )
+    )  # Default to complex 0 if either dict is complex
+    for exponents in set(dict1.keys()) | set(
+        dict2.keys()
+    ):  # Iterate over all unique exponents
+        coeff1 = dict1.get(
+            exponents, sum_coeffs.default_factory()
+        )  # Get coeff1, default to zero array if missing
+        coeff2 = dict2.get(
+            exponents, sum_coeffs.default_factory()
+        )  # Get coeff2, default to zero array if missing
         if subtract:
-            sum_coeffs[exponents] = np.array(coeff1).flatten() - np.array(coeff2).flatten() # Flatten for subtraction
+            sum_coeffs[exponents] = (
+                np.array(coeff1).flatten() - np.array(coeff2).flatten()
+            )  # Flatten for subtraction
         else:
-            sum_coeffs[exponents] = np.array(coeff1).flatten() + np.array(coeff2).flatten() # Flatten for addition
+            sum_coeffs[exponents] = (
+                np.array(coeff1).flatten() + np.array(coeff2).flatten()
+            )  # Flatten for addition
     return sum_coeffs
 
 
@@ -273,16 +311,22 @@ def convert_to_cmtf(variable):
     """
     if isinstance(variable, ComplexMultivariateTaylorFunction):
         return variable  # Already a CMTF, return as is
-    elif isinstance(variable, MultivariateTaylorFunction): # Var function returns MTF now
+    elif isinstance(
+        variable, MultivariateTaylorFunction
+    ):  # Var function returns MTF now
         # Convert MTF to CMTF: just need to ensure coefficients are complex type
         exponents = variable.exponents
         coeffs = variable.coeffs.astype(np.complex128)
-        return ComplexMultivariateTaylorFunction((exponents, coeffs), variable.dimension)
+        return ComplexMultivariateTaylorFunction(
+            (exponents, coeffs), variable.dimension
+        )
     elif isinstance(variable, (int, float, complex, np.number)):
         # Create constant CMTF from scalar
         dim = 1
-        if hasattr(variable, 'dimension'):
+        if hasattr(variable, "dimension"):
             dim = variable.dimension
         return ComplexMultivariateTaylorFunction.from_constant(variable, dimension=dim)
     else:
-        raise TypeError("Unsupported type for conversion to ComplexMultivariateTaylorFunction.")
+        raise TypeError(
+            "Unsupported type for conversion to ComplexMultivariateTaylorFunction."
+        )

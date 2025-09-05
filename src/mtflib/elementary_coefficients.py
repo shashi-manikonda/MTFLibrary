@@ -20,7 +20,9 @@ import sys  # Import sys for getsizeof
 
 
 MAX_PRECOMPUTED_ORDER = 100  # Global maximum order for precomputation
-PRECOMPUTED_COEFFICIENT_DIR = "precomputed_coefficients_data"  # Directory to store coefficient files
+PRECOMPUTED_COEFFICIENT_DIR = (
+    "precomputed_coefficients_data"  # Directory to store coefficient files
+)
 precomputed_coefficients = {}  # Dictionary to hold loaded coefficients
 
 
@@ -30,7 +32,7 @@ def _compute_sin_taylor_coefficients(max_order: int) -> np.ndarray:
     """
     coefficients = np.zeros(max_order + 1)
     for n in range(1, max_order + 1, 2):
-        coefficients[n] = ((-1)**((n - 1) // 2)) / math.factorial(n)
+        coefficients[n] = ((-1) ** ((n - 1) // 2)) / math.factorial(n)
     return coefficients
 
 
@@ -40,7 +42,7 @@ def _compute_cos_taylor_coefficients(max_order: int) -> np.ndarray:
     """
     coefficients = np.zeros(max_order + 1)
     for n in range(0, max_order + 1, 2):
-        coefficients[n] = ((-1)**(n // 2)) / math.factorial(n)
+        coefficients[n] = ((-1) ** (n // 2)) / math.factorial(n)
     return coefficients
 
 
@@ -62,7 +64,7 @@ def _compute_gaussian_taylor_coefficients(max_order: int) -> np.ndarray:
     coefficients = np.zeros(max_order + 1)
     for n in range(0, max_order + 1, 2):  # Gaussian has only even terms
         k = n // 2
-        coefficients[n] = (-1)**k / math.factorial(k)
+        coefficients[n] = (-1) ** k / math.factorial(k)
     return coefficients
 
 
@@ -105,7 +107,7 @@ def _compute_log_taylor_coefficients(max_order: int) -> np.ndarray:
         if n == 0:
             coefficients[n] = 0.0
         elif n >= 1:
-            coefficients[n] = ((-1)**(n - 1)) / n
+            coefficients[n] = ((-1) ** (n - 1)) / n
     return coefficients
 
 
@@ -120,7 +122,7 @@ def _compute_arctan_taylor_coefficients(max_order: int) -> np.ndarray:
             coefficients[n] = 0.0
         elif n % 2 != 0:  # Arctan series has only odd terms
             term_index = (n - 1) // 2
-            coefficients[n] = ((-1)**term_index) / n
+            coefficients[n] = ((-1) ** term_index) / n
         else:
             coefficients[n] = 0.0
     return coefficients
@@ -187,10 +189,10 @@ def _compute_arcsin_taylor_coefficients(max_order: int) -> np.ndarray:
             m = (n - 1) // 2
             numerator = 1.0
             for i in range(m):
-                numerator *= (2 * i + 1)
+                numerator *= 2 * i + 1
             denominator = 1.0
             for i in range(1, m + 1):
-                denominator *= (2 * i)
+                denominator *= 2 * i
             coefficients[n] = (numerator / denominator) * (1 / n)
     return coefficients
 
@@ -212,12 +214,15 @@ def _compute_arccos_taylor_coefficients(max_order: int) -> np.ndarray:
             m = (n - 1) // 2
             numerator = 1.0
             for i in range(m):
-                numerator *= (2 * i + 1)
+                numerator *= 2 * i + 1
             denominator = 1.0
             for i in range(1, m + 1):
-                denominator *= (2 * i)
-            coefficients[n] = -(numerator / denominator) * (1 / n)  # Note the negative sign for arccos
+                denominator *= 2 * i
+            coefficients[n] = -(numerator / denominator) * (
+                1 / n
+            )  # Note the negative sign for arccos
     return coefficients
+
 
 def _compute_inverse_taylor_coefficients(max_order: int) -> np.ndarray:
     """
@@ -225,25 +230,25 @@ def _compute_inverse_taylor_coefficients(max_order: int) -> np.ndarray:
     """
     coefficients = np.zeros(max_order + 1)
     for n in range(0, max_order + 1):
-        coefficients[n] = (-1)**n
+        coefficients[n] = (-1) ** n
     return coefficients
 
 
 coefficient_functions = {
-    'sin': _compute_sin_taylor_coefficients,
-    'cos': _compute_cos_taylor_coefficients,
-    'exp': _compute_exp_taylor_coefficients,
-    'gaussian': _compute_gaussian_taylor_coefficients,
-    'sqrt': _compute_sqrt_taylor_coefficients,
-    'isqrt': _compute_isqrt_taylor_coefficients,
-    'log': _compute_log_taylor_coefficients,
-    'arctan': _compute_arctan_taylor_coefficients,
-    'sinh': _compute_sinh_taylor_coefficients,
-    'cosh': _compute_cosh_taylor_coefficients,
-    'arctanh': _compute_arctanh_taylor_coefficients,
-    'arcsin': _compute_arcsin_taylor_coefficients,
-    'arccos': _compute_arccos_taylor_coefficients,
-    'inverse': _compute_inverse_taylor_coefficients, # NEW: Added inverse function
+    "sin": _compute_sin_taylor_coefficients,
+    "cos": _compute_cos_taylor_coefficients,
+    "exp": _compute_exp_taylor_coefficients,
+    "gaussian": _compute_gaussian_taylor_coefficients,
+    "sqrt": _compute_sqrt_taylor_coefficients,
+    "isqrt": _compute_isqrt_taylor_coefficients,
+    "log": _compute_log_taylor_coefficients,
+    "arctan": _compute_arctan_taylor_coefficients,
+    "sinh": _compute_sinh_taylor_coefficients,
+    "cosh": _compute_cosh_taylor_coefficients,
+    "arctanh": _compute_arctanh_taylor_coefficients,
+    "arcsin": _compute_arcsin_taylor_coefficients,
+    "arccos": _compute_arccos_taylor_coefficients,
+    "inverse": _compute_inverse_taylor_coefficients,  # NEW: Added inverse function
 }
 
 
@@ -300,76 +305,104 @@ def load_precomputed_coefficients(max_order_config: int = None) -> dict:
     base_dir = os.path.dirname(os.path.abspath(__file__))
     full_coefficient_dir = os.path.join(base_dir, PRECOMPUTED_COEFFICIENT_DIR)
 
-
-    if not os.path.exists(full_coefficient_dir): # Use full path
+    if not os.path.exists(full_coefficient_dir):  # Use full path
         os.makedirs(full_coefficient_dir)
 
     for func_name, compute_func in coefficient_functions.items():
-        filename = os.path.join(full_coefficient_dir, f'{func_name}_coefficients.json') # Use full path
+        filename = os.path.join(
+            full_coefficient_dir, f"{func_name}_coefficients.json"
+        )  # Use full path
         if os.path.exists(filename):
             try:
-                with open(filename, 'r') as f:
+                with open(filename, "r") as f:
                     coefficient_list = json.load(f)
                     loaded_coefficients = np.array(coefficient_list)
                 if loaded_coefficients.shape[0] < max_order_to_init + 1:
-                    print(f"Precomputed {func_name} coefficients (order {loaded_coefficients.shape[0]-1}) insufficient, recomputing up to order {max_order_to_init}.")
+                    print(
+                        f"Precomputed {func_name} coefficients "
+                        f"(order {loaded_coefficients.shape[0]-1}) insufficient, "
+                        f"recomputing up to order {max_order_to_init}."
+                    )
                     coefficients = compute_func(max_order_to_init)
                     try:
-                        with open(filename, 'w') as f:
+                        with open(filename, "w") as f:
                             json.dump(coefficients.tolist(), f, indent=2)
-                        print(f"Recomputed and saved {func_name} coefficients up to order {max_order_to_init}.")
+                        print(
+                            f"Recomputed and saved {func_name} coefficients "
+                            f"up to order {max_order_to_init}."
+                        )
                     except Exception as e:
-                        print(f"Error saving recomputed coefficients for {func_name} to {filename}: {e}")
+                        print(
+                            f"Error saving recomputed coefficients for {func_name} "
+                            f"to {filename}: {e}"
+                        )
                     precomputed_coefficients[func_name] = coefficients
                 else:
-                    coefficients = loaded_coefficients[:max_order_to_init + 1]
+                    coefficients = loaded_coefficients[: max_order_to_init + 1]
                     precomputed_coefficients[func_name] = coefficients
-                    # print(f"Loaded precomputed {func_name} coefficients up to order {max_order_to_init} from {filename}.")
 
             except Exception as e:
-                print(f"Warning: Error loading coefficients for {func_name} from {filename}: {e}. Recomputing...")
+                print(
+                    f"Warning: Error loading coefficients for {func_name} from "
+                    f"{filename}: {e}. Recomputing..."
+                )
                 coefficients = compute_func(max_order_to_init)
                 try:
-                    with open(filename, 'w') as f:
+                    with open(filename, "w") as f:
                         json.dump(coefficients.tolist(), f, indent=2)
-                    print(f"Computed and saved {func_name} coefficients up to order {max_order_to_init}.")
+                    print(
+                        f"Computed and saved {func_name} coefficients up to "
+                        f"order {max_order_to_init}."
+                    )
                 except Exception as save_e:
-                    print(f"Error saving recomputed coefficients for {func_name} to {filename}: {save_e}")
+                    print(
+                        f"Error saving recomputed coefficients for {func_name} "
+                        f"to {filename}: {save_e}"
+                    )
                 precomputed_coefficients[func_name] = coefficients
 
         else:  # File does not exist
-            print(f"Precomputing {func_name} Taylor coefficients up to order {max_order_to_init} and saving to {filename}")
+            print(
+                f"Precomputing {func_name} Taylor coefficients up to order "
+                f"{max_order_to_init} and saving to {filename}"
+            )
             coefficients = compute_func(max_order_to_init)
             try:
-                with open(filename, 'w') as f:
+                with open(filename, "w") as f:
                     json.dump(coefficients.tolist(), f, indent=2)
-                print(f"Computed and saved {func_name} coefficients up to order {max_order_to_init}.")
+                print(
+                    f"Computed and saved {func_name} coefficients up to order "
+                    f"{max_order_to_init}."
+                )
             except Exception as e:
                 print(f"Error saving coefficients for {func_name} to {filename}: {e}")
             precomputed_coefficients[func_name] = coefficients
-
-
-    # for func_name in coefficient_functions.keys():  # Verification print outside the loop
-    #     print(f"First 5 {func_name} coefficients: {precomputed_coefficients[func_name][:5]}")
 
     print("Global precomputed coefficients loading/generation complete.")
     size_in_bytes = sys.getsizeof(precomputed_coefficients)
     size_in_kb = size_in_bytes / 1024
     size_in_mb = size_in_kb / 1024
-    print(f"Size of precomputed_coefficients dictionary in memory: {size_in_bytes} bytes, {size_in_kb:.2f} KB, {size_in_mb:.2f} MB")
+    print(
+        f"Size of precomputed_coefficients dictionary in memory: "
+        f"{size_in_bytes} bytes, {size_in_kb:.2f} KB, {size_in_mb:.2f} MB"
+    )
 
     return precomputed_coefficients
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     load_precomputed_coefficients()  # Load with default MAX_PRECOMPUTED_ORDER
 
     print("\n--- Precomputed Taylor Coefficients (First Few Terms) ---")
     for function_name in sorted(coefficient_functions.keys()):
         coeffs = precomputed_coefficients.get(function_name, np.array([]))
-        display_order = min(5, coeffs.shape[0] - 1) if coeffs.shape[0] > 0 else 0  # Display up to order 5 or less if available
+        display_order = (
+            min(5, coeffs.shape[0] - 1) if coeffs.shape[0] > 0 else 0
+        )  # Display up to order 5 or less if available
         if display_order >= 0:
-            display_coeffs = ", ".join([f"{c:.6f}" for c in coeffs[:display_order + 1]])  # Format for display
+            display_coeffs = ", ".join(
+                [f"{c:.6f}" for c in coeffs[: display_order + 1]]
+            )  # Format for display
         else:
             display_coeffs = "Not computed/loaded"
 
