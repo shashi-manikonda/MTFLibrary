@@ -58,7 +58,7 @@ def _compute_exp_taylor_coefficients(max_order: int) -> np.ndarray:
 
 def _compute_gaussian_taylor_coefficients(max_order: int) -> np.ndarray:
     """
-    Compute Taylor series coefficients for gaussian(x) = exp(-x^2) around zero.
+    Compute Taylor series coeffs for gaussian(x) = exp(-x^2).
     Note: Gaussian series has only even terms.
     """
     coefficients = np.zeros(max_order + 1)
@@ -200,7 +200,7 @@ def _compute_arcsin_taylor_coefficients(max_order: int) -> np.ndarray:
 def _compute_arccos_taylor_coefficients(max_order: int) -> np.ndarray:
     """
     Compute Taylor series coefficients for arccos(x) around zero.
-    Note: Arccos series has only odd terms (except the constant term).
+    Note: Arccos series has only odd terms (except constant).
     """
     coefficients = np.zeros(max_order + 1)
     for n in range(0, max_order + 1):
@@ -226,7 +226,7 @@ def _compute_arccos_taylor_coefficients(max_order: int) -> np.ndarray:
 
 def _compute_inverse_taylor_coefficients(max_order: int) -> np.ndarray:
     """
-    Compute Taylor series coefficients for inverse(1+x) = 1/(1+x) around zero.
+    Compute Taylor series coeffs for inverse(1+x) = 1/(1+x).
     """
     coefficients = np.zeros(max_order + 1)
     for n in range(0, max_order + 1):
@@ -260,7 +260,7 @@ def load_precomputed_coefficients(max_order_config: int = None) -> dict:
     exists and its order is sufficient, the coefficients are loaded from it.
     Otherwise, they are recomputed, saved to a JSON file, and then loaded.
     The loaded coefficients are stored in the global `precomputed_coefficients`
-    dictionary.
+    dict.
 
     Parameters
     ----------
@@ -292,14 +292,16 @@ def load_precomputed_coefficients(max_order_config: int = None) -> dict:
     >>> print(sin_coeffs)
     [ 0.          1.          0.         -0.16666667  0.          0.00833333]
     """
-    global precomputed_coefficients, MAX_PRECOMPUTED_ORDER
+    global precomputed_coefficients
 
     if max_order_config is None:
         max_order_to_init = MAX_PRECOMPUTED_ORDER
     else:
         max_order_to_init = max_order_config
 
-    print(f"Loading/Precomputing Taylor coefficients up to order {max_order_to_init}")
+    print(
+        f"Loading/Precomputing Taylor coefficients up to order {max_order_to_init}"
+    )
 
     # Construct the path to the directory relative to this file
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -308,6 +310,7 @@ def load_precomputed_coefficients(max_order_config: int = None) -> dict:
     if not os.path.exists(full_coefficient_dir):  # Use full path
         os.makedirs(full_coefficient_dir)
 
+    local_precomputed_coefficients = {}
     for func_name, compute_func in coefficient_functions.items():
         filename = os.path.join(
             full_coefficient_dir, f"{func_name}_coefficients.json"
@@ -319,31 +322,31 @@ def load_precomputed_coefficients(max_order_config: int = None) -> dict:
                     loaded_coefficients = np.array(coefficient_list)
                 if loaded_coefficients.shape[0] < max_order_to_init + 1:
                     print(
-                        f"Precomputed {func_name} coefficients "
-                        f"(order {loaded_coefficients.shape[0]-1}) insufficient, "
-                        f"recomputing up to order {max_order_to_init}."
+                        f"Precomputed {func_name} coeffs (order "
+                        f"{loaded_coefficients.shape[0] - 1}) insufficient, "
+                        f"recomputing to order {max_order_to_init}."
                     )
                     coefficients = compute_func(max_order_to_init)
                     try:
                         with open(filename, "w") as f:
                             json.dump(coefficients.tolist(), f, indent=2)
                         print(
-                            f"Recomputed and saved {func_name} coefficients "
-                            f"up to order {max_order_to_init}."
+                            f"Recomputed and saved {func_name} coeffs to "
+                            f"order {max_order_to_init}."
                         )
                     except Exception as e:
                         print(
-                            f"Error saving recomputed coefficients for {func_name} "
-                            f"to {filename}: {e}"
+                            f"Error saving recomputed {func_name} coeffs to "
+                            f"{filename}: {e}"
                         )
-                    precomputed_coefficients[func_name] = coefficients
+                    local_precomputed_coefficients[func_name] = coefficients
                 else:
                     coefficients = loaded_coefficients[: max_order_to_init + 1]
-                    precomputed_coefficients[func_name] = coefficients
+                    local_precomputed_coefficients[func_name] = coefficients
 
             except Exception as e:
                 print(
-                    f"Warning: Error loading coefficients for {func_name} from "
+                    f"Warning: Error loading {func_name} coeffs from "
                     f"{filename}: {e}. Recomputing..."
                 )
                 coefficients = compute_func(max_order_to_init)
@@ -359,11 +362,11 @@ def load_precomputed_coefficients(max_order_config: int = None) -> dict:
                         f"Error saving recomputed coefficients for {func_name} "
                         f"to {filename}: {save_e}"
                     )
-                precomputed_coefficients[func_name] = coefficients
+                local_precomputed_coefficients[func_name] = coefficients
 
         else:  # File does not exist
             print(
-                f"Precomputing {func_name} Taylor coefficients up to order "
+                f"Precomputing {func_name} Taylor coeffs to order "
                 f"{max_order_to_init} and saving to {filename}"
             )
             coefficients = compute_func(max_order_to_init)
@@ -375,9 +378,12 @@ def load_precomputed_coefficients(max_order_config: int = None) -> dict:
                     f"{max_order_to_init}."
                 )
             except Exception as e:
-                print(f"Error saving coefficients for {func_name} to {filename}: {e}")
-            precomputed_coefficients[func_name] = coefficients
+                print(
+                    f"Error saving coefficients for {func_name} to {filename}: {e}"
+                )
+            local_precomputed_coefficients[func_name] = coefficients
 
+    precomputed_coefficients = local_precomputed_coefficients
     print("Global precomputed coefficients loading/generation complete.")
     size_in_bytes = sys.getsizeof(precomputed_coefficients)
     size_in_kb = size_in_bytes / 1024
@@ -406,6 +412,8 @@ if __name__ == "__main__":
         else:
             display_coeffs = "Not computed/loaded"
 
-        print(f"{function_name}: Orders 0-{display_order}: [{display_coeffs}...]")
+        print(
+            f"{function_name}: Orders 0-{display_order}: [{display_coeffs}...]"
+        )
 
     print("\nPrecomputation and Saving Complete.")

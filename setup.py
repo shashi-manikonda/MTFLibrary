@@ -1,3 +1,8 @@
+# This file is used to build the C++ and C extensions for the mtflib library.
+# It is required by setuptools, which is specified as the build backend in
+# pyproject.toml. For more details on how setuptools handles extensions, see:
+# https://setuptools.pypa.io/en/latest/userguide/ext_modules.html
+
 import sys
 from setuptools import setup, Extension
 import numpy

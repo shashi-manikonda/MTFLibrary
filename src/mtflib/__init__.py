@@ -47,32 +47,44 @@ Example:
 
 import pandas as pd
 
-# Set the display format for floats
-pd.options.display.float_format = '{:.12e}'.format
-pd.set_option('display.max_columns', None)
-pd.set_option('display.max_rows', None)
-pd.set_option('display.width', 1000)
-
-from . import elementary_coefficients
-from . import taylor_function
-from . import elementary_functions
-from . import complex_taylor_function
-
-from .taylor_function import (MultivariateTaylorFunction,
+from .taylor_function import (
+    MultivariateTaylorFunction,
     convert_to_mtf,
-    _split_constant_polynomial_part,
-    sqrt_taylor,
     isqrt_taylor,
     Var,
-    mtfarray)
-from .elementary_functions import (cos_taylor, sin_taylor, tan_taylor,
-    exp_taylor, gaussian_taylor, log_taylor, arctan_taylor,
-    sinh_taylor, cosh_taylor, tanh_taylor, arcsin_taylor, arccos_taylor,
-    arctanh_taylor, integrate, derivative)
-from .complex_taylor_function import (ComplexMultivariateTaylorFunction,
-    convert_to_cmtf)
+    mtfarray,
+)
+from .elementary_functions import (
+    cos_taylor,
+    sin_taylor,
+    tan_taylor,
+    exp_taylor,
+    gaussian_taylor,
+    log_taylor,
+    arctan_taylor,
+    sinh_taylor,
+    cosh_taylor,
+    tanh_taylor,
+    arcsin_taylor,
+    arccos_taylor,
+    arctanh_taylor,
+    integrate,
+    derivative,
+    sqrt_taylor,
+)
+from .complex_taylor_function import (
+    ComplexMultivariateTaylorFunction,
+    convert_to_cmtf,
+)
 from .elementary_coefficients import load_precomputed_coefficients
 from .taylor_map import TaylorMap
+
+# Set the display format for floats
+pd.options.display.float_format = "{:.12e}".format
+pd.set_option("display.max_columns", None)
+pd.set_option("display.max_rows", None)
+pd.set_option("display.width", 1000)
+
 
 MTF = MultivariateTaylorFunction
 
@@ -80,27 +92,33 @@ MTF = MultivariateTaylorFunction
 # Defines the public API for the library.
 __all__ = [
     # Core Classes
-    'MultivariateTaylorFunction',
-    'ComplexMultivariateTaylorFunction',
-    'TaylorMap',
-    'MTF',  # Alias for MultivariateTaylorFunction
-    'Var',  # Factory for creating variables
-
+    "MultivariateTaylorFunction",
+    "ComplexMultivariateTaylorFunction",
+    "TaylorMap",
+    "MTF",  # Alias for MultivariateTaylorFunction
+    "Var",  # Factory for creating variables
     # Elementary Functions
-    'sin_taylor', 'cos_taylor', 'tan_taylor',
-    'arcsin_taylor', 'arccos_taylor', 'arctan_taylor',
-    'sinh_taylor', 'cosh_taylor', 'tanh_taylor',
-    'arctanh_taylor',
-    'exp_taylor', 'log_taylor', 'sqrt_taylor', 'isqrt_taylor',
-    'gaussian_taylor',
-
+    "sin_taylor",
+    "cos_taylor",
+    "tan_taylor",
+    "arcsin_taylor",
+    "arccos_taylor",
+    "arctan_taylor",
+    "sinh_taylor",
+    "cosh_taylor",
+    "tanh_taylor",
+    "arctanh_taylor",
+    "exp_taylor",
+    "log_taylor",
+    "sqrt_taylor",
+    "isqrt_taylor",
+    "gaussian_taylor",
     # Core Operators
-    'integrate',
-    'derivative',
-
+    "integrate",
+    "derivative",
     # Utility Functions
-    'mtfarray',
-    'load_precomputed_coefficients',
-    'convert_to_mtf',
-    'convert_to_cmtf',
+    "mtfarray",
+    "load_precomputed_coefficients",
+    "convert_to_mtf",
+    "convert_to_cmtf",
 ]

@@ -101,7 +101,9 @@ def test_eval_wrapper(sample_mtf):
 @pytest.mark.skipif(not _TORCH_AVAILABLE, reason="torch not installed")
 def test_neval_torch_tensor(sample_mtf):
     """Tests neval with a torch tensor."""
-    points = torch.tensor([[1.0, 2.0], [3.0, 4.0], [0.0, 0.0]], dtype=torch.float64)
+    points = torch.tensor(
+        [[1.0, 2.0], [3.0, 4.0], [0.0, 0.0]], dtype=torch.float64
+    )
 
     expected = np.array(
         [

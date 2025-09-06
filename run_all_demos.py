@@ -11,7 +11,7 @@ def run_demos():
     For .ipynb files, it converts them to .py using jupytext first.
     Saves text output and PNG files to 'demo/runoutput' folder.
     Shows execution status and timing on screen.
-    Keeps all temporary files (converted .py and wrapper scripts) in runoutput.
+    Keeps all temporary files in runoutput.
     """
     project_root = os.path.dirname(os.path.abspath(__file__))
     src_path = os.path.join(project_root, "src")
@@ -21,12 +21,17 @@ def run_demos():
     runoutput_dir = os.path.join(demos_dir, "runoutput")
     os.makedirs(runoutput_dir, exist_ok=True)
 
-    print(f"Demo Runner Started - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(
+        f"Demo Runner Started - "
+        f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+    )
     print(f"Output will be saved to: {runoutput_dir}")
     print(f"Source path: {src_path}")
     print("=" * 60)
 
-    python_executable = "python" if platform.system() == "Windows" else "python3"
+    python_executable = (
+        "python" if platform.system() == "Windows" else "python3"
+    )
     total_demos = 0
     successful_demos = 0
     failed_demos = 0
@@ -78,7 +83,9 @@ def run_demos():
 
                 # Set up environment
                 env = os.environ.copy()
-                env["PYTHONPATH"] = src_path + os.pathsep + env.get("PYTHONPATH", "")
+                env["PYTHONPATH"] = (
+                    src_path + os.pathsep + env.get("PYTHONPATH", "")
+                )
 
                 # Run the demo and capture output with 5-minute timeout
                 print("    Executing (max 5min timeout)...")
@@ -93,13 +100,16 @@ def run_demos():
                 demo_duration = time.time() - demo_start_time
 
                 # Save output to file
-                output_file = os.path.join(demo_output_dir, f"{demo_name}_output.txt")
+                output_file = os.path.join(
+                    demo_output_dir, f"{demo_name}_output.txt"
+                )
                 with open(output_file, "w") as f:
                     f.write(f"Demo: {file}\n")
                     f.write(f"Execution Time: {demo_duration:.2f} seconds\n")
                     f.write(f"Return Code: {result.returncode}\n")
                     f.write(
-                        f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+                        f"Timestamp: "
+                        f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
                     )
                     f.write("=" * 50 + "\n")
                     f.write("STDOUT:\n")
@@ -109,7 +119,7 @@ def run_demos():
                         f.write("STDERR:\n")
                         f.write(result.stderr)
 
-                # Move temp files to output directory instead of deleting them
+                # Move temp files to output directory
                 move_temp_files_to_output(
                     script_path, wrapper_script, demo_output_dir, demo_name
                 )
@@ -141,22 +151,28 @@ def run_demos():
                         error_lines = result.stderr.strip().split("\n")
                         print(
                             "      Error: "
-                            f"{error_lines[-1] if error_lines else 'Unknown error'}"
+                            f"{error_lines[-1] if error_lines else 'Unknown'}"
                         )
 
             except subprocess.TimeoutExpired:
                 demo_duration = time.time() - demo_start_time
                 failed_demos += 1
-                print(f"    ✗ TIMEOUT - {demo_duration:.2f}s (exceeded 5min limit)")
+                print(
+                    f"    ✗ TIMEOUT - {demo_duration:.2f}s "
+                    f"(exceeded 5min limit)"
+                )
 
                 # Save timeout info to file
-                output_file = os.path.join(demo_output_dir, f"{demo_name}_output.txt")
+                output_file = os.path.join(
+                    demo_output_dir, f"{demo_name}_output.txt"
+                )
                 with open(output_file, "w") as f:
                     f.write(f"Demo: {file}\n")
                     f.write(f"Execution Time: {demo_duration:.2f} seconds\n")
                     f.write("Status: TIMEOUT (exceeded 5 minute limit)\n")
                     f.write(
-                        f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+                        f"Timestamp: "
+                        f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
                     )
 
                 # Move temp files even on timeout
@@ -167,21 +183,26 @@ def run_demos():
             except FileNotFoundError as e:
                 demo_duration = time.time() - demo_start_time
                 failed_demos += 1
-                error_msg = "jupytext not found" if "jupytext" in str(e) else str(e)
+                error_msg = (
+                    "jupytext not found" if "jupytext" in str(e) else str(e)
+                )
                 print(f"    ✗ FAILED - {demo_duration:.2f}s")
                 print(f"      Error: {error_msg}")
 
                 # Save error to file
-                output_file = os.path.join(demo_output_dir, f"{demo_name}_output.txt")
+                output_file = os.path.join(
+                    demo_output_dir, f"{demo_name}_output.txt"
+                )
                 with open(output_file, "w") as f:
                     f.write(f"Demo: {file}\n")
                     f.write(f"Execution Time: {demo_duration:.2f} seconds\n")
                     f.write(f"Error: {error_msg}\n")
                     f.write(
-                        f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+                        f"Timestamp: "
+                        f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
                     )
 
-                # Move temp files even on error (if they exist)
+                # Move temp files even on error
                 move_temp_files_to_output(
                     script_path, wrapper_script, demo_output_dir, demo_name
                 )
@@ -197,16 +218,19 @@ def run_demos():
                 print(f"      Error: {str(e)}")
 
                 # Save error to file
-                output_file = os.path.join(demo_output_dir, f"{demo_name}_output.txt")
+                output_file = os.path.join(
+                    demo_output_dir, f"{demo_name}_output.txt"
+                )
                 with open(output_file, "w") as f:
                     f.write(f"Demo: {file}\n")
                     f.write(f"Execution Time: {demo_duration:.2f} seconds\n")
                     f.write(f"Error: {str(e)}\n")
                     f.write(
-                        f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+                        f"Timestamp: "
+                        f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
                     )
 
-                # Move temp files even on error (if they exist)
+                # Move temp files even on error
                 move_temp_files_to_output(
                     script_path, wrapper_script, demo_output_dir, demo_name
                 )
@@ -220,23 +244,25 @@ def run_demos():
     print(f"Successful: {successful_demos} ✓")
     print(f"Failed: {failed_demos} ✗")
     print(
-        f"Success Rate: {(successful_demos / total_demos * 100):.1f}%"
+        f"Success Rate: " f"{(successful_demos / total_demos * 100):.1f}%"
         if total_demos > 0
         else "N/A"
     )
     print(f"Total Time: {total_duration:.2f} seconds")
     print(
-        f"Average Time per Demo: {(total_duration / total_demos):.2f} seconds"
+        f"Average Time per Demo: "
+        f"{(total_duration / total_demos):.2f} seconds"
         if total_demos > 0
         else "N/A"
     )
     print(f"Output saved to: {runoutput_dir}")
 
 
-def move_temp_files_to_output(script_path, wrapper_script, demo_output_dir, demo_name):
+def move_temp_files_to_output(
+    script_path, wrapper_script, demo_output_dir, demo_name
+):
     """
-    Moves temporary files (converted .py from notebooks and wrapper scripts)
-    to the demo output directory instead of deleting them.
+    Moves temporary files to the demo output directory.
     """
     try:
         # Move the converted .py file from notebook (if it exists)
@@ -252,9 +278,14 @@ def move_temp_files_to_output(script_path, wrapper_script, demo_output_dir, demo
 
         # Move the wrapper script (if it exists)
         if wrapper_script and os.path.exists(wrapper_script):
-            wrapper_dest = os.path.join(demo_output_dir, f"{demo_name}_wrapper.py")
+            wrapper_dest = os.path.join(
+                demo_output_dir, f"{demo_name}_wrapper.py"
+            )
             os.rename(wrapper_script, wrapper_dest)
-            print(f"    Moved wrapper script to: {os.path.basename(wrapper_dest)}")
+            print(
+                f"    Moved wrapper script to: "
+                f"{os.path.basename(wrapper_dest)}"
+            )
 
     except OSError as e:
         print(f"    Warning: Could not move temp files: {str(e)}")
@@ -299,7 +330,8 @@ def save_figure_as_png(*args, **kwargs):
         filepath = os.path.join("{output_dir}", filename)
 
         # Save the figure
-        fig.savefig(filepath, dpi=150, bbox_inches='tight', facecolor='white')
+        fig.savefig(filepath, dpi=150, bbox_inches='tight',
+                    facecolor='white')
         print(f"Saved plot as: {{filename}}")
 
         _figure_counter += 1

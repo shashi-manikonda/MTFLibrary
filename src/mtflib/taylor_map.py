@@ -120,9 +120,13 @@ class TaylorMap:
             A new TaylorMap representing the element-wise difference.
         """
         if not isinstance(other, TaylorMap):
-            raise TypeError("Can only subtract a TaylorMap from another TaylorMap.")
+            raise TypeError(
+                "Can only subtract a TaylorMap from another TaylorMap."
+            )
         if self.map_dim != other.map_dim:
-            raise ValueError("TaylorMap dimensions must match for subtraction.")
+            raise ValueError(
+                "TaylorMap dimensions must match for subtraction."
+            )
 
         new_components = self.components - other.components
         return TaylorMap(list(new_components))
@@ -144,9 +148,13 @@ class TaylorMap:
             A new TaylorMap representing the element-wise product.
         """
         if not isinstance(other, TaylorMap):
-            raise TypeError("Can only multiply a TaylorMap by another TaylorMap.")
+            raise TypeError(
+                "Can only multiply a TaylorMap by another TaylorMap."
+            )
         if self.map_dim != other.map_dim:
-            raise ValueError("TaylorMap dimensions must match for multiplication.")
+            raise ValueError(
+                "TaylorMap dimensions must match for multiplication."
+            )
 
         new_components = self.components * other.components
         return TaylorMap(list(new_components))
@@ -195,7 +203,9 @@ class TaylorMap:
 
         new_components = []
         # The new dimension will be the input dimension of the 'other' map.
-        new_dimension = other.components[0].dimension if other.map_dim > 0 else 0
+        new_dimension = (
+            other.components[0].dimension if other.map_dim > 0 else 0
+        )
 
         for component_mtf in self.components:
             composed_component = MultivariateTaylorFunction.from_constant(
@@ -236,7 +246,9 @@ class TaylorMap:
         """
         return self.components[index]
 
-    def get_coefficient(self, component_index: int, exponent_array: np.ndarray):
+    def get_coefficient(
+        self, component_index: int, exponent_array: np.ndarray
+    ):
         """
         Gets the coefficient of a specific term in a component function.
 
@@ -343,8 +355,13 @@ class TaylorMap:
         """
         Returns a new TaylorMap with coefficients scaled for sensitivity analysis.
         """
-        if self.map_dim > 0 and len(scaling_factors) != self.components[0].dimension:
-            raise ValueError("Number of scaling factors must match input dimension.")
+        if (
+            self.map_dim > 0
+            and len(scaling_factors) != self.components[0].dimension
+        ):
+            raise ValueError(
+                "Number of scaling factors must match input dimension."
+            )
 
         new_map_components = []
         for component in self.components:
@@ -390,7 +407,9 @@ class TaylorMap:
             for i, val in variable_map.items():
                 eval_point[i - 1] = val
 
-            return np.array([c.eval(eval_point).item() for c in self.components])
+            return np.array(
+                [c.eval(eval_point).item() for c in self.components]
+            )
 
         new_components = []
         for component in self.components:
@@ -430,7 +449,7 @@ class TaylorMap:
             f"(input dim: {self.components[0].dimension}):\n"
         )
         for i, component in enumerate(self.components):
-            representation += f"--- Component {i+1} ---\n"
+            representation += f"--- Component {i + 1} ---\n"
             representation += str(component) + "\n"
         return representation
 
@@ -531,10 +550,14 @@ class TaylorMap:
         inv_jacobian = np.linalg.inv(jacobian)
         inv_linear_components = []
         for i in range(dim):
-            comp_mtf = MultivariateTaylorFunction.from_constant(0.0, dimension=dim)
+            comp_mtf = MultivariateTaylorFunction.from_constant(
+                0.0, dimension=dim
+            )
             for j in range(dim):
                 if abs(inv_jacobian[i, j]) > 1e-14:
-                    var_mtf = MultivariateTaylorFunction.from_variable(j + 1, dim)
+                    var_mtf = MultivariateTaylorFunction.from_variable(
+                        j + 1, dim
+                    )
                     with warnings.catch_warnings():
                         warnings.simplefilter("ignore", ComplexWarning)
                         comp_mtf += float(inv_jacobian[i, j]) * var_mtf
@@ -560,7 +583,8 @@ class TaylorMap:
         G = TaylorMap(non_linear_components)
 
         identity_components = [
-            MultivariateTaylorFunction.from_variable(i + 1, dim) for i in range(dim)
+            MultivariateTaylorFunction.from_variable(i + 1, dim)
+            for i in range(dim)
         ]
         identity_map = TaylorMap(identity_components)
 

@@ -160,7 +160,9 @@ def test_mtf_extract_coefficient(setup_function):
             exponent_one_one_list[0] = 1
             exponent_one_one_list[1] = 1
         elif global_dim == 1:
-            exponent_one_one_list[0] = 2  # If dimension is 1, (1, 1) becomes (2,)
+            exponent_one_one_list[0] = (
+                2  # If dimension is 1, (1, 1) becomes (2,)
+            )
         exponent_one_one = tuple(exponent_one_one_list)
 
     mtf = MultivariateTaylorFunction(
@@ -199,7 +201,9 @@ def test_mtf_set_coefficient(setup_function):
             invalid_exponent = tuple(exponent_one[:-1])  # Shorter tuple
         else:
             invalid_exponent = (1, 0)  # Mismatch if global_dim is 1
-        mtf.set_coefficient(invalid_exponent, 2.0)  # Exponent dimension mismatch
+        mtf.set_coefficient(
+            invalid_exponent, 2.0
+        )  # Exponent dimension mismatch
     with pytest.raises(TypeError):
         mtf.set_coefficient(exponent_one, "invalid")  # Value must be numeric
 
@@ -215,7 +219,11 @@ def test_mtf_get_max_coefficient(setup_function):
     exponent_one_zero = tuple(exponent_one_zero)
     exponent_zero_one = tuple(exponent_zero_one)
 
-    coeffs = {exponent_zero: 1.0, exponent_one_zero: -2.0, exponent_zero_one: 3.0}
+    coeffs = {
+        exponent_zero: 1.0,
+        exponent_one_zero: -2.0,
+        exponent_zero_one: 3.0,
+    }
     mtf = MultivariateTaylorFunction(
         coefficients=coeffs, dimension=max(2, global_dim)
     )  # Dimension at least 2 for the test
@@ -234,7 +242,11 @@ def test_mtf_get_min_coefficient(setup_function):
     exponent_zero_one = tuple(exponent_zero_one)
 
     etol = MultivariateTaylorFunction.get_etol()
-    coeffs = {exponent_zero: 0.1, exponent_one_zero: 2.0, exponent_zero_one: 3.0}
+    coeffs = {
+        exponent_zero: 0.1,
+        exponent_one_zero: 2.0,
+        exponent_zero_one: 3.0,
+    }
     mtf = MultivariateTaylorFunction(
         coefficients=coeffs, dimension=max(2, global_dim)
     )  # Dimension at least 2 for the test
@@ -307,7 +319,9 @@ def test_mtf_subtraction(setup_function):
     assert np.allclose(mtf_diff_const.extract_coefficient(exponent_zero), 3.0)
     assert np.allclose(mtf_diff_const.extract_coefficient(exponent_one), 3.0)
     mtf_diff_rconst = 4.0 - mtf1  # 4 - (5+3x) = -1 - 3x
-    assert np.allclose(mtf_diff_rconst.extract_coefficient(exponent_zero), -1.0)
+    assert np.allclose(
+        mtf_diff_rconst.extract_coefficient(exponent_zero), -1.0
+    )
     assert np.allclose(mtf_diff_rconst.extract_coefficient(exponent_one), -3.0)
 
 
@@ -327,7 +341,9 @@ def test_mtf_multiplication(setup_function):
     mtf2 = MultivariateTaylorFunction(
         {exponent_zero: 3.0, exponent_one: -2.0}, dimension=global_dim
     )  # 3 - 2x
-    mtf_prod = mtf1 * mtf2  # (2+x) * (3-2x) = 6 - 4x + 3x - 2x^2 = 6 - x - 2x^2
+    mtf_prod = (
+        mtf1 * mtf2
+    )  # (2+x) * (3-2x) = 6 - 4x + 3x - 2x^2 = 6 - x - 2x^2
     assert np.allclose(mtf_prod.extract_coefficient(exponent_zero), 6.0)
     assert np.allclose(mtf_prod.extract_coefficient(exponent_one), -1.0)
     assert np.allclose(mtf_prod.extract_coefficient(exponent_two), -2.0)
@@ -428,7 +444,9 @@ def test_cmtf_creation(setup_function):
     exponent_one = tuple(exponent_one)
 
     coeffs = {exponent_zero: 1 + 1j, exponent_one: 2 - 1j}
-    cmtf = ComplexMultivariateTaylorFunction(coefficients=coeffs, dimension=global_dim)
+    cmtf = ComplexMultivariateTaylorFunction(
+        coefficients=coeffs, dimension=global_dim
+    )
     assert np.allclose(cmtf.extract_coefficient(exponent_zero), 1 + 1j)
     assert np.allclose(cmtf.extract_coefficient(exponent_one), 2 - 1j)
 
@@ -442,7 +460,9 @@ def test_cmtf_variable_evaluation(setup_function):
     if global_dim > 1:
         evaluation_point_x2[1] = 0.0
 
-    x1_var_c = ComplexMultivariateTaylorFunction.from_variable(1, dimension=global_dim)
+    x1_var_c = ComplexMultivariateTaylorFunction.from_variable(
+        1, dimension=global_dim
+    )
     assert np.allclose(x1_var_c.eval(evaluation_point_x1), 0.5 + 0.0j)
 
 
@@ -465,12 +485,20 @@ def test_cmtf_truncate(setup_function):
         exponent_two: 3 - 3j,
         exponent_three: 4 + 4j,
     }
-    cmtf = ComplexMultivariateTaylorFunction(coefficients=coeffs, dimension=global_dim)
+    cmtf = ComplexMultivariateTaylorFunction(
+        coefficients=coeffs, dimension=global_dim
+    )
     truncated_cmtf = cmtf.truncate(2)
-    assert np.allclose(truncated_cmtf.extract_coefficient(exponent_three), 0.0j)
-    assert np.allclose(truncated_cmtf.extract_coefficient(exponent_two), 3 - 3j)
+    assert np.allclose(
+        truncated_cmtf.extract_coefficient(exponent_three), 0.0j
+    )
+    assert np.allclose(
+        truncated_cmtf.extract_coefficient(exponent_two), 3 - 3j
+    )
     assert np.allclose(truncated_cmtf.extract_coefficient(exponent_one), 2j)
-    assert np.allclose(truncated_cmtf.extract_coefficient(exponent_zero), 1 + 0j)
+    assert np.allclose(
+        truncated_cmtf.extract_coefficient(exponent_zero), 1 + 0j
+    )
 
 
 def test_cmtf_extract_coefficient(setup_function):
@@ -505,7 +533,9 @@ def test_cmtf_set_coefficient(setup_function):
     cmtf.set_coefficient(exponent_one, 0.0j)  # Setting to zero
     assert np.allclose(cmtf.extract_coefficient(exponent_one), 0.0j)
     with pytest.raises(TypeError):
-        cmtf.set_coefficient(list(exponent_one), "invalid")  # Value must be numeric
+        cmtf.set_coefficient(
+            list(exponent_one), "invalid"
+        )  # Value must be numeric
 
 
 def test_cmtf_get_max_coefficient(setup_function):
@@ -519,11 +549,17 @@ def test_cmtf_get_max_coefficient(setup_function):
     exponent_one_zero = tuple(exponent_one_zero)
     exponent_zero_one = tuple(exponent_zero_one)
 
-    coeffs = {exponent_zero: 1 + 0j, exponent_one_zero: 1j, exponent_zero_one: -2 + 0j}
+    coeffs = {
+        exponent_zero: 1 + 0j,
+        exponent_one_zero: 1j,
+        exponent_zero_one: -2 + 0j,
+    }
     cmtf = ComplexMultivariateTaylorFunction(
         coefficients=coeffs, dimension=max(2, global_dim)
     )  # Dimension at least 2 for the test
-    assert pytest.approx(cmtf.get_max_coefficient()) == 2.0  # Max magnitude is 2.0
+    assert (
+        pytest.approx(cmtf.get_max_coefficient()) == 2.0
+    )  # Max magnitude is 2.0
 
 
 def test_cmtf_get_min_coefficient(setup_function):
@@ -537,7 +573,11 @@ def test_cmtf_get_min_coefficient(setup_function):
     exponent_one_zero = tuple(exponent_one_zero)
     exponent_zero_one = tuple(exponent_zero_one)
 
-    coeffs = {exponent_zero: 0.1j, exponent_one_zero: 2 + 0j, exponent_zero_one: 3j}
+    coeffs = {
+        exponent_zero: 0.1j,
+        exponent_one_zero: 2 + 0j,
+        exponent_zero_one: 3j,
+    }
     cmtf = ComplexMultivariateTaylorFunction(
         coefficients=coeffs, dimension=max(2, global_dim)
     )  # Dimension at least 2 for the test
@@ -629,11 +669,19 @@ def test_cmtf_addition(setup_function):
     assert np.allclose(cmtf_sum.extract_coefficient(exponent_zero), 4 - 1j)
     assert np.allclose(cmtf_sum.extract_coefficient(exponent_one), 1 - 0.5j)
     cmtf_sum_const = cmtf1 + (2 + 0j)  # (3+j) + (2-j)x
-    assert np.allclose(cmtf_sum_const.extract_coefficient(exponent_zero), 3 + 1j)
-    assert np.allclose(cmtf_sum_const.extract_coefficient(exponent_one), 2 - 1j)
+    assert np.allclose(
+        cmtf_sum_const.extract_coefficient(exponent_zero), 3 + 1j
+    )
+    assert np.allclose(
+        cmtf_sum_const.extract_coefficient(exponent_one), 2 - 1j
+    )
     cmtf_sum_rconst = (2 + 0j) + cmtf1  # commutativity
-    assert np.allclose(cmtf_sum_rconst.extract_coefficient(exponent_zero), 3 + 1j)
-    assert np.allclose(cmtf_sum_rconst.extract_coefficient(exponent_one), 2 - 1j)
+    assert np.allclose(
+        cmtf_sum_rconst.extract_coefficient(exponent_zero), 3 + 1j
+    )
+    assert np.allclose(
+        cmtf_sum_rconst.extract_coefficient(exponent_one), 2 - 1j
+    )
 
 
 def test_cmtf_subtraction(setup_function):
@@ -653,11 +701,19 @@ def test_cmtf_subtraction(setup_function):
     assert np.allclose(cmtf_diff.extract_coefficient(exponent_zero), 3 - 1j)
     assert np.allclose(cmtf_diff.extract_coefficient(exponent_one), 2 + 2j)
     cmtf_diff_const = cmtf1 - (2 + 0j)  # (3+0j) + (3+1j)x
-    assert np.allclose(cmtf_diff_const.extract_coefficient(exponent_zero), 3 + 0j)
-    assert np.allclose(cmtf_diff_const.extract_coefficient(exponent_one), 3 + 1j)
+    assert np.allclose(
+        cmtf_diff_const.extract_coefficient(exponent_zero), 3 + 0j
+    )
+    assert np.allclose(
+        cmtf_diff_const.extract_coefficient(exponent_one), 3 + 1j
+    )
     cmtf_diff_rconst = (4 + 0j) - cmtf1  # (-1+0j) + (-3-1j)x
-    assert np.allclose(cmtf_diff_rconst.extract_coefficient(exponent_zero), -1 + 0j)
-    assert np.allclose(cmtf_diff_rconst.extract_coefficient(exponent_one), -3 - 1j)
+    assert np.allclose(
+        cmtf_diff_rconst.extract_coefficient(exponent_zero), -1 + 0j
+    )
+    assert np.allclose(
+        cmtf_diff_rconst.extract_coefficient(exponent_one), -3 - 1j
+    )
 
 
 def test_cmtf_multiplication(setup_function):
@@ -681,10 +737,14 @@ def test_cmtf_multiplication(setup_function):
     assert np.allclose(cmtf_prod.extract_coefficient(exponent_one), -2 + 0j)
     assert np.allclose(cmtf_prod.extract_coefficient(exponent_two), -1j)
     cmtf_prod_const = cmtf1 * (2 + 0j)  # (2+0j) + (2j)x
-    assert np.allclose(cmtf_prod_const.extract_coefficient(exponent_zero), 2 + 0j)
+    assert np.allclose(
+        cmtf_prod_const.extract_coefficient(exponent_zero), 2 + 0j
+    )
     assert np.allclose(cmtf_prod_const.extract_coefficient(exponent_one), 2j)
     cmtf_prod_rconst = (2 + 0j) * cmtf1  # commutativity
-    assert np.allclose(cmtf_prod_rconst.extract_coefficient(exponent_zero), 2 + 0j)
+    assert np.allclose(
+        cmtf_prod_rconst.extract_coefficient(exponent_zero), 2 + 0j
+    )
     assert np.allclose(cmtf_prod_rconst.extract_coefficient(exponent_one), 2j)
 
 
@@ -789,7 +849,9 @@ def test_convert_to_mtf(setup_function):
 
     existing_mtf = MultivariateTaylorFunction.from_constant(3.0)
     converted_mtf = convert_to_mtf(existing_mtf)
-    assert converted_mtf is existing_mtf  # Should return same object if already MTF
+    assert (
+        converted_mtf is existing_mtf
+    )  # Should return same object if already MTF
 
     with pytest.raises(TypeError):
         convert_to_mtf("invalid")  # Invalid type
@@ -830,7 +892,9 @@ def test_elementary_functions_scalar(setup_function, func, func_name):
     global_dim, exponent_zero = setup_function
     scalar_input = 0.5
     mtf_result = func(scalar_input)
-    assert isinstance(mtf_result, MultivariateTaylorFunction)  # Changed assertion here
+    assert isinstance(
+        mtf_result, MultivariateTaylorFunction
+    )  # Changed assertion here
     zero_point = tuple([0 for _ in range(global_dim)])
     scalar_eval_result = func(scalar_input).eval(
         zero_point
@@ -1011,7 +1075,7 @@ def test_old_compose_is_gone():
     Test that the old standalone compose function is no longer available.
     """
     with pytest.raises(NameError):
-        compose(None, None)
+        compose(None, None)  # noqa: F821
 
 
 def test_mtfarray():
@@ -1039,7 +1103,6 @@ def test_mtfarray():
     # So there should be 4 rows.
     # Actually, the constant term is not always present if the coefficient is zero.
     # Let's check the number of non-zero coefficients.
-    num_coeffs = mtf1.coeffs.size + mtf2.coeffs.size
     # There might be overlapping coefficients, but in this case there are not.
     # The mtfarray function will merge the terms, so the number of rows will be
     # the number of unique exponents.
@@ -1105,8 +1168,12 @@ def test_set_truncate_after_operation_validation(setup_function):
     """
     Tests the input validation for the setter function.
     """
-    with pytest.raises(ValueError, match="Input 'enable' must be a boolean value"):
-        MultivariateTaylorFunction.set_truncate_after_operation("not a boolean")
+    with pytest.raises(
+        ValueError, match="Input 'enable' must be a boolean value"
+    ):
+        MultivariateTaylorFunction.set_truncate_after_operation(
+            "not a boolean"
+        )
 
 
 def test_array_ufunc_extended():
@@ -1122,7 +1189,9 @@ def test_array_ufunc_extended():
         (np.exp, exp_taylor),
         (np.log, log_taylor),
     ]:
-        mtf_from_ufunc = ufunc(x + 0.5)  # use an offset to avoid issues at 0 for log
+        mtf_from_ufunc = ufunc(
+            x + 0.5
+        )  # use an offset to avoid issues at 0 for log
         mtf_from_direct_call = mtf_func(x + 0.5)
         assert mtf_from_ufunc == mtf_from_direct_call
 
