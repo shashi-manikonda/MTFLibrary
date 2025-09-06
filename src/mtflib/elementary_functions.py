@@ -55,8 +55,7 @@ def _apply_constant_factoring(
         result_mtf = polynomial_expansion_mtf - constant_factor_value
     else:
         raise ValueError(
-            f"Unsupported combine_operation: {combine_operation}. Must be '*', '+', or '-'."
-        )
+            f"Unsupported combine_operation: {combine_operation}. Must be '*', '+', or '-'.")
 
     return result_mtf
 
