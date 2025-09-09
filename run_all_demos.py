@@ -313,6 +313,9 @@ import sys
 # Configure matplotlib for non-interactive backend
 matplotlib.use('Agg')
 
+# Define demo_name for use in filenames
+demo_name = "{demo_name}"
+
 # Global figure counter for sequential naming
 _figure_counter = 1
 
