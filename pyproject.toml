@@ -35,15 +35,27 @@ test = [
     "matplotlib",
     "nbconvert",
     "ipykernel",
-    "jupytext",
+]
+docs = [
     "sphinx",
-    "sphinx_rtd_theme",
+    "sphinx-rtd-theme",
+    "myst_parser",
+    "sympy",
 ]
 dev = [
-    "mtflib[test]",
-    "mtflib[torch]",
+    "mtflib[test,torch,docs]",
+    "black",
+    "flake8",
+    "pre-commit",
 ]
 
 [project.urls]
 "Homepage" = "https://github.com/sm-physics/mtflib"
 "Bug Tracker" = "https://github.com/sm-physics/mtflib/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.flake8]
+max-line-length = 79
+ignore = ["E203", "W503", "E501"]

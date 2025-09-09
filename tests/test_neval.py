@@ -1,19 +1,29 @@
 import pytest
 import numpy as np
+
 try:
     import torch
+
     _TORCH_AVAILABLE = True
 except ImportError:
     _TORCH_AVAILABLE = False
 from mtflib import MultivariateTaylorFunction
+
 
 # Old eval logic for comparison
 def old_eval(mtf, evaluation_point):
     """The old eval logic for comparison."""
     evaluation_point = np.array(evaluation_point)
     term_values = np.prod(np.power(evaluation_point, mtf.exponents), axis=1)
-    result = np.einsum('j,j->', mtf.coeffs, term_values)
+    result = np.einsum("j,j->", mtf.coeffs, term_values)
     return result
+
+
+@pytest.fixture(autouse=True)
+def reset_mtf():
+    """Resets the MTF library before each test."""
+    MultivariateTaylorFunction._INITIALIZED = False
+
 
 @pytest.fixture
 def sample_mtf():
@@ -21,7 +31,8 @@ def sample_mtf():
     MultivariateTaylorFunction.initialize_mtf(max_order=2, max_dimension=2)
     x = MultivariateTaylorFunction.from_variable(1, 2)
     y = MultivariateTaylorFunction.from_variable(2, 2)
-    return x**2 + 2*x*y + y**2 + 1
+    return x**2 + 2 * x * y + y**2 + 1
+
 
 def test_neval_single_point(sample_mtf):
     """Tests neval with a single point and compares with old eval."""
@@ -36,24 +47,24 @@ def test_neval_single_point(sample_mtf):
     assert result.shape == (1,)
     assert np.allclose(result[0], expected)
 
+
 def test_neval_multiple_points(sample_mtf):
     """Tests neval with multiple points."""
-    points = np.array([
-        [1.0, 2.0],
-        [3.0, 4.0],
-        [0.0, 0.0]
-    ])
+    points = np.array([[1.0, 2.0], [3.0, 4.0], [0.0, 0.0]])
 
-    expected = np.array([
-        old_eval(sample_mtf, points[0]),
-        old_eval(sample_mtf, points[1]),
-        old_eval(sample_mtf, points[2])
-    ])
+    expected = np.array(
+        [
+            old_eval(sample_mtf, points[0]),
+            old_eval(sample_mtf, points[1]),
+            old_eval(sample_mtf, points[2]),
+        ]
+    )
 
     result = sample_mtf.neval(points)
 
     assert result.shape == (3,)
     assert np.allclose(result, expected)
+
 
 def test_neval_error_handling(sample_mtf):
     """Tests the error handling of neval."""
@@ -64,6 +75,7 @@ def test_neval_error_handling(sample_mtf):
     with pytest.raises(ValueError):
         # Incorrect shape
         sample_mtf.neval(np.array([1.0, 2.0, 3.0]))
+
 
 def test_eval_wrapper(sample_mtf):
     """Tests the new eval wrapper."""
@@ -85,20 +97,21 @@ def test_eval_wrapper(sample_mtf):
     with pytest.raises(ValueError):
         sample_mtf.eval(np.array([[1.0, 2.0], [3.0, 4.0]]))
 
+
 @pytest.mark.skipif(not _TORCH_AVAILABLE, reason="torch not installed")
 def test_neval_torch_tensor(sample_mtf):
     """Tests neval with a torch tensor."""
-    points = torch.tensor([
-        [1.0, 2.0],
-        [3.0, 4.0],
-        [0.0, 0.0]
-    ], dtype=torch.float64)
+    points = torch.tensor(
+        [[1.0, 2.0], [3.0, 4.0], [0.0, 0.0]], dtype=torch.float64
+    )
 
-    expected = np.array([
-        old_eval(sample_mtf, points[0].numpy()),
-        old_eval(sample_mtf, points[1].numpy()),
-        old_eval(sample_mtf, points[2].numpy())
-    ])
+    expected = np.array(
+        [
+            old_eval(sample_mtf, points[0].numpy()),
+            old_eval(sample_mtf, points[1].numpy()),
+            old_eval(sample_mtf, points[2].numpy()),
+        ]
+    )
 
     result = sample_mtf.neval(points)
 

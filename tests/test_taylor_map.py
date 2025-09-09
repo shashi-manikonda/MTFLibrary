@@ -3,11 +3,15 @@ import numpy as np
 import mtflib
 from mtflib import TaylorMap, MultivariateTaylorFunction
 
+
 @pytest.fixture(scope="module", autouse=True)
 def setup_mtf_module():
     """Initializes mtflib globals for the test module."""
     if not mtflib.MultivariateTaylorFunction.get_mtf_initialized_status():
-        mtflib.MultivariateTaylorFunction.initialize_mtf(max_order=5, max_dimension=3)
+        mtflib.MultivariateTaylorFunction.initialize_mtf(
+            max_order=5, max_dimension=3
+        )
+
 
 @pytest.fixture
 def sample_maps():
@@ -32,12 +36,14 @@ def sample_maps():
 
     return map1, map2, map3
 
+
 def test_constructor(sample_maps):
     map1, _, _ = sample_maps
     assert isinstance(map1, TaylorMap)
     assert map1.map_dim == 2
     assert len(map1.components) == 2
     assert isinstance(map1.get_component(0), MultivariateTaylorFunction)
+
 
 def test_addition(sample_maps):
     map1, map2, _ = sample_maps
@@ -47,17 +53,21 @@ def test_addition(sample_maps):
     x = MultivariateTaylorFunction.from_variable(1, 2)
     y = MultivariateTaylorFunction.from_variable(2, 2)
 
-    expected_c1 = 1 + x + x*y
+    expected_c1 = 1 + x + x * y
     expected_c2 = 2 + y + x + y
 
     assert result.map_dim == 2
     assert result.get_component(0) == expected_c1
     assert result.get_component(1) == expected_c2
 
+
 def test_addition_dim_mismatch(sample_maps):
     map1, _, map3 = sample_maps
-    with pytest.raises(ValueError, match="TaylorMap dimensions must match for addition."):
+    with pytest.raises(
+        ValueError, match="TaylorMap dimensions must match for addition."
+    ):
         map1 + map3
+
 
 def test_composition():
     # F: R^2 -> R^2, F(x,y) = [x+y, x-y]
@@ -70,15 +80,15 @@ def test_composition():
     # G: R^1 -> R^2, G(t) = [t^2, 2t]
     t = MultivariateTaylorFunction.from_variable(1, 1)
     g1 = t**2
-    g2 = 2*t
+    g2 = 2 * t
     mapG = TaylorMap([g1, g2])
 
     # Compose F(G(t))
     # F(g1, g2) = [g1+g2, g1-g2] = [t^2 + 2t, t^2 - 2t]
     result = mapF.compose(mapG)
 
-    expected_c1 = t**2 + 2*t
-    expected_c2 = t**2 - 2*t
+    expected_c1 = t**2 + 2 * t
+    expected_c2 = t**2 - 2 * t
 
     assert result.map_dim == 2
     assert result.get_component(0) == expected_c1
@@ -86,11 +96,13 @@ def test_composition():
     # The new map should have input dimension 1
     assert result.get_component(0).dimension == 1
 
+
 def test_composition_dim_mismatch(sample_maps):
     map1, _, map3 = sample_maps
     # map1 input dim (2) != map3 output dim (3)
     with pytest.raises(ValueError, match="Cannot compose maps"):
         map1.compose(map3)
+
 
 def test_trace(sample_maps):
     map1, _, _ = sample_maps
@@ -110,6 +122,7 @@ def test_trace(sample_maps):
     # Trace of the linear part is d(xy)/dx|0 + d(x+y)/dy|0 = 0 + 1 = 1
     assert map2.trace() == 1.0
 
+
 def test_get_set_coefficient(sample_maps):
     map1_orig, _, _ = sample_maps
     # Create a deep copy for modification to avoid test pollution
@@ -124,7 +137,8 @@ def test_get_set_coefficient(sample_maps):
 
     # Reset for other tests
     map1.set_coefficient(0, np.array([1, 0]), 1.0)
-    assert map1.get_coefficient(0, np.array([1,0])) == 1.0
+    assert map1.get_coefficient(0, np.array([1, 0])) == 1.0
+
 
 def test_substitute_partial(sample_maps):
     map1, _, _ = sample_maps
@@ -141,6 +155,7 @@ def test_substitute_partial(sample_maps):
     assert result_map.get_component(0) == expected_c1
     assert result_map.get_component(1) == expected_c2
 
+
 def test_substitute_full(sample_maps):
     map1, _, _ = sample_maps
     # map1 is F(x,y) = [1+x, 2+y]
@@ -150,6 +165,7 @@ def test_substitute_full(sample_maps):
     # Expected: F(3,5) = [4, 7]
     assert isinstance(result, np.ndarray)
     np.testing.assert_array_almost_equal(result, [4.0, 7.0])
+
 
 def test_variable_creation_bug():
     """
@@ -161,7 +177,9 @@ def test_variable_creation_bug():
     # A variable should not have a constant term.
     # The constant term corresponds to an exponent tuple of all zeros.
     constant_term = y.extract_coefficient(tuple([0, 0])).item()
-    assert constant_term == 0.0, "A variable created with from_variable should not have a constant term."
+    assert (
+        constant_term == 0.0
+    ), "A variable created with from_variable should not have a constant term."
 
     x = MultivariateTaylorFunction.from_variable(1, 2)
     prod = x * y
@@ -169,7 +187,10 @@ def test_variable_creation_bug():
     # The product of x and y should be xy. It should not contain a linear x term.
     # A linear x term would have an exponent of (1, 0).
     x_term_in_prod = prod.extract_coefficient(tuple([1, 0])).item()
-    assert x_term_in_prod == 0.0, "The product x*y should not contain a linear x term."
+    assert (
+        x_term_in_prod == 0.0
+    ), "The product x*y should not contain a linear x term."
+
 
 def test_trace_standalone():
     """
@@ -184,8 +205,10 @@ def test_trace_standalone():
 
     map_to_test = TaylorMap([g1, g2])
 
-    # Trace of [x*y, x+y] should be d(xy)/dx + d(x+y)/dy at origin, which is 0 + 1 = 1.
+    # Trace of [x*y, x+y] should be d(xy)/dx + d(x+y)/dy at origin,
+    # which is 0 + 1 = 1.
     assert map_to_test.trace() == 1.0
+
 
 def test_subtraction(sample_maps):
     map1, map2, _ = sample_maps
@@ -194,12 +217,13 @@ def test_subtraction(sample_maps):
     x = MultivariateTaylorFunction.from_variable(1, 2)
     y = MultivariateTaylorFunction.from_variable(2, 2)
 
-    expected_c1 = (1 + x) - (x*y)
-    expected_c2 = (2 + y) - (x+y)
+    expected_c1 = (1 + x) - (x * y)
+    expected_c2 = (2 + y) - (x + y)
 
     assert result.map_dim == 2
     assert result.get_component(0) == expected_c1
     assert result.get_component(1) == expected_c2
+
 
 def test_multiplication(sample_maps):
     map1, map2, _ = sample_maps
@@ -208,12 +232,13 @@ def test_multiplication(sample_maps):
     x = MultivariateTaylorFunction.from_variable(1, 2)
     y = MultivariateTaylorFunction.from_variable(2, 2)
 
-    expected_c1 = (1 + x) * (x*y)
-    expected_c2 = (2 + y) * (x+y)
+    expected_c1 = (1 + x) * (x * y)
+    expected_c2 = (2 + y) * (x + y)
 
     assert result.map_dim == 2
     assert result.get_component(0) == expected_c1
     assert result.get_component(1) == expected_c2
+
 
 def test_arithmetic_type_error(sample_maps):
     map1, _, _ = sample_maps
@@ -222,7 +247,8 @@ def test_arithmetic_type_error(sample_maps):
     with pytest.raises(TypeError):
         map1 - "a"
     with pytest.raises(TypeError):
-        map1 * [1,2]
+        map1 * [1, 2]
+
 
 def test_component_management(sample_maps):
     map1_orig, _, _ = sample_maps
@@ -238,6 +264,7 @@ def test_component_management(sample_maps):
     map1.remove_component(0)
     assert map1.map_dim == 2
     assert map1.get_component(0) == map1_orig.get_component(1)
+
 
 def test_truncate(sample_maps):
     _, map2, _ = sample_maps
@@ -256,21 +283,23 @@ def test_truncate(sample_maps):
     assert truncated_map.get_component(0) == expected_c1
     assert truncated_map.get_component(1) == expected_c2
 
+
 def test_map_sensitivity(sample_maps):
     map1, _, _ = sample_maps
     # map1 is [1+x, 2+y]
-    scaling_factors = [10, 100] # scale x by 10, y by 100
+    scaling_factors = [10, 100]  # scale x by 10, y by 100
 
     sensitive_map = map1.map_sensitivity(scaling_factors)
 
     # Expected: [1 + 10x, 2 + 100y]
     x = MultivariateTaylorFunction.from_variable(1, 2)
     y = MultivariateTaylorFunction.from_variable(2, 2)
-    expected_c1 = 1 + 10*x
-    expected_c2 = 2 + 100*y
+    expected_c1 = 1 + 10 * x
+    expected_c2 = 2 + 100 * y
 
     assert sensitive_map.get_component(0) == expected_c1
     assert sensitive_map.get_component(1) == expected_c2
+
 
 def test_empty_map():
     empty_map = TaylorMap([])
@@ -291,6 +320,7 @@ def test_empty_map():
     # Composing a map with input_dim=2 with a map with output_dim=0 should fail.
     with pytest.raises(ValueError):
         map_non_empty.compose(empty_map)
+
 
 def test_inversion():
     """
@@ -322,24 +352,35 @@ def test_inversion():
     truncated_identity = identity_map.truncate(max_order)
 
     # Check component-wise equality
-    assert truncated_composition.get_component(0) == truncated_identity.get_component(0)
-    assert truncated_composition.get_component(1) == truncated_identity.get_component(1)
+    assert truncated_composition.get_component(
+        0
+    ) == truncated_identity.get_component(0)
+    assert truncated_composition.get_component(
+        1
+    ) == truncated_identity.get_component(1)
+
 
 def test_invert_non_square(sample_maps):
     """
     Tests that a ValueError is raised for a non-square map.
     """
-    _, _, map3 = sample_maps # map3 is R^2 -> R^3
-    with pytest.raises(ValueError, match="Map must be square to be invertible"):
+    _, _, map3 = sample_maps  # map3 is R^2 -> R^3
+    with pytest.raises(
+        ValueError, match="Map must be square to be invertible"
+    ):
         map3.invert()
+
 
 def test_invert_with_constant(sample_maps):
     """
     Tests that a ValueError is raised for a map with constant terms.
     """
-    map1, _, _ = sample_maps # map1 has constant terms
-    with pytest.raises(ValueError, match="Map must have no constant terms to be invertible"):
+    map1, _, _ = sample_maps  # map1 has constant terms
+    with pytest.raises(
+        ValueError, match="Map must have no constant terms to be invertible"
+    ):
         map1.invert()
+
 
 def test_invert_singular():
     """
@@ -351,8 +392,10 @@ def test_invert_singular():
 
     # This map's linear part is [[1, 1], [1, 1]], which is singular
     f1 = x + y
-    f2 = x + y + x**2 # Add non-linear part
+    f2 = x + y + x**2  # Add non-linear part
     singular_map = TaylorMap([f1, f2])
 
-    with pytest.raises(ValueError, match="The linear part of the map is not invertible"):
+    with pytest.raises(
+        ValueError, match="The linear part of the map is not invertible"
+    ):
         singular_map.invert()

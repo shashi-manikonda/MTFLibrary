@@ -22,6 +22,7 @@ in a computationally efficient manner.
 
    getting_started
    examples
+   taylor_map
 
 .. toctree::
    :maxdepth: 2

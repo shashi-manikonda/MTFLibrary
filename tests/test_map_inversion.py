@@ -1,7 +1,5 @@
-import pytest
-import numpy as np
-import mtflib
 from mtflib import TaylorMap, MultivariateTaylorFunction
+
 
 def test_map_inversion_from_demo():
     """
@@ -29,7 +27,7 @@ def test_map_inversion_from_demo():
 
     # 6. Check that the components are equal
     # The __eq__ method for TaylorMap components handles necessary cleanup and
-    # tolerance, so we can compare them directly without truncation. This provides
-    # a stricter test that would have caught the regression.
+    # tolerance, so we can compare them directly without truncation.
+    # This provides a stricter test that would have caught the regression.
     assert composition.get_component(0) == identity_map.get_component(0)
     assert composition.get_component(1) == identity_map.get_component(1)
