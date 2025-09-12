@@ -357,9 +357,8 @@ class MultivariateTaylorFunction:
 
             if self.exponents.size > 0 and self.exponents.shape[1] != self.dimension:
                 raise ValueError(
-                    f"Provided dimension {
-                        self.dimension} does not match exponent dimension {
-                        self.exponents.shape[1]}.")
+                    f"Provided dimension {self.dimension} does not match exponent dimension {self.exponents.shape[1]}."
+                )
             if self.coeffs.ndim != 1 or self.coeffs.shape[0] != self.exponents.shape[0]:
                 raise ValueError("Coefficients array has incorrect shape.")
 
@@ -517,8 +516,8 @@ class MultivariateTaylorFunction:
         if evaluation_point.ndim == 1:
             if evaluation_point.shape[0] != self.dimension:
                 raise ValueError(
-                    f"Evaluation point dimension must match MTF dimension ({
-                        self.dimension}).")
+                    f"Evaluation point dimension must match MTF dimension ({self.dimension})."
+                )
             evaluation_points = evaluation_point.reshape(1, -1)
             return self.neval(evaluation_points)
         elif evaluation_point.ndim == 2:
@@ -586,8 +585,8 @@ class MultivariateTaylorFunction:
         evaluation_points = backend.atleast_2d(evaluation_points)
         if evaluation_points.shape[1] != self.dimension:
             raise ValueError(
-                f"Evaluation points array must have shape (n_points, {
-                    self.dimension}).")
+                f"Evaluation points array must have shape (n_points, {self.dimension})."
+            )
 
         if self.coeffs.size == 0:
             return backend.zeros(evaluation_points.shape[0])
@@ -1472,8 +1471,8 @@ class MultivariateTaylorFunction:
 
         if self.dimension > len(symbols):
             raise ValueError(
-                f"Not enough symbols provided for the {
-                    self.dimension}-dimensional function.")
+                f"Not enough symbols provided for the {self.dimension}-dimensional function."
+            )
 
         sympy_vars = sp.symbols(symbols[: self.dimension])
 
@@ -1654,8 +1653,8 @@ def convert_to_mtf(input_val, dimension=None):
         return input_val(dimension)
     else:
         raise TypeError(
-            f"Unsupported input type: {
-                type(input_val)}. Cannot convert to MTF/CMTF.")
+            f"Unsupported input type: {type(input_val)}. Cannot convert to MTF/CMTF."
+        )
 
 
 def _split_constant_polynomial_part(
@@ -1980,9 +1979,8 @@ def mtfarray(mtfs, column_names=None):
     for mtf in mtfs:
         if not isinstance(mtf, valid_mtf_types):
             raise TypeError(
-                f"All elements in 'mtfs' must be instances of {
-                    MultivariateTaylorFunction.__name__}, but found {
-                    type(mtf).__name__}.")
+                f"All elements in 'mtfs' must be instances of {MultivariateTaylorFunction.__name__}, but found {type(mtf).__name__}."
+            )
 
     first_dim = mtfs[0].dimension
     for i, mtf in enumerate(mtfs[1:]):
