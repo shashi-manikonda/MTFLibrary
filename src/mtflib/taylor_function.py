@@ -1988,24 +1988,21 @@ def mtfarray(mtfs, column_names=None):
             raise ValueError(
                 f"MTF at index {i + 1} has dimension {mtf.dimension}, but the first MTF has dimension {first_dim}. All MTFs must have the same dimension."
             )
-
+    
     dfs = []
     for i, mtf in enumerate(mtfs):
         df = mtf.get_tabular_dataframe()
         if column_names and len(column_names) == len(mtfs):
             if "Coefficient" in df.columns:
                 df = df.rename(
-                    columns={
-                        "Coefficient": f"Coeff_{
-                            column_names[i]}"})
+                    columns={"Coefficient": f"Coeff_{column_names[i]}"})
         else:
             mtf_name = getattr(mtf, "name", str(i + 1))
             if "Coefficient" in df.columns:
                 df = df.rename(
-                    columns={
-                        "Coefficient": f"Coefficient_{mtf_name}"})
+                    columns={"Coefficient": f"Coefficient_{mtf_name}"})
         dfs.append(df)
-
+    
     tmap = reduce(
         lambda left, right: pd.merge(
             left, right, on=["Order", "Exponents"], how="outer"
