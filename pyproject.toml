@@ -57,6 +57,7 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 "mtflib.backends.cpp" = ["*.hpp"]
+"mtflib.backends.c" = ["*.h"]
 
 [tool.flake8]
 max-line-length = 79
