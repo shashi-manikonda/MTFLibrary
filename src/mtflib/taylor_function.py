@@ -191,9 +191,8 @@ class MultivariateTaylorFunction:
                 cls._IMPLEMENTATION = implementation
 
             print(
-                f"Initializing MTF globals with: _MAX_ORDER={
-                    cls._MAX_ORDER}, _MAX_DIMENSION={
-                    cls._MAX_DIMENSION}")
+                f"Initializing MTF globals with: _MAX_ORDER={cls._MAX_ORDER}, _MAX_DIMENSION={cls._MAX_DIMENSION}"
+            )
             cls._PRECOMPUTED_COEFFICIENTS = (
                 elementary_coefficients.load_precomputed_coefficients(
                     max_order_config=cls._MAX_ORDER
@@ -201,15 +200,11 @@ class MultivariateTaylorFunction:
             )
             cls._INITIALIZED = True
             print(
-                f"MTF globals initialized: _MAX_ORDER={
-                    cls._MAX_ORDER}, _MAX_DIMENSION={
-                    cls._MAX_DIMENSION}, _INITIALIZED={
-                    cls._INITIALIZED}")
+                f"MTF globals initialized: _MAX_ORDER={cls._MAX_ORDER}, _MAX_DIMENSION={cls._MAX_DIMENSION}, _INITIALIZED={cls._INITIALIZED}"
+            )
             print(
-                f"Max coefficient count (order={
-                    cls._MAX_ORDER}, nvars={
-                    cls._MAX_DIMENSION}): {
-                    cls.get_max_coefficient_count()}")
+                f"Max coefficient count (order={cls._MAX_ORDER}, nvars={cls._MAX_DIMENSION}): {cls.get_max_coefficient_count()}"
+            )
             print("Precomputed coefficients loaded and ready for use.")
         else:
             raise RuntimeError(
@@ -1993,10 +1988,8 @@ def mtfarray(mtfs, column_names=None):
     for i, mtf in enumerate(mtfs[1:]):
         if mtf.dimension != first_dim:
             raise ValueError(
-    f"MTF at index {
-        i +
-        1} has dimension {
-             mtf.dimension}, but the first MTF has dimension {first_dim}. All MTFs must have the same dimension.")
+                f"MTF at index {i + 1} has dimension {mtf.dimension}, but the first MTF has dimension {first_dim}. All MTFs must have the same dimension."
+            )
 
     dfs = []
     for i, mtf in enumerate(mtfs):
