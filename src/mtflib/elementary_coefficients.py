@@ -367,10 +367,7 @@ def load_precomputed_coefficients(max_order_config: int = None) -> dict:
     size_in_bytes = sys.getsizeof(precomputed_coefficients)
     size_in_kb = size_in_bytes / 1024
     size_in_mb = size_in_kb / 1024
-    print(
-        f"Size of precomputed_coefficients dictionary in memory: {size_in_bytes} bytes, {
-            size_in_kb:.2f} KB, {
-            size_in_mb:.2f} MB")
+    print(f"Size of precomputed_coefficients dictionary in memory: {size_in_bytes} bytes, {size_in_kb:.2f} KB, {size_in_mb:.2f} MB")
 
     return precomputed_coefficients
 
