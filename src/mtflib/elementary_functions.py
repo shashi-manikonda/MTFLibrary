@@ -1168,8 +1168,7 @@ def integrate(
         )
     if not (1 <= integration_variable_index <= mtf_instance.dimension):
         raise ValueError(
-            f"integration_variable_index must be between 1 and {
-                mtf_instance.dimension}, inclusive."
+            f"integration_variable_index must be between 1 and {mtf_instance.dimension}, inclusive."
         )
     if lower_limit is not None and upper_limit is None:
         raise ValueError(
