@@ -1221,8 +1221,8 @@ class MultivariateTaylorFunction:
                     f"Value for key {var_index} must be a MultivariateTaylorFunction object.")
             if not (1 <= var_index <= self.dimension):
                 raise ValueError(
-                    f"Variable index {var_index} is out of bounds for the outer function's dimension {
-                        self.dimension}.")
+                    f"Variable index {var_index} is out of bounds for the outer function's dimension {self.dimension}."
+                )
 
             if result_dim is None:
                 result_dim = g.dimension
@@ -1343,8 +1343,8 @@ class MultivariateTaylorFunction:
             raise TypeError("Exponents must be a tuple.")
         if len(exponents) != self.dimension:
             raise ValueError(
-                f"Exponents tuple length must match MTF dimension ({
-                    self.dimension}).")
+                f"Exponents tuple length must match MTF dimension ({self.dimension})."
+            )
 
         exponent_row = np.array(exponents, dtype=np.int32)
         match = np.all(self.exponents == exponent_row, axis=1)
@@ -1381,8 +1381,8 @@ class MultivariateTaylorFunction:
             raise TypeError("Exponents must be a tuple.")
         if len(exponents) != self.dimension:
             raise ValueError(
-                f"Exponents tuple length must match MTF dimension ({
-                    self.dimension}).")
+                f"Exponents tuple length must match MTF dimension ({self.dimension})."
+            )
         if not isinstance(value, (int, float, np.number, complex)):
             raise TypeError("Coefficient value must be a number.")
 
@@ -1769,8 +1769,8 @@ def sqrt_taylor_1D_expansion(
         ] = np.array([coefficient_val]).reshape(1)
     if order > elementary_coefficients.MAX_PRECOMPUTED_ORDER:
         print(
-            f"Warning: Requested order {order} exceeds precomputed order {
-                elementary_coefficients.MAX_PRECOMPUTED_ORDER}. Calculations may be slower for higher orders.")
+            f"Warning: Requested order {order} exceeds precomputed order {elementary_coefficients.MAX_PRECOMPUTED_ORDER}. Calculations may be slower for higher orders."
+        )
         for n_order in range(
             elementary_coefficients.MAX_PRECOMPUTED_ORDER + 1, order + 1
         ):
@@ -1863,8 +1863,8 @@ def isqrt_taylor_1D_expansion(
         ] = np.array([coefficient_val]).reshape(1)
     if order > elementary_coefficients.MAX_PRECOMPUTED_ORDER:
         print(
-            f"Warning: Requested order {order} exceeds precomputed order {
-                elementary_coefficients.MAX_PRECOMPUTED_ORDER}. Calculations may be slower for higher orders.")
+            f"Warning: Requested order {order} exceeds precomputed order {elementary_coefficients.MAX_PRECOMPUTED_ORDER}. Calculations may be slower for higher orders."
+        )
         for n_order in range(
             elementary_coefficients.MAX_PRECOMPUTED_ORDER + 1, order + 1
         ):
