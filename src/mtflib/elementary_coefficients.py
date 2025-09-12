@@ -316,10 +316,7 @@ def load_precomputed_coefficients(max_order_config: int = None) -> dict:
                     coefficient_list = json.load(f)
                     loaded_coefficients = np.array(coefficient_list)
                 if loaded_coefficients.shape[0] < max_order_to_init + 1:
-                    print(
-                        f"Precomputed {func_name} coefficients (order {
-        loaded_coefficients.shape[0]
-         - 1}) insufficient, recomputing up to order {max_order_to_init}.")
+                    print(f"Precomputed {func_name} coefficients (order {loaded_coefficients.shape[0] - 1}) insufficient, recomputing up to order {max_order_to_init}.")
                     coefficients = compute_func(max_order_to_init)
                     try:
                         with open(filename, 'w') as f:
