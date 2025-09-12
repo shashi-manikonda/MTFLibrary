@@ -64,11 +64,3 @@ Then, run the test suite from the root of the repository:
 ```bash
 pytest
 ```
-
-## Running Benchmarks
-
-The repository includes a script to benchmark the performance of the library. You can run it directly:
-
-```bash
-python benchmarks/benchmark.py
-```
