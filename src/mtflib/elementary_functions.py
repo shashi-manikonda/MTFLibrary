@@ -1291,8 +1291,7 @@ def derivative(mtf_instance, deriv_dim):
         or deriv_dim > mtf_instance.dimension
     ):
         raise ValueError(
-            f"deriv_dim must be an integer between 1 and {
-                mtf_instance.dimension} inclusive."
+            f"deriv_dim must be an integer between 1 and {mtf_instance.dimension} inclusive."
         )
 
     deriv_dim_index = deriv_dim - 1  # Convert 1-based to 0-based index
