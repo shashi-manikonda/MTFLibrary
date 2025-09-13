@@ -6,9 +6,6 @@ import pandas as pd
 import mtflib
 from mtflib import (
     mtf,
-    var,
-    mtfarray,
-    convert_to_mtf,
     ComplexMultivariateTaylorFunction,
 )
 
@@ -65,7 +62,7 @@ def test_global_etol_setting(setup_function):
 # --- Var Function Tests ---
 def test_var_creation(setup_function):
     global_dim, exponent_zero = setup_function
-    x_var = var(1)
+    x_var = mtf.var(1)
     assert isinstance(x_var, mtf)
     assert x_var.dimension == global_dim
     exponent_one = [0] * global_dim
@@ -76,9 +73,9 @@ def test_var_creation(setup_function):
     coeff_constant = x_var.extract_coefficient(exponent_zero)
     assert np.allclose(coeff_constant, 0.0)
     with pytest.raises(ValueError):
-        var(0)
+        mtf.var(0)
     with pytest.raises(ValueError):
-        var(global_dim + 1)
+        mtf.var(global_dim + 1)
 
 
 # --- MultivariateTaylorFunction (Real MTF) Tests ---
@@ -105,8 +102,8 @@ def test_mtf_variable_evaluation(setup_function):
     if global_dim > 1:
         evaluation_point_x2[1] = 3.0
 
-    x1_var = var(1)
-    x2_var = var(2)
+    x1_var = mtf.var(1)
+    x2_var = mtf.var(2)
     assert np.allclose(x1_var.eval(evaluation_point_x1), 2.0)
     assert np.allclose(x2_var.eval(evaluation_point_x2), 3.0)
 
@@ -805,20 +802,20 @@ def test_cmtf_eval_shape_consistency(setup_function):
 
 
 # --- convert_to_mtf Tests ---
-def test_convert_to_mtf(setup_function):
+def test_to_mtf(setup_function):
     global_dim, exponent_zero = setup_function
     exponent_one = list(exponent_zero)
     if global_dim > 0:
         exponent_one[0] = 1
     exponent_one = tuple(exponent_one)
 
-    mtf_instance = convert_to_mtf(5.0)
+    mtf_instance = mtf.to_mtf(5.0)
     assert isinstance(mtf_instance, mtf)
     assert np.allclose(mtf_instance.eval([0] * global_dim), 5.0)
     assert np.allclose(mtf_instance.extract_coefficient(exponent_zero), 5.0)
     assert np.allclose(mtf_instance.extract_coefficient(exponent_one), 0.0)
 
-    # cmtf = convert_to_mtf(2+1j)
+    # cmtf = mtf.to_mtf(2+1j)
     # assert isinstance(cmtf, ComplexMultivariateTaylorFunction)
     # assert np.allclose(cmtf.eval([0] * global_dim), np.array([2+1j]).reshape(1))
     # assert np.allclose(cmtf.extract_coefficient(exponent_zero),
@@ -826,7 +823,7 @@ def test_convert_to_mtf(setup_function):
     # assert np.allclose(cmtf.extract_coefficient(exponent_one),
     # np.array([0.0j]).reshape(1))
 
-    x_var_mtf = convert_to_mtf(var(1))
+    x_var_mtf = mtf.to_mtf(mtf.var(1))
     assert isinstance(x_var_mtf, mtf)
     assert x_var_mtf.dimension == global_dim
     eval_point = [0] * global_dim
@@ -835,22 +832,22 @@ def test_convert_to_mtf(setup_function):
     assert np.allclose(x_var_mtf.eval(eval_point), 1.0)
 
     existing_mtf = mtf.from_constant(3.0)
-    converted_mtf = convert_to_mtf(existing_mtf)
+    converted_mtf = mtf.to_mtf(existing_mtf)
     assert (
         converted_mtf is existing_mtf
     )  # Should return same object if already MTF
 
     with pytest.raises(TypeError):
-        convert_to_mtf("invalid")  # Invalid type
+        mtf.to_mtf("invalid")  # Invalid type
 
     numpy_scalar = np.float64(7.0)
-    mtf_np_scalar = convert_to_mtf(numpy_scalar)
+    mtf_np_scalar = mtf.to_mtf(numpy_scalar)
     assert np.allclose(mtf_np_scalar.eval([0] * global_dim), 7.0)
     assert np.allclose(mtf_np_scalar.extract_coefficient(exponent_zero), 7.0)
     assert np.allclose(mtf_np_scalar.extract_coefficient(exponent_one), 0.0)
 
     numpy_0d_array = np.array(9.0)
-    mtf_np_0d = convert_to_mtf(numpy_0d_array)
+    mtf_np_0d = mtf.to_mtf(numpy_0d_array)
     assert np.allclose(mtf_np_0d.eval([0] * global_dim), 9.0)
     assert np.allclose(mtf_np_0d.extract_coefficient(exponent_zero), 9.0)
     assert np.allclose(mtf_np_0d.extract_coefficient(exponent_one), 0.0)
@@ -1020,7 +1017,7 @@ def test_array_ufunc():
     """
     Test the __array_ufunc__ implementation with a numpy ufunc.
     """
-    x = var(1)
+    x = mtf.var(1)
     y = np.sin(x)
 
     # The result should be a mtf object
@@ -1038,8 +1035,8 @@ def test_compose_method():
     """
     Test the new compose method on the mtf class.
     """
-    x = var(1)
-    y = var(2)
+    x = mtf.var(1)
+    y = mtf.var(2)
 
     f = x**2 + y
     g = x + 1
@@ -1065,17 +1062,17 @@ def test_old_compose_is_gone():
         compose(None, None)  # noqa: F821
 
 
-def test_mtfarray():
+def test_list2pd():
     """
-    Test the mtfarray function.
+    Test the list2pd function.
     """
-    x = var(1)
-    y = var(2)
+    x = mtf.var(1)
+    y = mtf.var(2)
 
     mtf1 = x + 2 * y
     mtf2 = x**2
 
-    df = mtfarray([mtf1, mtf2], column_names=["f1", "f2"])
+    df = mtf.list2pd([mtf1, mtf2], column_names=["f1", "f2"])
 
     assert isinstance(df, pd.DataFrame)
     assert "Coeff_f1" in df.columns
@@ -1091,7 +1088,7 @@ def test_mtfarray():
     # Actually, the constant term is not always present if the coefficient is zero.
     # Let's check the number of non-zero coefficients.
     # There might be overlapping coefficients, but in this case there are not.
-    # The mtfarray function will merge the terms, so the number of rows will be
+    # The list2pd function will merge the terms, so the number of rows will be
     # the number of unique exponents.
     # mtf1 has terms (1,0,0) and (0,1,0). mtf2 has term (2,0,0).
     # The exponents are (1,0,0), (0,1,0), (2,0,0). So there should be 3 rows.
@@ -1109,7 +1106,7 @@ def test_cleanup_default_behavior(setup_function):
     Tests that cleanup of negligible coefficients is enabled by default.
     """
     etol = mtf.get_etol()
-    x = var(1)
+    x = mtf.var(1)
 
     # Create a function with a negligible term
     f = x + etol / 2
@@ -1131,7 +1128,7 @@ def test_disable_cleanup(setup_function):
     mtf.set_truncate_after_operation(False)
 
     etol = mtf.get_etol()
-    x = var(1)
+    x = mtf.var(1)
 
     # Create a function with a negligible term
     f = x + etol / 2
@@ -1167,8 +1164,8 @@ def test_array_ufunc_extended():
     """
     Test the __array_ufunc__ implementation with more numpy ufuncs.
     """
-    x = var(1)
-    y = var(2)
+    x = mtf.var(1)
+    y = mtf.var(2)
 
     # Test a few more unary ufuncs
     for ufunc, mtf_func in [

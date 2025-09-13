@@ -12,9 +12,9 @@ import math
 import numpy as np
 from .taylor_function import (
     MultivariateTaylorFunction,
-    convert_to_mtf,
     _split_constant_polynomial_part,
     _sqrt_taylor,
+    _generate_exponent,
 )
 from .complex_taylor_function import ComplexMultivariateTaylorFunction
 from . import (
@@ -22,14 +22,6 @@ from . import (
 )  # Import the new module with loaded coefficients
 
 
-def _generate_exponent(
-    order_val: int, var_index: int, dimension: int
-) -> tuple:
-    """Helper: Generates exponent tuples."""
-    exponent_tuple = [0] * dimension
-    if dimension > 0:
-        exponent_tuple[var_index] = order_val
-    return tuple(exponent_tuple)
 
 
 def _apply_constant_factoring(
@@ -92,7 +84,7 @@ def _sin_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
-    input_mtf = convert_to_mtf(variable)
+    input_mtf = MultivariateTaylorFunction.to_mtf(variable)
     constant_term_C_value, polynomial_part_mtf = (
         _split_constant_polynomial_part(input_mtf)
     )
@@ -139,7 +131,7 @@ def _cos_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
-    input_mtf = convert_to_mtf(variable)
+    input_mtf = MultivariateTaylorFunction.to_mtf(variable)
     constant_term_C_value, polynomial_part_mtf = (
         _split_constant_polynomial_part(input_mtf)
     )
@@ -159,7 +151,7 @@ def sin_taylor_around_zero(
     """Helper: Taylor expansion of sin(u) around zero, precomputed coefficients."""
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
-    input_mtf = convert_to_mtf(variable)
+    input_mtf = MultivariateTaylorFunction.to_mtf(variable)
     sin_taylor_1d_coefficients = {}
     taylor_dimension_1d = 1
     variable_index_1d = 0
@@ -212,7 +204,7 @@ def cos_taylor_around_zero(
     """Helper: Taylor expansion of cos(u) around zero, precomputed coefficients."""
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
-    input_mtf = convert_to_mtf(variable)
+    input_mtf = MultivariateTaylorFunction.to_mtf(variable)
     cos_taylor_1d_coefficients = {}
     taylor_dimension_1d = 1
     variable_index_1d = 0
@@ -330,7 +322,7 @@ def _exp_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
-    input_mtf = convert_to_mtf(variable)
+    input_mtf = MultivariateTaylorFunction.to_mtf(variable)
     return _apply_constant_factoring(
         input_mtf, math.exp, exp_taylor_around_zero, "*"
     ).truncate(order)
@@ -342,7 +334,7 @@ def exp_taylor_around_zero(
     """Helper: Taylor expansion of exp(u) around zero, precomputed coefficients."""
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
-    input_mtf = convert_to_mtf(variable)
+    input_mtf = MultivariateTaylorFunction.to_mtf(variable)
     exp_taylor_1d_coefficients = {}
     taylor_dimension_1d = 1
     variable_index_1d = 0
@@ -419,7 +411,7 @@ def _gaussian_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
-    input_mtf = convert_to_mtf(variable)
+    input_mtf = MultivariateTaylorFunction.to_mtf(variable)
     return _exp_taylor(-(input_mtf**2), order=order)
 
 
@@ -462,7 +454,7 @@ def _log_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
-    input_mtf = convert_to_mtf(variable)
+    input_mtf = MultivariateTaylorFunction.to_mtf(variable)
 
     constant_term_C_value, polynomial_part_B_mtf = (
         _split_constant_polynomial_part(input_mtf)
@@ -495,7 +487,7 @@ def log_taylor_1D_expansion(
     """Helper: 1D Taylor expansion of log(1+u) around zero, precomputed coefficients."""
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
-    input_mtf = convert_to_mtf(variable)
+    input_mtf = MultivariateTaylorFunction.to_mtf(variable)
     log_taylor_1d_coefficients = {}
     taylor_dimension_1d = 1
     variable_index_1d = 0
@@ -574,7 +566,7 @@ def _arctan_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
-    input_mtf = convert_to_mtf(variable)
+    input_mtf = MultivariateTaylorFunction.to_mtf(variable)
 
     constant_term_C_value, polynomial_part_B_mtf = (
         _split_constant_polynomial_part(input_mtf)
@@ -596,7 +588,7 @@ def arctan_taylor_1D_expansion(
     """Helper: 1D Taylor expansion of arctan(u) around zero, precomputed coefficients."""
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
-    input_mtf = convert_to_mtf(variable)
+    input_mtf = MultivariateTaylorFunction.to_mtf(variable)
     arctan_taylor_1d_coefficients = {}
     taylor_dimension_1d = 1
     variable_index_1d = 0
@@ -681,7 +673,7 @@ def _sinh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
-    input_mtf = convert_to_mtf(variable)
+    input_mtf = MultivariateTaylorFunction.to_mtf(variable)
     constant_term_C_value, polynomial_part_mtf = (
         _split_constant_polynomial_part(input_mtf)
     )
@@ -728,7 +720,7 @@ def _cosh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
-    input_mtf = convert_to_mtf(variable)
+    input_mtf = MultivariateTaylorFunction.to_mtf(variable)
     constant_term_C_value, polynomial_part_mtf = (
         _split_constant_polynomial_part(input_mtf)
     )
@@ -748,7 +740,7 @@ def sinh_taylor_around_zero(
     """Helper: Taylor expansion of sinh(u) around zero, precomputed coefficients."""
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
-    input_mtf = convert_to_mtf(variable)
+    input_mtf = MultivariateTaylorFunction.to_mtf(variable)
     sinh_taylor_coefficients = {}
     taylor_dimension_1d = 1
     variable_index_1d = 0
@@ -820,7 +812,7 @@ def cosh_taylor_around_zero(
     """Helper: Taylor expansion of cosh(u) around zero, precomputed coefficients."""
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
-    input_mtf = convert_to_mtf(variable)
+    input_mtf = MultivariateTaylorFunction.to_mtf(variable)
     cosh_taylor_coefficients = {}
     taylor_dimension_1d = 1
     variable_index_1d = 0
@@ -929,7 +921,7 @@ def _arctanh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
-    input_mtf = convert_to_mtf(variable)
+    input_mtf = MultivariateTaylorFunction.to_mtf(variable)
 
     constant_term_C_value, polynomial_part_B_mtf = (
         _split_constant_polynomial_part(input_mtf)
@@ -959,7 +951,7 @@ def arctanh_taylor_1D_expansion(
     """Helper: 1D Taylor expansion of arctanh(u) around zero, precomputed coefficients."""
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
-    input_mtf = convert_to_mtf(variable)
+    input_mtf = MultivariateTaylorFunction.to_mtf(variable)
     arctanh_taylor_1d_coefficients = {}
     taylor_dimension_1d = 1
     variable_index_1d = 0
@@ -1043,7 +1035,7 @@ def _arcsin_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
-    x_mtf = convert_to_mtf(variable)
+    x_mtf = MultivariateTaylorFunction.to_mtf(variable)
     x_squared_mtf = x_mtf * x_mtf
     one_minus_x_squared_mtf = 1.0 - x_squared_mtf
     sqrt_of_one_minus_x_squared_mtf = _sqrt_taylor(one_minus_x_squared_mtf)
@@ -1091,12 +1083,12 @@ def _arccos_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     )  # Get arcsin_taylor expansion
     pi_over_2_constant = np.pi / 2.0
     arccos_mtf = (
-        convert_to_mtf(pi_over_2_constant) - arcsin_mtf
+        MultivariateTaylorFunction.to_mtf(pi_over_2_constant) - arcsin_mtf
     )  # Perform MTF subtraction
     return arccos_mtf.truncate(order)  # Truncate to the desired order
 
 
-def integrate(
+def _integrate(
     mtf_instance,
     integration_variable_index,
     lower_limit=None,
@@ -1235,7 +1227,7 @@ def integrate(
         return indefinite_integral_mtf
 
 
-def derivative(mtf_instance, deriv_dim):
+def _derivative(mtf_instance, deriv_dim):
     r"""
     Computes the partial derivative of an MTF.
 
