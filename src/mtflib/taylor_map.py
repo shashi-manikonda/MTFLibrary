@@ -8,9 +8,11 @@ the output vector is a Taylor series. This class provides methods for
 vector arithmetic, composition, and inversion of such maps.
 """
 
-import numpy as np
 import warnings
+
+import numpy as np
 from numpy.exceptions import ComplexWarning
+
 from .taylor_function import MultivariateTaylorFunction
 
 

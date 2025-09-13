@@ -12,8 +12,10 @@ The CMTF class is a powerful tool for analyzing the behavior of
 complex-valued functions, particularly in fields like physics and
 engineering where complex numbers are fundamental.
 """
-import numpy as np
 from collections import defaultdict
+
+import numpy as np
+
 from .taylor_function import MultivariateTaylorFunction
 
 

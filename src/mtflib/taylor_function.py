@@ -8,12 +8,13 @@ Taylor series expansions. It serves as an implementation of a Differential
 Algebra (DA) vector, and the operations defined on it form a Truncated
 Power Series Algebra (TPSA).
 """
-import numpy as np
-from collections import defaultdict
 import math
 import numbers
-import pandas as pd
+from collections import defaultdict
 from functools import reduce
+
+import numpy as np
+import pandas as pd
 
 from . import elementary_coefficients
 from .backend import get_backend

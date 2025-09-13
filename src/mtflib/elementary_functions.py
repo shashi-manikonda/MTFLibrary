@@ -9,19 +9,19 @@ Differential Algebra (DA).
 """
 
 import math
+
 import numpy as np
-from .taylor_function import (
-    MultivariateTaylorFunction,
-    _split_constant_polynomial_part,
-    _sqrt_taylor,
-    _generate_exponent,
-)
-from .complex_taylor_function import ComplexMultivariateTaylorFunction
+
 from . import (
     elementary_coefficients,
 )  # Import the new module with loaded coefficients
-
-
+from .complex_taylor_function import ComplexMultivariateTaylorFunction
+from .taylor_function import (
+    MultivariateTaylorFunction,
+    _generate_exponent,
+    _split_constant_polynomial_part,
+    _sqrt_taylor,
+)
 
 
 def _apply_constant_factoring(

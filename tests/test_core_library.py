@@ -1,12 +1,13 @@
 # mtflib/test_taylor_functions.py
 
-import pytest
 import numpy as np
 import pandas as pd
+import pytest
+
 import mtflib
 from mtflib import (
-    mtf,
     ComplexMultivariateTaylorFunction,
+    mtf,
 )
 
 # Global settings for tests

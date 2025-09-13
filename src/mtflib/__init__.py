@@ -47,14 +47,14 @@ Example:
 
 import pandas as pd
 
-from .taylor_function import (
-    MultivariateTaylorFunction,
-    mtf,
-)
 from .complex_taylor_function import (
     ComplexMultivariateTaylorFunction,
 )
 from .elementary_coefficients import load_precomputed_coefficients
+from .taylor_function import (
+    MultivariateTaylorFunction,
+    mtf,
+)
 from .taylor_map import TaylorMap
 
 # Set the display format for floats
