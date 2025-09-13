@@ -24,9 +24,9 @@ def main():
     mtf.initialize_mtf(max_order=5, max_dimension=3)
 
     # Create a sample MTF
-    x = mtf.from_variable(1, 3)
-    y = mtf.from_variable(2, 3)
-    z = mtf.from_variable(3, 3)
+    x = mtf.var(1)
+    y = mtf.var(2)
+    z = mtf.var(3)
     mtf_instance = mtf.sin(x) + mtf.cos(y) + mtf.exp(z)
 
     # Generate a large number of random points

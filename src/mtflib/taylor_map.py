@@ -37,8 +37,8 @@ class TaylorMap:
     >>> MultivariateTaylorFunction.initialize_mtf(max_order=2, max_dimension=2)
     >>>
     >>> # Create variables
-    >>> x1 = MultivariateTaylorFunction.from_variable(1, 2)
-    >>> x2 = MultivariateTaylorFunction.from_variable(2, 2)
+    >>> x1 = MultivariateTaylorFunction.var(1, 2)
+    >>> x2 = MultivariateTaylorFunction.var(2, 2)
     >>>
     >>> # Create a map F(x1, x2) = [x1 + x2, x1 - x2]
     >>> f1 = x1 + x2
@@ -46,8 +46,8 @@ class TaylorMap:
     >>> F = TaylorMap([f1, f2])
     >>>
     >>> # Create another map G(y1, y2) = [y1*y2, y1]
-    >>> y1 = MultivariateTaylorFunction.from_variable(1, 2)
-    >>> y2 = MultivariateTaylorFunction.from_variable(2, 2)
+    >>> y1 = MultivariateTaylorFunction.var(1, 2)
+    >>> y2 = MultivariateTaylorFunction.var(2, 2)
     >>> g1 = y1 * y2
     >>> g2 = y1
     >>> G = TaylorMap([g1, g2])
@@ -487,9 +487,9 @@ class TaylorMap:
 
         Examples
         --------
-        >>> from mtflib import MultivariateTaylorFunction, TaylorMap, Var
+        >>> from mtflib import MultivariateTaylorFunction, TaylorMap, mtf
         >>> MultivariateTaylorFunction.initialize_mtf(max_order=3, max_dimension=2)
-        >>> x, y = Var(1), Var(2)
+        >>> x, y = mtf.var(1), mtf.var(2)
         >>>
         >>> # Define a map F(x, y) = [x + y^2, y - x^2]
         >>> F = TaylorMap([x + y**2, y - x**2])
@@ -555,7 +555,7 @@ class TaylorMap:
             )
             for j in range(dim):
                 if abs(inv_jacobian[i, j]) > 1e-14:
-                    var_mtf = MultivariateTaylorFunction.from_variable(
+                    var_mtf = MultivariateTaylorFunction.var(
                         j + 1, dim
                     )
                     with warnings.catch_warnings():
@@ -583,7 +583,7 @@ class TaylorMap:
         G = TaylorMap(non_linear_components)
 
         identity_components = [
-            MultivariateTaylorFunction.from_variable(i + 1, dim)
+            MultivariateTaylorFunction.var(i + 1, dim)
             for i in range(dim)
         ]
         identity_map = TaylorMap(identity_components)

@@ -27,7 +27,8 @@ Here's a simple example to get you started with `mtflib`:
 
 ```python
 import numpy as np
-from mtflib import mtf, var
+from mtflib import mtf
+from IPython.display import display
 
 # 1. Initialize global settings (must be done once)
 # This sets the max order of the Taylor series and the number of variables.
@@ -35,8 +36,8 @@ mtf.initialize_mtf(max_order=5, max_dimension=2)
 
 # 2. Define symbolic variables
 # var(1) corresponds to x, var(2) to y
-x = var(1)
-y = var(2)
+x = mtf.var(1)
+y = mtf.var(2)
 
 # 3. Create a Taylor series expression
 # This creates a Taylor series for sin(x) + y^2
@@ -47,7 +48,7 @@ f = mtf.sin(x) + y**2
 eval_point = np.array([0.5, 2.0])
 result = f.eval(eval_point)
 
-print(f"f(x, y) = sin(x) + y^2")
+print(f"\nf(x, y) = sin(x) + y^2")
 print(f"Result of f(0.5, 2.0): {result[0]}")
 
 # For comparison, the exact value is sin(0.5) + 2.0^2
@@ -55,9 +56,36 @@ exact_value = np.sin(0.5) + 4.0
 print(f"Exact value: {exact_value}")
 
 # You can also view the Taylor series coefficients
-print("\\nTaylor Series Representation:")
+print("\nTaylor Series Representation:")
 print(f)
+
+print("Symbolic representation of the function:")
+display(f.symprint())  # This will print the series in a human-readable format
 ```
+output:
+```
+Initializing MTF globals with: _MAX_ORDER=5, _MAX_DIMENSION=2
+Loading/Precomputing Taylor coefficients up to order 5
+Global precomputed coefficients loading/generation complete.
+Size of precomputed_coefficients dictionary in memory: 464 bytes, 0.45 KB, 0.00 MB
+MTF globals initialized: _MAX_ORDER=5, _MAX_DIMENSION=2, _INITIALIZED=True
+Max coefficient count (order=5, nvars=2): 21
+Precomputed coefficients loaded and ready for use.
+
+f(x, y) = sin(x) + y^2
+Result of f(0.5, 2.0): 4.479427083333333
+Exact value: 4.479425538604203
+
+Taylor Series Representation:
+          Coefficient  Order Exponents
+0  1.000000000000e+00      1    (1, 0)
+1  1.000000000000e+00      2    (0, 2)
+2 -1.666666666667e-01      3    (3, 0)
+3  8.333333333333e-03      5    (5, 0)
+
+Symbolic representation of the function:
+```
+$\displaystyle 0.00833333 x^{5} - 0.166667 x^{3} + 1.0 x + 1.0 y^{2}$
 
 ## Running Tests
 

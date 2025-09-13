@@ -10,8 +10,8 @@ def test_map_inversion_from_demo():
     mtf.initialize_mtf(max_order=4, max_dimension=2)
 
     # 2. Create the invertible map
-    x = mtf.from_variable(1, 2)
-    y = mtf.from_variable(2, 2)
+    x = mtf.var(1, 2)
+    y = mtf.var(2, 2)
     f1 = x + 0.1 * y**2
     f2 = y - 0.1 * x**2
     map_to_invert = TaylorMap([f1, f2])

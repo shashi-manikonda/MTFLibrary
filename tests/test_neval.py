@@ -29,8 +29,8 @@ def reset_mtf():
 def sample_mtf():
     """A sample MTF for testing."""
     mtf.initialize_mtf(max_order=2, max_dimension=2)
-    x = mtf.from_variable(1, 2)
-    y = mtf.from_variable(2, 2)
+    x = mtf.var(1, 2)
+    y = mtf.var(2, 2)
     return x**2 + 2 * x * y + y**2 + 1
 
 

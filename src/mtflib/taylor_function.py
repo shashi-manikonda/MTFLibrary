@@ -434,42 +434,73 @@ class MultivariateTaylorFunction:
         return cls(coefficients=coeffs, dimension=dimension)
 
     @classmethod
-    def from_variable(cls, var_index, dimension):
+    def var(cls, var_index: int, dimension: int = None) -> "MultivariateTaylorFunction":
         """
         Creates a MultivariateTaylorFunction representing a single variable.
 
-        This function represents the projection map `f(x_1, ..., x_n) = x_i`,
-        where `i` is `var_index`.
+        This is a convenience factory function for creating a single variable.
+        The dimension is inferred from the global settings if not provided.
 
         Parameters
         ----------
         var_index : int
-            The index of the variable to create (1-based).
-        dimension : int
-            The total number of variables in the function's domain.
+            The 1-based index of the variable to create (1-based).
+        dimension : int, optional
+            The total number of variables in the function's domain. If None,
+            the global `_MAX_DIMENSION` is used.
 
         Returns
         -------
         MultivariateTaylorFunction
-            A new MTF instance representing the specified variable.
+            An mtf object representing the variable `x_i`.
 
         Raises
         ------
         ValueError
             If `var_index` is not between 1 and `dimension`.
         """
-        if not (1 <= var_index <= dimension):
-            raise ValueError(
-                f"Variable index must be between 1 and {dimension}, inclusive."
-            )
-        exponent = [0] * dimension
-        exponent[var_index - 1] = 1
-        # Use a scalar float for the coefficient
-        coeffs = {tuple(exponent): 1.0}
-        return cls(
-            coefficients=coeffs,
-            dimension=dimension,
-            var_name=f"x_{var_index}")
+        if dimension is None:
+            dimension = cls.get_max_dimension()
+
+        return _var_helper(cls, var_index, dimension)
+
+    @staticmethod
+    def list2pd(mtfs, column_names=None):
+        """
+        Merges a list of MTFs into a single pandas DataFrame for comparison.
+
+        Each MTF's coefficients are presented in a separate column, making it
+        easy to view multiple functions side-by-side.
+
+        Parameters
+        ----------
+        mtfs : list of MultivariateTaylorFunction
+            A list of MTF objects to be merged.
+        column_names : list of str, optional
+            A list of names for the coefficient columns. If not provided,
+            columns are named generically.
+
+        Returns
+        -------
+        pd.DataFrame
+            A DataFrame where each row is a term and each column represents
+            the coefficients of one of the input MTFs.
+
+        Raises
+        ------
+        TypeError
+            If the input is not a list of MTF objects.
+        ValueError
+            If the MTFs in the list have different dimensions.
+        """
+        return _list2pd_helper(mtfs, column_names)
+
+    @staticmethod
+    def to_mtf(input_val, dimension=None):
+        """
+        Converts input to MultivariateTaylorFunction or ComplexMultivariateTaylorFunction.
+        """
+        return _to_mtf_helper(input_val, dimension)
 
     def __call__(self, evaluation_point):
         """
@@ -1241,7 +1272,7 @@ class MultivariateTaylorFunction:
                 if i > result_dim:
                     raise ValueError(
                         f"Outer function variable {i} is not being substituted, but the result dimension is only {result_dim}.")
-                substitutions[i] = type(self).from_variable(i, result_dim)
+                substitutions[i] = type(self).var(i, dimension=result_dim)
 
         # The final MTF will be initialized as a zero constant of the correct
         # dimension.
@@ -1644,6 +1675,54 @@ class MultivariateTaylorFunction:
         """Computes the Taylor expansion of 1/sqrt(mtf_obj)."""
         return _isqrt_taylor(mtf_obj)
 
+    def integrate(self, integration_variable_index, lower_limit=None, upper_limit=None):
+        r"""
+        Performs definite or indefinite integration of an MTF.
+
+        This function corresponds to the inverse derivation operator
+        :math:`\partial_{\bigcirc}^{-1}` of the Differential Algebra. It integrates
+        the Taylor series with respect to one of its variables.
+
+        Parameters
+        ----------
+        integration_variable_index : int
+            The 1-based index of the variable to integrate with respect to.
+        lower_limit : float, optional
+            The lower limit for definite integration.
+        upper_limit : float, optional
+            The upper limit for definite integration.
+
+        Returns
+        -------
+        MultivariateTaylorFunction
+            If an indefinite integral, a new MTF representing the integral.
+            If a definite integral, a new MTF representing the result after
+            integrating and substituting the bounds.
+        """
+        from .elementary_functions import _integrate
+        return _integrate(self, integration_variable_index, lower_limit, upper_limit)
+
+    def derivative(self, deriv_dim):
+        r"""
+        Computes the partial derivative of an MTF.
+
+        This function corresponds to the derivation operator
+        :math:`\partial_{\bigcirc}` of the Differential Algebra. It differentiates
+        the Taylor series with respect to one of its variables.
+
+        Parameters
+        ----------
+        deriv_dim : int
+            The 1-based index of the variable to differentiate with respect to.
+
+        Returns
+        -------
+        MultivariateTaylorFunction
+            A new MTF representing the partial derivative.
+        """
+        from .elementary_functions import _derivative
+        return _derivative(self, deriv_dim)
+
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
         """
         Implements NumPy ufunc protocol, directly calling taylor functions from elementary_functions.py.
@@ -1680,7 +1759,7 @@ class MultivariateTaylorFunction:
         if method == "__call__":
             input_mtf = inputs[0]
             if not isinstance(input_mtf, MultivariateTaylorFunction):
-                input_mtf = convert_to_mtf(input_mtf, dimension=self.dimension)
+                input_mtf = self.to_mtf(input_mtf, dimension=self.dimension)
 
             if ufunc in UNARY_UFUNC_MAP:
                 return UNARY_UFUNC_MAP[ufunc](input_mtf)
@@ -1725,25 +1804,6 @@ def _generate_exponent_combinations(dimension, order):
     return exponent_combinations
 
 
-def convert_to_mtf(input_val, dimension=None):
-    """Converts input to MultivariateTaylorFunction or ComplexMultivariateTaylorFunction."""
-    if isinstance(input_val, (MultivariateTaylorFunction)):
-        return input_val
-    elif isinstance(input_val, (int, float)):
-        if dimension is None:
-            dimension = MultivariateTaylorFunction.get_max_dimension()
-        return MultivariateTaylorFunction.from_constant(
-            input_val, dimension=dimension)
-    elif isinstance(input_val, np.ndarray) and input_val.shape == ():
-        return convert_to_mtf(input_val.item(), dimension)
-    elif isinstance(input_val, np.number):
-        return convert_to_mtf(float(input_val), dimension)
-    elif callable(input_val) and input_val.__name__ == "var":
-        return input_val(dimension)
-    else:
-        raise TypeError(
-            f"Unsupported input type: {type(input_val)}. Cannot convert to MTF/CMTF."
-        )
 
 
 def _split_constant_polynomial_part(
@@ -1818,7 +1878,7 @@ def _sqrt_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
-    input_mtf = convert_to_mtf(variable)
+    input_mtf = MultivariateTaylorFunction.to_mtf(variable)
     constant_term_C_value, polynomial_part_B_mtf = _split_constant_polynomial_part(
         input_mtf)
     if constant_term_C_value <= 0:
@@ -1839,7 +1899,7 @@ def sqrt_taylor_1D_expansion(
     """Helper: 1D Taylor expansion of sqrt(1+u) around zero, precomputed coefficients."""
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
-    input_mtf = convert_to_mtf(variable)
+    input_mtf = MultivariateTaylorFunction.to_mtf(variable)
     sqrt_taylor_1d_coefficients = {}
     taylor_dimension_1d = 1
     variable_index_1d = 0
@@ -1912,7 +1972,7 @@ def _isqrt_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
-    input_mtf = convert_to_mtf(variable)
+    input_mtf = MultivariateTaylorFunction.to_mtf(variable)
     constant_term_C_value, polynomial_part_B_mtf = _split_constant_polynomial_part(
         input_mtf)
     if abs(constant_term_C_value) < 1e-9:
@@ -1933,7 +1993,7 @@ def isqrt_taylor_1D_expansion(
     """Helper: 1D Taylor expansion of isqrt(1+u) around zero, precomputed coefficients."""
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
-    input_mtf = convert_to_mtf(variable)
+    input_mtf = MultivariateTaylorFunction.to_mtf(variable)
     isqrt_taylor_1d_coefficients = {}
     taylor_dimension_1d = 1
     variable_index_1d = 0
@@ -1981,80 +2041,22 @@ def isqrt_taylor_1D_expansion(
     return composed_mtf.truncate(order)
 
 
-def var(var_index):
-    """
-    Creates a MultivariateTaylorFunction representing an independent variable.
-
-    This is a convenience factory function for creating a single variable,
-    equivalent to `mtf.from_variable`. The dimension
-    is inferred from the global settings.
-
-    Parameters
-    ----------
-    var_index : int
-        The 1-based index of the variable to create.
-
-    Returns
-    -------
-    MultivariateTaylorFunction
-        An mtf object representing the variable `x_i`.
-
-    Raises
-    ------
-    RuntimeError
-        If the mtf globals have not been initialized.
-    ValueError
-        If `var_index` is not a valid index.
-    """
-    dimension = mtf.get_max_dimension()
-
-    if not mtf.get_mtf_initialized_status():
-        raise RuntimeError(
-            "mtf Globals must be initialized before creating var objects."
-        )
-    if not isinstance(
-            var_index,
-            int) or var_index <= 0 or var_index > dimension:
+def _var_helper(cls, var_index, dimension):
+    """Helper to create a variable MTF."""
+    if not (1 <= var_index <= dimension):
         raise ValueError(
-            f"var_index must be a positive integer between 1 and {dimension}, inclusive.")
+            f"Variable index must be between 1 and {dimension}, inclusive."
+        )
+    exponent = [0] * dimension
+    exponent[var_index - 1] = 1
+    coeffs = {tuple(exponent): 1.0}
+    return cls(
+        coefficients=coeffs,
+        dimension=dimension,
+        var_name=f"x_{var_index}")
 
-    exponents_arr = np.zeros((1, dimension), dtype=np.int32)
-    exponents_arr[0, var_index - 1] = 1
-    coeffs_arr = np.array([1.0], dtype=np.float64)
-
-    return mtf(
-        coefficients=(exponents_arr, coeffs_arr), dimension=dimension
-    )
-
-
-def mtfarray(mtfs, column_names=None):
-    """
-    Merges a list of MTFs into a single pandas DataFrame for comparison.
-
-    Each MTF's coefficients are presented in a separate column, making it
-    easy to view multiple functions side-by-side.
-
-    Parameters
-    ----------
-    mtfs : list of MultivariateTaylorFunction
-        A list of MTF objects to be merged.
-    column_names : list of str, optional
-        A list of names for the coefficient columns. If not provided,
-        columns are named generically.
-
-    Returns
-    -------
-    pd.DataFrame
-        A DataFrame where each row is a term and each column represents
-        the coefficients of one of the input MTFs.
-
-    Raises
-    ------
-    TypeError
-        If the input is not a list of MTF objects.
-    ValueError
-        If the MTFs in the list have different dimensions.
-    """
+def _list2pd_helper(mtfs, column_names=None):
+    """Helper to merge a list of MTFs into a single pandas DataFrame."""
     if isinstance(mtfs, np.ndarray):
         mtfs = list(mtfs)
 
@@ -2064,11 +2066,11 @@ def mtfarray(mtfs, column_names=None):
     if not mtfs:
         return pd.DataFrame(columns=["Order", "Exponents"])
 
-    valid_mtf_types = (mtf,)
+    valid_mtf_types = (MultivariateTaylorFunction,)
     for mtf_instance in mtfs:
         if not isinstance(mtf_instance, valid_mtf_types):
             raise TypeError(
-                f"All elements in 'mtfs' must be instances of {mtf.__name__}, but found {type(mtf_instance).__name__}."
+                f"All elements in 'mtfs' must be instances of {MultivariateTaylorFunction.__name__}, but found {type(mtf_instance).__name__}."
             )
 
     first_dim = mtfs[0].dimension
@@ -2109,3 +2111,21 @@ def mtfarray(mtfs, column_names=None):
         by=["Order", "Exponents"], ascending=[True, False]
     ).reset_index(drop=True)
     return tmap
+
+def _to_mtf_helper(input_val, dimension=None):
+    """Helper to convert input to MultivariateTaylorFunction."""
+    if isinstance(input_val, (MultivariateTaylorFunction)):
+        return input_val
+    elif isinstance(input_val, (int, float)):
+        if dimension is None:
+            dimension = MultivariateTaylorFunction.get_max_dimension()
+        return MultivariateTaylorFunction.from_constant(
+            input_val, dimension=dimension)
+    elif isinstance(input_val, np.ndarray) and input_val.shape == ():
+        return _to_mtf_helper(input_val.item(), dimension)
+    elif isinstance(input_val, np.number):
+        return _to_mtf_helper(float(input_val), dimension)
+    else:
+        raise TypeError(
+            f"Unsupported input type: {type(input_val)}. Cannot convert to MTF/CMTF."
+        )
