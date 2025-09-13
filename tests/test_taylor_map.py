@@ -9,9 +9,7 @@ from mtflib import TaylorMap, mtf
 def setup_mtf_module():
     """Initializes mtflib globals for the test module."""
     if not mtf.get_mtf_initialized_status():
-        mtf.initialize_mtf(
-            max_order=5, max_dimension=3
-        )
+        mtf.initialize_mtf(max_order=5, max_dimension=3)
 
 
 @pytest.fixture
@@ -178,9 +176,9 @@ def test_variable_creation_bug():
     # A variable should not have a constant term.
     # The constant term corresponds to an exponent tuple of all zeros.
     constant_term = y.extract_coefficient(tuple([0, 0])).item()
-    assert (
-        constant_term == 0.0
-    ), "A variable created with var should not have a constant term."
+    assert constant_term == 0.0, (
+        "A variable created with var should not have a constant term."
+    )
 
     x = mtf.var(1, 2)
     prod = x * y
@@ -188,9 +186,7 @@ def test_variable_creation_bug():
     # The product of x and y should be xy. It should not contain a linear x term.
     # A linear x term would have an exponent of (1, 0).
     x_term_in_prod = prod.extract_coefficient(tuple([1, 0])).item()
-    assert (
-        x_term_in_prod == 0.0
-    ), "The product x*y should not contain a linear x term."
+    assert x_term_in_prod == 0.0, "The product x*y should not contain a linear x term."
 
 
 def test_trace_standalone():
@@ -353,12 +349,8 @@ def test_inversion():
     truncated_identity = identity_map.truncate(max_order)
 
     # Check component-wise equality
-    assert truncated_composition.get_component(
-        0
-    ) == truncated_identity.get_component(0)
-    assert truncated_composition.get_component(
-        1
-    ) == truncated_identity.get_component(1)
+    assert truncated_composition.get_component(0) == truncated_identity.get_component(0)
+    assert truncated_composition.get_component(1) == truncated_identity.get_component(1)
 
 
 def test_invert_non_square(sample_maps):
@@ -366,9 +358,7 @@ def test_invert_non_square(sample_maps):
     Tests that a ValueError is raised for a non-square map.
     """
     _, _, map3 = sample_maps  # map3 is R^2 -> R^3
-    with pytest.raises(
-        ValueError, match="Map must be square to be invertible"
-    ):
+    with pytest.raises(ValueError, match="Map must be square to be invertible"):
         map3.invert()
 
 

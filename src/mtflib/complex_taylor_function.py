@@ -12,6 +12,7 @@ The CMTF class is a powerful tool for analyzing the behavior of
 complex-valued functions, particularly in fields like physics and
 engineering where complex numbers are fundamental.
 """
+
 from collections import defaultdict
 
 import numpy as np
@@ -56,9 +57,7 @@ class ComplexMultivariateTaylorFunction(MultivariateTaylorFunction):
     1     (0+3j)      1    (1,)
     """
 
-    def __init__(
-        self, coefficients, dimension=None, var_name=None, mtf_data=None
-    ):
+    def __init__(self, coefficients, dimension=None, var_name=None, mtf_data=None):
         """
         Initializes a ComplexMultivariateTaylorFunction.
 
@@ -329,11 +328,8 @@ def convert_to_cmtf(variable):
         dim = 1
         if hasattr(variable, "dimension"):
             dim = variable.dimension
-        return ComplexMultivariateTaylorFunction.from_constant(
-            variable, dimension=dim
-        )
+        return ComplexMultivariateTaylorFunction.from_constant(variable, dimension=dim)
     else:
         raise TypeError(
-            "Unsupported type for conversion to "
-            "ComplexMultivariateTaylorFunction."
+            "Unsupported type for conversion to ComplexMultivariateTaylorFunction."
         )
