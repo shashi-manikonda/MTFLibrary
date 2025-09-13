@@ -27,16 +27,16 @@ Here's a simple example to get you started with `mtflib`:
 
 ```python
 import numpy as np
-from mtflib import mtf, Var
+from mtflib import mtf, var
 
 # 1. Initialize global settings (must be done once)
 # This sets the max order of the Taylor series and the number of variables.
 mtf.initialize_mtf(max_order=5, max_dimension=2)
 
 # 2. Define symbolic variables
-# Var(1) corresponds to x, Var(2) to y
-x = Var(1)
-y = Var(2)
+# var(1) corresponds to x, var(2) to y
+x = var(1)
+y = var(2)
 
 # 3. Create a Taylor series expression
 # This creates a Taylor series for sin(x) + y^2

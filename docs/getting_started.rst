@@ -44,19 +44,19 @@ library, creates a two-variable function, and evaluates it at a point.
 
 .. code-block:: python
 
-    from mtflib import MultivariateTaylorFunction, Var, sin_taylor
+    from mtflib import mtf, var
 
     # 1. Initialize the library's global settings. This is a crucial first step.
     # We'll set a maximum order of 4 and 2 variables (dimensions).
-    MultivariateTaylorFunction.initialize_mtf(max_order=4, max_dimension=2)
+    mtf.initialize_mtf(max_order=4, max_dimension=2)
 
     # 2. Create variables x and y.
-    # Var(1) corresponds to the first variable, Var(2) to the second.
-    x = Var(1)
-    y = Var(2)
+    # var(1) corresponds to the first variable, var(2) to the second.
+    x = var(1)
+    y = var(2)
 
     # 3. Define a function, for example, f(x, y) = sin(x + y**2)
-    f = sin_taylor(x + y**2)
+    f = mtf.sin(x + y**2)
 
     # 4. Print the function's Taylor series coefficients in a readable format.
     print("Taylor series for f(x, y) = sin(x + y^2):")

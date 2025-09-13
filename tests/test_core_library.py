@@ -27,7 +27,7 @@ def setup_function():
     global_dim = mtf.get_max_dimension()
     exponent_zero = tuple([0] * global_dim)
     yield global_dim, exponent_zero
-    mtf._INITIALIZED = False
+    mtflib.taylor_function.mtf._INITIALIZED = False
 
 
 # --- Global Settings Tests ---
@@ -62,7 +62,7 @@ def test_global_etol_setting(setup_function):
         mtf.set_etol(0.0)  # Invalid etol
 
 
-# --- var Function Tests ---
+# --- Var Function Tests ---
 def test_var_creation(setup_function):
     global_dim, exponent_zero = setup_function
     x_var = var(1)

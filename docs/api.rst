@@ -35,7 +35,7 @@ Factory and Utility Functions
 These functions are used to create or manipulate core objects.
 
 .. automodule:: mtflib.taylor_function
-   :members: Var, mtfarray, mtf
+   :members: var, mtfarray, mtf
 
 .. automodule:: mtflib.elementary_coefficients
    :members: load_precomputed_coefficients

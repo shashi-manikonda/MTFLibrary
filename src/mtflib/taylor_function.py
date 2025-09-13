@@ -95,16 +95,16 @@ class MultivariateTaylorFunction:
     Examples
     --------
     >>> import numpy as np
-    >>> from mtflib import MultivariateTaylorFunction
+    >>> from mtflib import mtf, var
     >>>
-    >>> # Initialize global settings for MTF
-    >>> MultivariateTaylorFunction.initialize_mtf(max_order=5, max_dimension=2)
+    >>> # Initialize global settings for mtf
+    >>> mtf.initialize_mtf(max_order=5, max_dimension=2)
     >>>
     >>> # Create a constant function f(x1, x2) = 2.0
-    >>> f = MultivariateTaylorFunction.from_constant(2.0, dimension=2)
+    >>> f = mtf.from_constant(2.0, dimension=2)
     >>>
     >>> # Create a variable x1
-    >>> x1 = MultivariateTaylorFunction.from_variable(var_index=1, dimension=2)
+    >>> x1 = var(1, 2)
     >>>
     >>> # Create a function g(x1, x2) = 2.0 + x1
     >>> g = f + x1
@@ -153,19 +153,19 @@ class MultivariateTaylorFunction:
 
         Examples
         --------
-        >>> from mtflib import MultivariateTaylorFunction
+        >>> from mtflib import mtf
         >>> # Initialize for problems up to order 10 in 5 variables.
-        >>> MultivariateTaylorFunction.initialize_mtf(max_order=10, max_dimension=5)
-        Initializing MTF globals with: _MAX_ORDER=10, _MAX_DIMENSION=5
+        >>> mtf.initialize_mtf(max_order=10, max_dimension=5)
+        Initializing mtf globals with: _MAX_ORDER=10, _MAX_DIMENSION=5
         Loading/Precomputing Taylor coefficients up to order 10
         Global precomputed coefficients loading/generation complete.
         Size of precomputed_coefficients dictionary in memory: ...
-        MTF globals initialized: _MAX_ORDER=10, _MAX_DIMENSION=5, _INITIALIZED=True
+        mtf globals initialized: _MAX_ORDER=10, _MAX_DIMENSION=5, _INITIALIZED=True
         Max coefficient count (order=10, nvars=5): 3003
         Precomputed coefficients loaded and ready for use.
 
         >>> # This will raise an error because initialization with new settings is not allowed
-        >>> MultivariateTaylorFunction.initialize_mtf(max_order=12, max_dimension=5)
+        >>> mtf.initialize_mtf(max_order=12, max_dimension=5)
         Traceback (most recent call last):
         ...
         RuntimeError: MTF Globals are already initialized with different settings. Re-initialization with different max_order or max_dimension is not allowed.
@@ -559,9 +559,9 @@ class MultivariateTaylorFunction:
 
         Examples
         --------
-        >>> from mtflib import MultivariateTaylorFunction, Var
-        >>> MultivariateTaylorFunction.initialize_mtf(max_order=2, max_dimension=2)
-        >>> x, y = Var(1), Var(2)
+        >>> from mtflib import mtf, var
+        >>> mtf.initialize_mtf(max_order=2, max_dimension=2)
+        >>> x, y = var(1), var(2)
         >>> f = 1 + x*y
         >>>
         >>> # --- NumPy Backend ---
@@ -1186,9 +1186,9 @@ class MultivariateTaylorFunction:
 
         Examples
         --------
-        >>> MultivariateTaylorFunction.initialize_mtf(max_order=2, max_dimension=2)
-        >>> x1 = MultivariateTaylorFunction.from_variable(1, 2)
-        >>> x2 = MultivariateTaylorFunction.from_variable(2, 2)
+        >>> mtf.initialize_mtf(max_order=2, max_dimension=2)
+        >>> x1 = mtf.from_variable(1, 2)
+        >>> x2 = mtf.from_variable(2, 2)
         >>> f = x1 * x1 + x2
         >>> g1 = x1 + 1
         >>> g2 = x2 * 2
@@ -1705,6 +1705,9 @@ class MultivariateTaylorFunction:
         )
 
 
+mtf = MultivariateTaylorFunction
+
+
 def _generate_exponent_combinations(dimension, order):
     """Generates all combinations of exponents for a given dimension and order."""
     if dimension <= 0 or order < 0:
@@ -1735,7 +1738,7 @@ def convert_to_mtf(input_val, dimension=None):
         return convert_to_mtf(input_val.item(), dimension)
     elif isinstance(input_val, np.number):
         return convert_to_mtf(float(input_val), dimension)
-    elif callable(input_val) and input_val.__name__ == "Var":
+    elif callable(input_val) and input_val.__name__ == "var":
         return input_val(dimension)
     else:
         raise TypeError(
@@ -1824,13 +1827,13 @@ def _sqrt_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
         )
     constant_factor_sqrt_C = math.sqrt(constant_term_C_value)
     polynomial_part_x_mtf = polynomial_part_B_mtf / constant_term_C_value
-    sqrt_1_plus_x_mtf = _sqrt_taylor_1D_expansion(
+    sqrt_1_plus_x_mtf = sqrt_taylor_1D_expansion(
         polynomial_part_x_mtf, order=order)
     result_mtf = sqrt_1_plus_x_mtf * constant_factor_sqrt_C
     return result_mtf.truncate(order)
 
 
-def _sqrt_taylor_1D_expansion(
+def sqrt_taylor_1D_expansion(
         variable,
         order: int = None) -> MultivariateTaylorFunction:
     """Helper: 1D Taylor expansion of sqrt(1+u) around zero, precomputed coefficients."""
@@ -1918,13 +1921,13 @@ def _isqrt_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
         )
     constant_factor_isqrt_C = 1.0 / math.sqrt(constant_term_C_value)
     polynomial_part_x_mtf = polynomial_part_B_mtf / constant_term_C_value
-    isqrt_1_plus_x_mtf = _isqrt_taylor_1D_expansion(
+    isqrt_1_plus_x_mtf = isqrt_taylor_1D_expansion(
         polynomial_part_x_mtf, order=order)
     result_mtf = isqrt_1_plus_x_mtf * constant_factor_isqrt_C
     return result_mtf.truncate(order)
 
 
-def _isqrt_taylor_1D_expansion(
+def isqrt_taylor_1D_expansion(
     variable, order: int = None
 ) -> MultivariateTaylorFunction:
     """Helper: 1D Taylor expansion of isqrt(1+u) around zero, precomputed coefficients."""
@@ -1983,7 +1986,7 @@ def var(var_index):
     Creates a MultivariateTaylorFunction representing an independent variable.
 
     This is a convenience factory function for creating a single variable,
-    equivalent to `MultivariateTaylorFunction.from_variable`. The dimension
+    equivalent to `mtf.from_variable`. The dimension
     is inferred from the global settings.
 
     Parameters
@@ -1994,20 +1997,20 @@ def var(var_index):
     Returns
     -------
     MultivariateTaylorFunction
-        An MTF object representing the variable `x_i`.
+        An mtf object representing the variable `x_i`.
 
     Raises
     ------
     RuntimeError
-        If the MTF globals have not been initialized.
+        If the mtf globals have not been initialized.
     ValueError
         If `var_index` is not a valid index.
     """
-    dimension = MultivariateTaylorFunction.get_max_dimension()
+    dimension = mtf.get_max_dimension()
 
-    if not MultivariateTaylorFunction.get_mtf_initialized_status():
+    if not mtf.get_mtf_initialized_status():
         raise RuntimeError(
-            "MTF Globals must be initialized before creating Var objects."
+            "mtf Globals must be initialized before creating var objects."
         )
     if not isinstance(
             var_index,
@@ -2019,7 +2022,7 @@ def var(var_index):
     exponents_arr[0, var_index - 1] = 1
     coeffs_arr = np.array([1.0], dtype=np.float64)
 
-    return MultivariateTaylorFunction(
+    return mtf(
         coefficients=(exponents_arr, coeffs_arr), dimension=dimension
     )
 
@@ -2061,29 +2064,29 @@ def mtfarray(mtfs, column_names=None):
     if not mtfs:
         return pd.DataFrame(columns=["Order", "Exponents"])
 
-    valid_mtf_types = (MultivariateTaylorFunction,)
-    for mtf in mtfs:
-        if not isinstance(mtf, valid_mtf_types):
+    valid_mtf_types = (mtf,)
+    for mtf_instance in mtfs:
+        if not isinstance(mtf_instance, valid_mtf_types):
             raise TypeError(
-                f"All elements in 'mtfs' must be instances of {MultivariateTaylorFunction.__name__}, but found {type(mtf).__name__}."
+                f"All elements in 'mtfs' must be instances of {mtf.__name__}, but found {type(mtf_instance).__name__}."
             )
 
     first_dim = mtfs[0].dimension
-    for i, mtf in enumerate(mtfs[1:]):
-        if mtf.dimension != first_dim:
+    for i, mtf_instance in enumerate(mtfs[1:]):
+        if mtf_instance.dimension != first_dim:
             raise ValueError(
-                f"MTF at index {i + 1} has dimension {mtf.dimension}, but the first MTF has dimension {first_dim}. All MTFs must have the same dimension."
+                f"mtf at index {i + 1} has dimension {mtf_instance.dimension}, but the first mtf has dimension {first_dim}. All mtfs must have the same dimension."
             )
     
     dfs = []
-    for i, mtf in enumerate(mtfs):
-        df = mtf.get_tabular_dataframe()
+    for i, mtf_instance in enumerate(mtfs):
+        df = mtf_instance.get_tabular_dataframe()
         if column_names and len(column_names) == len(mtfs):
             if "Coefficient" in df.columns:
                 df = df.rename(
                     columns={"Coefficient": f"Coeff_{column_names[i]}"})
         else:
-            mtf_name = getattr(mtf, "name", str(i + 1))
+            mtf_name = getattr(mtf_instance, "name", str(i + 1))
             if "Coefficient" in df.columns:
                 df = df.rename(
                     columns={"Coefficient": f"Coefficient_{mtf_name}"})

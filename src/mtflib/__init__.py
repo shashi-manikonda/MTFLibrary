@@ -22,14 +22,14 @@ Core Features:
   act as the derivation operators of the Differential Algebra.
 
 Example:
-    >>> from mtflib import mtf, Var
+    >>> from mtflib import mtf, var
     >>>
     >>> # It is crucial to initialize the library's global settings first.
     >>> mtf.initialize_mtf(max_order=4, max_dimension=2)
     >>>
     >>> # Create variables x and y
-    >>> x = Var(1)
-    >>> y = Var(2)
+    >>> x = var(1)
+    >>> y = var(2)
     >>>
     >>> # Create a function f(x, y) = sin(x + y)
     >>> f = mtf.sin(x + y)
@@ -52,6 +52,7 @@ from .taylor_function import (
     convert_to_mtf,
     var,
     mtfarray,
+    mtf,
 )
 from .elementary_functions import (
     integrate,
@@ -70,9 +71,6 @@ pd.set_option("display.max_columns", None)
 pd.set_option("display.max_rows", None)
 pd.set_option("display.width", 1000)
 
-
-# Set Alias for convenience
-mtf = MultivariateTaylorFunction # Alias for MultivariateTaylorFunction
 
 # Defines the public API for the library.
 __all__ = [
