@@ -897,9 +897,9 @@ class MultivariateTaylorFunction:
 
         elif isinstance(power, float):
             if power == 0.5:
-                return sqrt_taylor(self)
+                return _sqrt_taylor(self)
             elif power == -0.5:
-                return isqrt_taylor(self)
+                return _isqrt_taylor(self)
             else:
                 raise ValueError(
                     "Power must be a non-negative integer, 0.5, or -0.5.")
@@ -1556,27 +1556,113 @@ class MultivariateTaylorFunction:
         """Defines inequality (!=) for MultivariateTaylorFunction objects."""
         return not self.__eq__(other)
 
+    @staticmethod
+    def sin(mtf_obj: 'MultivariateTaylorFunction') -> 'MultivariateTaylorFunction':
+        """Computes the Taylor expansion of sin(mtf_obj)."""
+        from .elementary_functions import _sin_taylor
+        return _sin_taylor(mtf_obj)
+
+    @staticmethod
+    def cos(mtf_obj: 'MultivariateTaylorFunction') -> 'MultivariateTaylorFunction':
+        """Computes the Taylor expansion of cos(mtf_obj)."""
+        from .elementary_functions import _cos_taylor
+        return _cos_taylor(mtf_obj)
+
+    @staticmethod
+    def tan(mtf_obj: 'MultivariateTaylorFunction') -> 'MultivariateTaylorFunction':
+        """Computes the Taylor expansion of tan(mtf_obj)."""
+        from .elementary_functions import _tan_taylor
+        return _tan_taylor(mtf_obj)
+
+    @staticmethod
+    def exp(mtf_obj: 'MultivariateTaylorFunction') -> 'MultivariateTaylorFunction':
+        """Computes the Taylor expansion of exp(mtf_obj)."""
+        from .elementary_functions import _exp_taylor
+        return _exp_taylor(mtf_obj)
+
+    @staticmethod
+    def gaussian(mtf_obj: 'MultivariateTaylorFunction') -> 'MultivariateTaylorFunction':
+        """Computes the Taylor expansion of a Gaussian function, exp(-mtf_obj^2)."""
+        from .elementary_functions import _gaussian_taylor
+        return _gaussian_taylor(mtf_obj)
+
+    @staticmethod
+    def log(mtf_obj: 'MultivariateTaylorFunction') -> 'MultivariateTaylorFunction':
+        """Computes the Taylor expansion of log(mtf_obj)."""
+        from .elementary_functions import _log_taylor
+        return _log_taylor(mtf_obj)
+
+    @staticmethod
+    def arctan(mtf_obj: 'MultivariateTaylorFunction') -> 'MultivariateTaylorFunction':
+        """Computes the Taylor expansion of arctan(mtf_obj)."""
+        from .elementary_functions import _arctan_taylor
+        return _arctan_taylor(mtf_obj)
+
+    @staticmethod
+    def sinh(mtf_obj: 'MultivariateTaylorFunction') -> 'MultivariateTaylorFunction':
+        """Computes the Taylor expansion of sinh(mtf_obj)."""
+        from .elementary_functions import _sinh_taylor
+        return _sinh_taylor(mtf_obj)
+
+    @staticmethod
+    def cosh(mtf_obj: 'MultivariateTaylorFunction') -> 'MultivariateTaylorFunction':
+        """Computes the Taylor expansion of cosh(mtf_obj)."""
+        from .elementary_functions import _cosh_taylor
+        return _cosh_taylor(mtf_obj)
+
+    @staticmethod
+    def tanh(mtf_obj: 'MultivariateTaylorFunction') -> 'MultivariateTaylorFunction':
+        """Computes the Taylor expansion of tanh(mtf_obj)."""
+        from .elementary_functions import _tanh_taylor
+        return _tanh_taylor(mtf_obj)
+
+    @staticmethod
+    def arcsin(mtf_obj: 'MultivariateTaylorFunction') -> 'MultivariateTaylorFunction':
+        """Computes the Taylor expansion of arcsin(mtf_obj)."""
+        from .elementary_functions import _arcsin_taylor
+        return _arcsin_taylor(mtf_obj)
+
+    @staticmethod
+    def arccos(mtf_obj: 'MultivariateTaylorFunction') -> 'MultivariateTaylorFunction':
+        """Computes the Taylor expansion of arccos(mtf_obj)."""
+        from .elementary_functions import _arccos_taylor
+        return _arccos_taylor(mtf_obj)
+
+    @staticmethod
+    def arctanh(mtf_obj: 'MultivariateTaylorFunction') -> 'MultivariateTaylorFunction':
+        """Computes the Taylor expansion of arctanh(mtf_obj)."""
+        from .elementary_functions import _arctanh_taylor
+        return _arctanh_taylor(mtf_obj)
+
+    @staticmethod
+    def sqrt(mtf_obj: 'MultivariateTaylorFunction') -> 'MultivariateTaylorFunction':
+        """Computes the Taylor expansion of sqrt(mtf_obj)."""
+        return _sqrt_taylor(mtf_obj)
+
+    @staticmethod
+    def isqrt(mtf_obj: 'MultivariateTaylorFunction') -> 'MultivariateTaylorFunction':
+        """Computes the Taylor expansion of 1/sqrt(mtf_obj)."""
+        return _isqrt_taylor(mtf_obj)
+
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
         """
         Implements NumPy ufunc protocol, directly calling taylor functions from elementary_functions.py.
         Handles scalar inputs by converting them to MultivariateTaylorFunction constants.
         """
-        from . import elementary_functions as elem_funcs
-
         UNARY_UFUNC_MAP = {
-            np.sin: elem_funcs.sin_taylor,
-            np.cos: elem_funcs.cos_taylor,
-            np.tan: elem_funcs.tan_taylor,
-            np.exp: elem_funcs.exp_taylor,
-            np.sqrt: sqrt_taylor,
-            np.log: elem_funcs.log_taylor,
-            np.arctan: elem_funcs.arctan_taylor,
-            np.sinh: elem_funcs.sinh_taylor,
-            np.cosh: elem_funcs.cosh_taylor,
-            np.tanh: elem_funcs.tanh_taylor,
-            np.arcsin: elem_funcs.arcsin_taylor,
-            np.arccos: elem_funcs.arccos_taylor,
-            np.arctanh: elem_funcs.arctanh_taylor,
+            np.sin: self.sin,
+            np.cos: self.cos,
+            np.tan: self.tan,
+            np.exp: self.exp,
+            np.sqrt: self.sqrt,
+            np.log: self.log,
+            np.arctan: self.arctan,
+            np.sinh: self.sinh,
+            np.cosh: self.cosh,
+            np.tanh: self.tanh,
+            np.arcsin: self.arcsin,
+            np.arccos: self.arccos,
+            np.arctanh: self.arctanh,
             np.reciprocal: self._inv_mtf_internal,
             np.negative: self.__neg__,
             np.positive: lambda x: x,
@@ -1617,6 +1703,9 @@ class MultivariateTaylorFunction:
             self.__class__,
             ((self.exponents, self.coeffs), self.dimension, self.var_name),
         )
+
+
+mtf = MultivariateTaylorFunction
 
 
 def _generate_exponent_combinations(dimension, order):
@@ -1700,7 +1789,7 @@ def _split_constant_polynomial_part(
     return constant_term_C_value, polynomial_part_mtf
 
 
-def sqrt_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
+def _sqrt_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """
     Computes the Taylor expansion of the square root of an MTF.
 
@@ -1796,7 +1885,7 @@ def sqrt_taylor_1D_expansion(
     return composed_mtf.truncate(order)
 
 
-def isqrt_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
+def _isqrt_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """
     Computes the Taylor expansion of the inverse square root of an MTF.
 

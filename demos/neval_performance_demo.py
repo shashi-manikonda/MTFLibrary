@@ -1,17 +1,17 @@
 import numpy as np
 import time
 import torch
-from mtflib import MultivariateTaylorFunction
+from mtflib import mtf
 
 
-def old_eval_loop(mtf, points):
+def old_eval_loop(mtf_instance, points):
     """
     Evaluates the MTF at each point in a loop using the old eval logic.
     """
     results = np.empty(points.shape[0])
     for i, point in enumerate(points):
-        term_values = np.prod(np.power(point, mtf.exponents), axis=1)
-        results[i] = np.einsum("j,j->", mtf.coeffs, term_values)
+        term_values = np.prod(np.power(point, mtf_instance.exponents), axis=1)
+        results[i] = np.einsum("j,j->", mtf_instance.coeffs, term_values)
     return results
 
 
@@ -21,13 +21,13 @@ def main():
     """
     # --- Setup ---
     print("Setting up the performance demo...")
-    MultivariateTaylorFunction.initialize_mtf(max_order=5, max_dimension=3)
+    mtf.initialize_mtf(max_order=5, max_dimension=3)
 
     # Create a sample MTF
-    x = MultivariateTaylorFunction.from_variable(1, 3)
-    y = MultivariateTaylorFunction.from_variable(2, 3)
-    z = MultivariateTaylorFunction.from_variable(3, 3)
-    mtf = np.sin(x) + np.cos(y) + np.exp(z)
+    x = mtf.from_variable(1, 3)
+    y = mtf.from_variable(2, 3)
+    z = mtf.from_variable(3, 3)
+    mtf_instance = mtf.sin(x) + mtf.cos(y) + mtf.exp(z)
 
     # Generate a large number of random points
     n_points = 100_000
@@ -39,7 +39,7 @@ def main():
     # --- Benchmark old eval loop ---
     print("Benchmarking the old eval method (looping)...")
     start_time = time.time()
-    results_old = old_eval_loop(mtf, points)
+    results_old = old_eval_loop(mtf_instance, points)
     end_time = time.time()
     time_old = end_time - start_time
     print(f"Time taken: {time_old:.4f} seconds")
@@ -48,7 +48,7 @@ def main():
     # --- Benchmark new neval method ---
     print("Benchmarking the new neval method (vectorized)...")
     start_time = time.time()
-    results_new = mtf.neval(points)
+    results_new = mtf_instance.neval(points)
     end_time = time.time()
     time_new = end_time - start_time
     print(f"Time taken: {time_new:.4f} seconds")
@@ -58,7 +58,7 @@ def main():
     print("Benchmarking the new neval method with PyTorch tensors...")
     points_torch = torch.from_numpy(points).to(torch.float64)
     start_time = time.time()
-    results_torch = mtf.neval(points_torch)
+    results_torch = mtf_instance.neval(points_torch)
     end_time = time.time()
     time_torch = end_time - start_time
     print(f"Time taken: {time_torch:.4f} seconds")

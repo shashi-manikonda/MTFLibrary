@@ -22,17 +22,17 @@ Core Features:
   act as the derivation operators of the Differential Algebra.
 
 Example:
-    >>> from mtflib import MultivariateTaylorFunction, sin_taylor, Var
+    >>> from mtflib import mtf, Var
     >>>
     >>> # It is crucial to initialize the library's global settings first.
-    >>> MultivariateTaylorFunction.initialize_mtf(max_order=4, max_dimension=2)
+    >>> mtf.initialize_mtf(max_order=4, max_dimension=2)
     >>>
     >>> # Create variables x and y
     >>> x = Var(1)
     >>> y = Var(2)
     >>>
     >>> # Create a function f(x, y) = sin(x + y)
-    >>> f = sin_taylor(x + y)
+    >>> f = mtf.sin(x + y)
     >>>
     >>> print(f.get_tabular_dataframe())
        Coefficient  Order Exponents
@@ -50,27 +50,13 @@ import pandas as pd
 from .taylor_function import (
     MultivariateTaylorFunction,
     convert_to_mtf,
-    isqrt_taylor,
     Var,
     mtfarray,
+    mtf,
 )
 from .elementary_functions import (
-    cos_taylor,
-    sin_taylor,
-    tan_taylor,
-    exp_taylor,
-    gaussian_taylor,
-    log_taylor,
-    arctan_taylor,
-    sinh_taylor,
-    cosh_taylor,
-    tanh_taylor,
-    arcsin_taylor,
-    arccos_taylor,
-    arctanh_taylor,
     integrate,
     derivative,
-    sqrt_taylor,
 )
 from .complex_taylor_function import (
     ComplexMultivariateTaylorFunction,
@@ -95,24 +81,9 @@ __all__ = [
     "MultivariateTaylorFunction",
     "ComplexMultivariateTaylorFunction",
     "TaylorMap",
-    "MTF",  # Alias for MultivariateTaylorFunction
-    "Var",  # Factory for creating variables
-    # Elementary Functions
-    "sin_taylor",
-    "cos_taylor",
-    "tan_taylor",
-    "arcsin_taylor",
-    "arccos_taylor",
-    "arctan_taylor",
-    "sinh_taylor",
-    "cosh_taylor",
-    "tanh_taylor",
-    "arctanh_taylor",
-    "exp_taylor",
-    "log_taylor",
-    "sqrt_taylor",
-    "isqrt_taylor",
-    "gaussian_taylor",
+    "MTF",
+    "mtf",
+    "Var",
     # Core Operators
     "integrate",
     "derivative",
