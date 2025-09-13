@@ -42,7 +42,15 @@ docs = [
     "sympy",
 ]
 dev = [
-    "mtflib[test,torch,docs]",
+    "pytest",
+    "matplotlib",
+    "nbconvert",
+    "ipykernel",
+    "torch",
+    "sphinx",
+    "sphinx-rtd-theme",
+    "myst_parser",
+    "sympy",
     "black",
     "flake8",
     "pre-commit",
