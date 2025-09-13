@@ -29,10 +29,9 @@ jobs:
         env:
           CIBW_ARCHS: auto
           CIBW_BUILD: cp38-* cp39-* cp310-* cp311-* cp312-* cp313-*
-          # Install build dependencies like numpy and pybind11 before the build process starts.
-          CIBW_BEFORE_BUILD: pip install numpy pybind11
-          # This will force the build to run on a single core, preventing deadlocks.
-          CIBW_JOBS: 1
+          # We've removed CIBW_BEFORE_BUILD.
+          # cibuildwheel will now automatically handle numpy and pybind11
+          # as they are listed in pyproject.toml.
 
       - name: Publish distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
