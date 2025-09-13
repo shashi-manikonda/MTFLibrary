@@ -95,16 +95,16 @@ class MultivariateTaylorFunction:
     Examples
     --------
     >>> import numpy as np
-    >>> from mtflib import MultivariateTaylorFunction
+    >>> from mtflib import mtf, var
     >>>
-    >>> # Initialize global settings for MTF
-    >>> MultivariateTaylorFunction.initialize_mtf(max_order=5, max_dimension=2)
+    >>> # Initialize global settings for mtf
+    >>> mtf.initialize_mtf(max_order=5, max_dimension=2)
     >>>
     >>> # Create a constant function f(x1, x2) = 2.0
-    >>> f = MultivariateTaylorFunction.from_constant(2.0, dimension=2)
+    >>> f = mtf.from_constant(2.0, dimension=2)
     >>>
     >>> # Create a variable x1
-    >>> x1 = MultivariateTaylorFunction.from_variable(var_index=1, dimension=2)
+    >>> x1 = var(1, 2)
     >>>
     >>> # Create a function g(x1, x2) = 2.0 + x1
     >>> g = f + x1
@@ -153,19 +153,19 @@ class MultivariateTaylorFunction:
 
         Examples
         --------
-        >>> from mtflib import MultivariateTaylorFunction
+        >>> from mtflib import mtf
         >>> # Initialize for problems up to order 10 in 5 variables.
-        >>> MultivariateTaylorFunction.initialize_mtf(max_order=10, max_dimension=5)
-        Initializing MTF globals with: _MAX_ORDER=10, _MAX_DIMENSION=5
+        >>> mtf.initialize_mtf(max_order=10, max_dimension=5)
+        Initializing mtf globals with: _MAX_ORDER=10, _MAX_DIMENSION=5
         Loading/Precomputing Taylor coefficients up to order 10
         Global precomputed coefficients loading/generation complete.
         Size of precomputed_coefficients dictionary in memory: ...
-        MTF globals initialized: _MAX_ORDER=10, _MAX_DIMENSION=5, _INITIALIZED=True
+        mtf globals initialized: _MAX_ORDER=10, _MAX_DIMENSION=5, _INITIALIZED=True
         Max coefficient count (order=10, nvars=5): 3003
         Precomputed coefficients loaded and ready for use.
 
         >>> # This will raise an error because initialization with new settings is not allowed
-        >>> MultivariateTaylorFunction.initialize_mtf(max_order=12, max_dimension=5)
+        >>> mtf.initialize_mtf(max_order=12, max_dimension=5)
         Traceback (most recent call last):
         ...
         RuntimeError: MTF Globals are already initialized with different settings. Re-initialization with different max_order or max_dimension is not allowed.
@@ -559,9 +559,9 @@ class MultivariateTaylorFunction:
 
         Examples
         --------
-        >>> from mtflib import MultivariateTaylorFunction, Var
-        >>> MultivariateTaylorFunction.initialize_mtf(max_order=2, max_dimension=2)
-        >>> x, y = Var(1), Var(2)
+        >>> from mtflib import mtf, var
+        >>> mtf.initialize_mtf(max_order=2, max_dimension=2)
+        >>> x, y = var(1), var(2)
         >>> f = 1 + x*y
         >>>
         >>> # --- NumPy Backend ---
@@ -897,9 +897,9 @@ class MultivariateTaylorFunction:
 
         elif isinstance(power, float):
             if power == 0.5:
-                return sqrt_taylor(self)
+                return _sqrt_taylor(self)
             elif power == -0.5:
-                return isqrt_taylor(self)
+                return _isqrt_taylor(self)
             else:
                 raise ValueError(
                     "Power must be a non-negative integer, 0.5, or -0.5.")
@@ -1186,9 +1186,9 @@ class MultivariateTaylorFunction:
 
         Examples
         --------
-        >>> MultivariateTaylorFunction.initialize_mtf(max_order=2, max_dimension=2)
-        >>> x1 = MultivariateTaylorFunction.from_variable(1, 2)
-        >>> x2 = MultivariateTaylorFunction.from_variable(2, 2)
+        >>> mtf.initialize_mtf(max_order=2, max_dimension=2)
+        >>> x1 = mtf.from_variable(1, 2)
+        >>> x2 = mtf.from_variable(2, 2)
         >>> f = x1 * x1 + x2
         >>> g1 = x1 + 1
         >>> g2 = x2 * 2
@@ -1556,27 +1556,113 @@ class MultivariateTaylorFunction:
         """Defines inequality (!=) for MultivariateTaylorFunction objects."""
         return not self.__eq__(other)
 
+    @staticmethod
+    def sin(mtf_obj: 'MultivariateTaylorFunction') -> 'MultivariateTaylorFunction':
+        """Computes the Taylor expansion of sin(mtf_obj)."""
+        from .elementary_functions import _sin_taylor
+        return _sin_taylor(mtf_obj)
+
+    @staticmethod
+    def cos(mtf_obj: 'MultivariateTaylorFunction') -> 'MultivariateTaylorFunction':
+        """Computes the Taylor expansion of cos(mtf_obj)."""
+        from .elementary_functions import _cos_taylor
+        return _cos_taylor(mtf_obj)
+
+    @staticmethod
+    def tan(mtf_obj: 'MultivariateTaylorFunction') -> 'MultivariateTaylorFunction':
+        """Computes the Taylor expansion of tan(mtf_obj)."""
+        from .elementary_functions import _tan_taylor
+        return _tan_taylor(mtf_obj)
+
+    @staticmethod
+    def exp(mtf_obj: 'MultivariateTaylorFunction') -> 'MultivariateTaylorFunction':
+        """Computes the Taylor expansion of exp(mtf_obj)."""
+        from .elementary_functions import _exp_taylor
+        return _exp_taylor(mtf_obj)
+
+    @staticmethod
+    def gaussian(mtf_obj: 'MultivariateTaylorFunction') -> 'MultivariateTaylorFunction':
+        """Computes the Taylor expansion of a Gaussian function, exp(-mtf_obj^2)."""
+        from .elementary_functions import _gaussian_taylor
+        return _gaussian_taylor(mtf_obj)
+
+    @staticmethod
+    def log(mtf_obj: 'MultivariateTaylorFunction') -> 'MultivariateTaylorFunction':
+        """Computes the Taylor expansion of log(mtf_obj)."""
+        from .elementary_functions import _log_taylor
+        return _log_taylor(mtf_obj)
+
+    @staticmethod
+    def arctan(mtf_obj: 'MultivariateTaylorFunction') -> 'MultivariateTaylorFunction':
+        """Computes the Taylor expansion of arctan(mtf_obj)."""
+        from .elementary_functions import _arctan_taylor
+        return _arctan_taylor(mtf_obj)
+
+    @staticmethod
+    def sinh(mtf_obj: 'MultivariateTaylorFunction') -> 'MultivariateTaylorFunction':
+        """Computes the Taylor expansion of sinh(mtf_obj)."""
+        from .elementary_functions import _sinh_taylor
+        return _sinh_taylor(mtf_obj)
+
+    @staticmethod
+    def cosh(mtf_obj: 'MultivariateTaylorFunction') -> 'MultivariateTaylorFunction':
+        """Computes the Taylor expansion of cosh(mtf_obj)."""
+        from .elementary_functions import _cosh_taylor
+        return _cosh_taylor(mtf_obj)
+
+    @staticmethod
+    def tanh(mtf_obj: 'MultivariateTaylorFunction') -> 'MultivariateTaylorFunction':
+        """Computes the Taylor expansion of tanh(mtf_obj)."""
+        from .elementary_functions import _tanh_taylor
+        return _tanh_taylor(mtf_obj)
+
+    @staticmethod
+    def arcsin(mtf_obj: 'MultivariateTaylorFunction') -> 'MultivariateTaylorFunction':
+        """Computes the Taylor expansion of arcsin(mtf_obj)."""
+        from .elementary_functions import _arcsin_taylor
+        return _arcsin_taylor(mtf_obj)
+
+    @staticmethod
+    def arccos(mtf_obj: 'MultivariateTaylorFunction') -> 'MultivariateTaylorFunction':
+        """Computes the Taylor expansion of arccos(mtf_obj)."""
+        from .elementary_functions import _arccos_taylor
+        return _arccos_taylor(mtf_obj)
+
+    @staticmethod
+    def arctanh(mtf_obj: 'MultivariateTaylorFunction') -> 'MultivariateTaylorFunction':
+        """Computes the Taylor expansion of arctanh(mtf_obj)."""
+        from .elementary_functions import _arctanh_taylor
+        return _arctanh_taylor(mtf_obj)
+
+    @staticmethod
+    def sqrt(mtf_obj: 'MultivariateTaylorFunction') -> 'MultivariateTaylorFunction':
+        """Computes the Taylor expansion of sqrt(mtf_obj)."""
+        return _sqrt_taylor(mtf_obj)
+
+    @staticmethod
+    def isqrt(mtf_obj: 'MultivariateTaylorFunction') -> 'MultivariateTaylorFunction':
+        """Computes the Taylor expansion of 1/sqrt(mtf_obj)."""
+        return _isqrt_taylor(mtf_obj)
+
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
         """
         Implements NumPy ufunc protocol, directly calling taylor functions from elementary_functions.py.
         Handles scalar inputs by converting them to MultivariateTaylorFunction constants.
         """
-        from . import elementary_functions as elem_funcs
-
         UNARY_UFUNC_MAP = {
-            np.sin: elem_funcs.sin_taylor,
-            np.cos: elem_funcs.cos_taylor,
-            np.tan: elem_funcs.tan_taylor,
-            np.exp: elem_funcs.exp_taylor,
-            np.sqrt: sqrt_taylor,
-            np.log: elem_funcs.log_taylor,
-            np.arctan: elem_funcs.arctan_taylor,
-            np.sinh: elem_funcs.sinh_taylor,
-            np.cosh: elem_funcs.cosh_taylor,
-            np.tanh: elem_funcs.tanh_taylor,
-            np.arcsin: elem_funcs.arcsin_taylor,
-            np.arccos: elem_funcs.arccos_taylor,
-            np.arctanh: elem_funcs.arctanh_taylor,
+            np.sin: self.sin,
+            np.cos: self.cos,
+            np.tan: self.tan,
+            np.exp: self.exp,
+            np.sqrt: self.sqrt,
+            np.log: self.log,
+            np.arctan: self.arctan,
+            np.sinh: self.sinh,
+            np.cosh: self.cosh,
+            np.tanh: self.tanh,
+            np.arcsin: self.arcsin,
+            np.arccos: self.arccos,
+            np.arctanh: self.arctanh,
             np.reciprocal: self._inv_mtf_internal,
             np.negative: self.__neg__,
             np.positive: lambda x: x,
@@ -1619,6 +1705,9 @@ class MultivariateTaylorFunction:
         )
 
 
+mtf = MultivariateTaylorFunction
+
+
 def _generate_exponent_combinations(dimension, order):
     """Generates all combinations of exponents for a given dimension and order."""
     if dimension <= 0 or order < 0:
@@ -1649,7 +1738,7 @@ def convert_to_mtf(input_val, dimension=None):
         return convert_to_mtf(input_val.item(), dimension)
     elif isinstance(input_val, np.number):
         return convert_to_mtf(float(input_val), dimension)
-    elif callable(input_val) and input_val.__name__ == "Var":
+    elif callable(input_val) and input_val.__name__ == "var":
         return input_val(dimension)
     else:
         raise TypeError(
@@ -1700,7 +1789,7 @@ def _split_constant_polynomial_part(
     return constant_term_C_value, polynomial_part_mtf
 
 
-def sqrt_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
+def _sqrt_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """
     Computes the Taylor expansion of the square root of an MTF.
 
@@ -1796,7 +1885,7 @@ def sqrt_taylor_1D_expansion(
     return composed_mtf.truncate(order)
 
 
-def isqrt_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
+def _isqrt_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """
     Computes the Taylor expansion of the inverse square root of an MTF.
 
@@ -1892,12 +1981,12 @@ def isqrt_taylor_1D_expansion(
     return composed_mtf.truncate(order)
 
 
-def Var(var_index):
+def var(var_index):
     """
     Creates a MultivariateTaylorFunction representing an independent variable.
 
     This is a convenience factory function for creating a single variable,
-    equivalent to `MultivariateTaylorFunction.from_variable`. The dimension
+    equivalent to `mtf.from_variable`. The dimension
     is inferred from the global settings.
 
     Parameters
@@ -1908,20 +1997,20 @@ def Var(var_index):
     Returns
     -------
     MultivariateTaylorFunction
-        An MTF object representing the variable `x_i`.
+        An mtf object representing the variable `x_i`.
 
     Raises
     ------
     RuntimeError
-        If the MTF globals have not been initialized.
+        If the mtf globals have not been initialized.
     ValueError
         If `var_index` is not a valid index.
     """
-    dimension = MultivariateTaylorFunction.get_max_dimension()
+    dimension = mtf.get_max_dimension()
 
-    if not MultivariateTaylorFunction.get_mtf_initialized_status():
+    if not mtf.get_mtf_initialized_status():
         raise RuntimeError(
-            "MTF Globals must be initialized before creating Var objects."
+            "mtf Globals must be initialized before creating var objects."
         )
     if not isinstance(
             var_index,
@@ -1933,7 +2022,7 @@ def Var(var_index):
     exponents_arr[0, var_index - 1] = 1
     coeffs_arr = np.array([1.0], dtype=np.float64)
 
-    return MultivariateTaylorFunction(
+    return mtf(
         coefficients=(exponents_arr, coeffs_arr), dimension=dimension
     )
 
@@ -1975,29 +2064,29 @@ def mtfarray(mtfs, column_names=None):
     if not mtfs:
         return pd.DataFrame(columns=["Order", "Exponents"])
 
-    valid_mtf_types = (MultivariateTaylorFunction,)
-    for mtf in mtfs:
-        if not isinstance(mtf, valid_mtf_types):
+    valid_mtf_types = (mtf,)
+    for mtf_instance in mtfs:
+        if not isinstance(mtf_instance, valid_mtf_types):
             raise TypeError(
-                f"All elements in 'mtfs' must be instances of {MultivariateTaylorFunction.__name__}, but found {type(mtf).__name__}."
+                f"All elements in 'mtfs' must be instances of {mtf.__name__}, but found {type(mtf_instance).__name__}."
             )
 
     first_dim = mtfs[0].dimension
-    for i, mtf in enumerate(mtfs[1:]):
-        if mtf.dimension != first_dim:
+    for i, mtf_instance in enumerate(mtfs[1:]):
+        if mtf_instance.dimension != first_dim:
             raise ValueError(
-                f"MTF at index {i + 1} has dimension {mtf.dimension}, but the first MTF has dimension {first_dim}. All MTFs must have the same dimension."
+                f"mtf at index {i + 1} has dimension {mtf_instance.dimension}, but the first mtf has dimension {first_dim}. All mtfs must have the same dimension."
             )
     
     dfs = []
-    for i, mtf in enumerate(mtfs):
-        df = mtf.get_tabular_dataframe()
+    for i, mtf_instance in enumerate(mtfs):
+        df = mtf_instance.get_tabular_dataframe()
         if column_names and len(column_names) == len(mtfs):
             if "Coefficient" in df.columns:
                 df = df.rename(
                     columns={"Coefficient": f"Coeff_{column_names[i]}"})
         else:
-            mtf_name = getattr(mtf, "name", str(i + 1))
+            mtf_name = getattr(mtf_instance, "name", str(i + 1))
             if "Coefficient" in df.columns:
                 df = df.rename(
                     columns={"Coefficient": f"Coefficient_{mtf_name}"})

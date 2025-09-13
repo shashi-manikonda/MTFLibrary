@@ -14,20 +14,20 @@ simpler ones. We will create the function `f(x, y) = sin(x + y)`.
 
 .. code-block:: python
 
-   from mtflib import MultivariateTaylorFunction, Var, sin_taylor
+   from mtflib import mtf, var
 
    # Initialize the library
-   MultivariateTaylorFunction.initialize_mtf(max_order=4, max_dimension=2)
+   mtf.initialize_mtf(max_order=4, max_dimension=2)
 
    # Create variables
-   x = Var(1)
-   y = Var(2)
+   x = var(1)
+   y = var(2)
 
    # Define the inner function g(x, y) = x + y
    g = x + y
 
    # Compose with sin to get f(x, y) = sin(x + y)
-   f = sin_taylor(g)
+   f = mtf.sin(g)
 
    print("Taylor series for f(x, y) = sin(x + y):")
    print(f.get_tabular_dataframe())
@@ -40,14 +40,14 @@ This example shows how to define a map and compute its inverse.
 
 .. code-block:: python
 
-   from mtflib import MultivariateTaylorFunction, TaylorMap, Var
+   from mtflib import mtf, TaylorMap, var
 
    # Initialize the library
-   MultivariateTaylorFunction.initialize_mtf(max_order=3, max_dimension=2)
+   mtf.initialize_mtf(max_order=3, max_dimension=2)
 
    # Create variables for the original coordinate system
-   x = Var(1)
-   y = Var(2)
+   x = var(1)
+   y = var(2)
 
    # Define a transformation F(x, y) = [u, v] where:
    # u = x + y^2
@@ -65,8 +65,8 @@ This example shows how to define a map and compute its inverse.
 
    # Verification: F(G(u,v)) should be the identity map [u, v]
    # Let's use new variables u, v for clarity
-   u = Var(1)
-   v = Var(2)
+   u = var(1)
+   v = var(2)
    Identity_check = F.compose(G)
 
    print("\\nVerification F(G(u,v)):")
@@ -81,14 +81,14 @@ operators: `derivative` and `integrate`.
 
 .. code-block:: python
 
-   from mtflib import MultivariateTaylorFunction, Var, derivative, integrate
+   from mtflib import mtf, var, derivative, integrate
 
    # Initialize the library
-   MultivariateTaylorFunction.initialize_mtf(max_order=5, max_dimension=2)
+   mtf.initialize_mtf(max_order=5, max_dimension=2)
 
    # Create variables
-   x = Var(1)
-   y = Var(2)
+   x = var(1)
+   y = var(2)
 
    # Define a function f(x, y) = x^3 * y^2
    f = (x**3) * (y**2)

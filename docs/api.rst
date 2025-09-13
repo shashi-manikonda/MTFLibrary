@@ -16,6 +16,8 @@ These are the main classes for representing and manipulating Taylor series.
    :members:
    :undoc-members:
    :show-inheritance:
+   :autosummary:
+   :autosummary-nosignatures:
 
 .. autoclass:: mtflib.complex_taylor_function.ComplexMultivariateTaylorFunction
    :members:
@@ -33,7 +35,7 @@ Factory and Utility Functions
 These functions are used to create or manipulate core objects.
 
 .. automodule:: mtflib.taylor_function
-   :members: Var, mtfarray
+   :members: var, mtfarray, mtf
 
 .. automodule:: mtflib.elementary_coefficients
    :members: load_precomputed_coefficients
@@ -45,8 +47,7 @@ These functions provide the core mathematical operations of the Differential
 Algebra.
 
 .. automodule:: mtflib.elementary_functions
-   :members:
-   :undoc-members:
+   :members: integrate, derivative
 
 Backend System
 --------------

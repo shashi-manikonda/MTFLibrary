@@ -14,7 +14,7 @@ from .taylor_function import (
     MultivariateTaylorFunction,
     convert_to_mtf,
     _split_constant_polynomial_part,
-    sqrt_taylor,
+    _sqrt_taylor,
 )
 from .complex_taylor_function import ComplexMultivariateTaylorFunction
 from . import (
@@ -60,7 +60,7 @@ def _apply_constant_factoring(
     return result_mtf
 
 
-def sin_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
+def _sin_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """
     Computes the Taylor expansion of `sin(x)`.
 
@@ -106,7 +106,7 @@ def sin_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     return result_mtf.truncate(order)
 
 
-def cos_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
+def _cos_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """
     Computes the Taylor expansion of `cos(x)`.
 
@@ -258,7 +258,7 @@ def cos_taylor_around_zero(
     return composed_mtf.truncate(order)
 
 
-def tan_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
+def _tan_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """
     Computes the Taylor expansion of `tan(x)`.
 
@@ -290,13 +290,13 @@ def tan_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
-    sin_mtf = sin_taylor(variable, order=order)
-    cos_mtf = cos_taylor(variable, order=order)
+    sin_mtf = _sin_taylor(variable, order=order)
+    cos_mtf = _cos_taylor(variable, order=order)
     tan_mtf = sin_mtf / cos_mtf
     return tan_mtf.truncate(order)
 
 
-def exp_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
+def _exp_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """
     Computes the Taylor expansion of `exp(x)`.
 
@@ -388,7 +388,7 @@ def exp_taylor_around_zero(
     return composed_mtf.truncate(order)
 
 
-def gaussian_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
+def _gaussian_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """
     Computes the Taylor expansion of a Gaussian function, `exp(-x^2)`.
 
@@ -420,10 +420,10 @@ def gaussian_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
     input_mtf = convert_to_mtf(variable)
-    return exp_taylor(-(input_mtf**2), order=order)
+    return _exp_taylor(-(input_mtf**2), order=order)
 
 
-def log_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
+def _log_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """
     Computes the Taylor expansion of `log(x)`.
 
@@ -544,7 +544,7 @@ def log_taylor_1D_expansion(
     return composed_mtf.truncate(order)
 
 
-def arctan_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
+def _arctan_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """
     Computes the Taylor expansion of `arctan(x)`.
 
@@ -649,7 +649,7 @@ def arctan_taylor_1D_expansion(
     return composed_mtf.truncate(order)
 
 
-def sinh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
+def _sinh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """
     Computes the Taylor expansion of `sinh(x)`.
 
@@ -695,7 +695,7 @@ def sinh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     return result_mtf.truncate(order)
 
 
-def cosh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
+def _cosh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """
     Computes the Taylor expansion of `cosh(x)`.
 
@@ -861,7 +861,7 @@ def cosh_taylor_around_zero(
     return composed_mtf.truncate(order)
 
 
-def tanh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
+def _tanh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """
     Computes the Taylor expansion of `tanh(x)`.
 
@@ -893,13 +893,13 @@ def tanh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
-    sinh_mtf = sinh_taylor(variable, order=order)
-    cosh_mtf = cosh_taylor(variable, order=order)
+    sinh_mtf = _sinh_taylor(variable, order=order)
+    cosh_mtf = _cosh_taylor(variable, order=order)
     tanh_mtf = sinh_mtf / cosh_mtf
     return tanh_mtf.truncate(order)
 
 
-def arctanh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
+def _arctanh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """
     Computes the Taylor expansion of `arctanh(x)`.
 
@@ -1011,7 +1011,7 @@ def arctanh_taylor_1D_expansion(
     return composed_mtf.truncate(order)
 
 
-def arcsin_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
+def _arcsin_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """
     Computes the Taylor expansion of `arcsin(x)`.
 
@@ -1046,13 +1046,13 @@ def arcsin_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     x_mtf = convert_to_mtf(variable)
     x_squared_mtf = x_mtf * x_mtf
     one_minus_x_squared_mtf = 1.0 - x_squared_mtf
-    sqrt_of_one_minus_x_squared_mtf = sqrt_taylor(one_minus_x_squared_mtf)
+    sqrt_of_one_minus_x_squared_mtf = _sqrt_taylor(one_minus_x_squared_mtf)
     argument_mtf = x_mtf / sqrt_of_one_minus_x_squared_mtf
-    arcsin_mtf = arctan_taylor(argument_mtf, order=order)
+    arcsin_mtf = _arctan_taylor(argument_mtf, order=order)
     return arcsin_mtf.truncate(order)
 
 
-def arccos_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
+def _arccos_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """
     Computes the Taylor expansion of `arccos(x)`.
 
@@ -1086,7 +1086,7 @@ def arccos_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
-    arcsin_mtf = arcsin_taylor(
+    arcsin_mtf = _arcsin_taylor(
         variable, order=order
     )  # Get arcsin_taylor expansion
     pi_over_2_constant = np.pi / 2.0

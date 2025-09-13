@@ -5,24 +5,11 @@ import numpy as np
 import pandas as pd
 import mtflib
 from mtflib import (
-    MultivariateTaylorFunction,
-    Var,
+    mtf,
+    var,
     mtfarray,
     convert_to_mtf,
-    cos_taylor,
-    sin_taylor,
-    exp_taylor,
-    gaussian_taylor,
-    log_taylor,
-    arctan_taylor,
-    sinh_taylor,
-    cosh_taylor,
-    tanh_taylor,
-    arcsin_taylor,
-    arccos_taylor,
-    arctanh_taylor,
     ComplexMultivariateTaylorFunction,
-    sqrt_taylor,
 )
 
 # Global settings for tests
@@ -33,14 +20,14 @@ ETOL = 1e-10
 
 @pytest.fixture(scope="function", autouse=True)
 def setup_function():
-    MultivariateTaylorFunction.initialize_mtf(
+    mtf.initialize_mtf(
         max_order=MAX_ORDER, max_dimension=MAX_DIMENSION
     )
-    MultivariateTaylorFunction.set_etol(ETOL)
-    global_dim = MultivariateTaylorFunction.get_max_dimension()
+    mtf.set_etol(ETOL)
+    global_dim = mtf.get_max_dimension()
     exponent_zero = tuple([0] * global_dim)
     yield global_dim, exponent_zero
-    mtflib.taylor_function.MultivariateTaylorFunction._INITIALIZED = False
+    mtflib.taylor_function.mtf._INITIALIZED = False
 
 
 # --- Global Settings Tests ---
@@ -49,37 +36,37 @@ def setup_function():
 # --- Tests for Global Settings ---
 def test_global_initialization_once(setup_function):
     global_dim, exponent_zero = setup_function
-    assert MultivariateTaylorFunction.get_max_order() == MAX_ORDER
-    assert MultivariateTaylorFunction.get_max_dimension() == MAX_DIMENSION
+    assert mtf.get_max_order() == MAX_ORDER
+    assert mtf.get_max_dimension() == MAX_DIMENSION
     # Re-initialization should not fail, but print a warning.
-    MultivariateTaylorFunction.initialize_mtf(
+    mtf.initialize_mtf(
         max_order=MAX_ORDER, max_dimension=MAX_DIMENSION
     )
 
 
 def test_global_max_order_setting(setup_function):
     global_dim, exponent_zero = setup_function
-    MultivariateTaylorFunction.set_max_order(MAX_ORDER)
-    assert MultivariateTaylorFunction.get_max_order() == MAX_ORDER
+    mtf.set_max_order(MAX_ORDER)
+    assert mtf.get_max_order() == MAX_ORDER
     with pytest.raises(ValueError):
-        MultivariateTaylorFunction.set_max_order(-1)  # Invalid order
+        mtf.set_max_order(-1)  # Invalid order
 
 
 def test_global_etol_setting(setup_function):
     global_dim, exponent_zero = setup_function
-    MultivariateTaylorFunction.set_etol(1e-6)
-    assert MultivariateTaylorFunction.get_etol() == 1e-6
+    mtf.set_etol(1e-6)
+    assert mtf.get_etol() == 1e-6
     with pytest.raises(ValueError):
-        MultivariateTaylorFunction.set_etol(-1e-6)  # Invalid etol
+        mtf.set_etol(-1e-6)  # Invalid etol
     with pytest.raises(ValueError):
-        MultivariateTaylorFunction.set_etol(0.0)  # Invalid etol
+        mtf.set_etol(0.0)  # Invalid etol
 
 
 # --- Var Function Tests ---
 def test_var_creation(setup_function):
     global_dim, exponent_zero = setup_function
-    x_var = Var(1)
-    assert isinstance(x_var, MultivariateTaylorFunction)
+    x_var = var(1)
+    assert isinstance(x_var, mtf)
     assert x_var.dimension == global_dim
     exponent_one = [0] * global_dim
     if global_dim > 0:
@@ -89,9 +76,9 @@ def test_var_creation(setup_function):
     coeff_constant = x_var.extract_coefficient(exponent_zero)
     assert np.allclose(coeff_constant, 0.0)
     with pytest.raises(ValueError):
-        Var(0)
+        var(0)
     with pytest.raises(ValueError):
-        Var(global_dim + 1)
+        var(global_dim + 1)
 
 
 # --- MultivariateTaylorFunction (Real MTF) Tests ---
@@ -99,7 +86,7 @@ def test_var_creation(setup_function):
 
 def test_mtf_constant_creation(setup_function):
     global_dim, exponent_zero = setup_function
-    const_mtf = MultivariateTaylorFunction.from_constant(5.0)
+    const_mtf = mtf.from_constant(5.0)
     assert np.allclose(const_mtf.eval([0] * global_dim), 5.0)
     assert np.allclose(const_mtf.extract_coefficient(exponent_zero), 5.0)
 
@@ -118,8 +105,8 @@ def test_mtf_variable_evaluation(setup_function):
     if global_dim > 1:
         evaluation_point_x2[1] = 3.0
 
-    x1_var = Var(1)
-    x2_var = Var(2)
+    x1_var = var(1)
+    x2_var = var(2)
     assert np.allclose(x1_var.eval(evaluation_point_x1), 2.0)
     assert np.allclose(x2_var.eval(evaluation_point_x2), 3.0)
 
@@ -143,8 +130,8 @@ def test_mtf_truncate(setup_function):
         exponent_two: 3.0,
         exponent_three: 4.0,
     }
-    mtf = MultivariateTaylorFunction(coefficients=coeffs, dimension=global_dim)
-    truncated_mtf = mtf.truncate(2)
+    mtf_instance = mtf(coefficients=coeffs, dimension=global_dim)
+    truncated_mtf = mtf_instance.truncate(2)
     assert np.allclose(truncated_mtf.extract_coefficient(exponent_three), 0.0)
     assert np.allclose(truncated_mtf.extract_coefficient(exponent_two), 3.0)
     assert np.allclose(truncated_mtf.extract_coefficient(exponent_one), 2.0)
@@ -165,12 +152,12 @@ def test_mtf_extract_coefficient(setup_function):
             )
         exponent_one_one = tuple(exponent_one_one_list)
 
-    mtf = MultivariateTaylorFunction(
+    mtf_instance = mtf(
         coefficients={exponent_one_one: 2.5, exponent_zero: 1.0},
         dimension=max(2, global_dim),
     )  # Dimension is set here to at least 2 for the test
-    assert np.allclose(mtf.extract_coefficient(exponent_one_one), 2.5)
-    assert np.allclose(mtf.extract_coefficient(exponent_zero), 1.0)
+    assert np.allclose(mtf_instance.extract_coefficient(exponent_one_one), 2.5)
+    assert np.allclose(mtf_instance.extract_coefficient(exponent_zero), 1.0)
 
     exponent_two_zero = list(exponent_zero)
     if global_dim > 0:
@@ -178,7 +165,7 @@ def test_mtf_extract_coefficient(setup_function):
         exponent_two_zero_list[0] = 2
         exponent_two_zero = tuple(exponent_two_zero_list)
     assert np.allclose(
-        mtf.extract_coefficient(exponent_two_zero), 0.0
+        mtf_instance.extract_coefficient(exponent_two_zero), 0.0
     )  # Non-existent coefficient should be zero
 
 
@@ -189,23 +176,23 @@ def test_mtf_set_coefficient(setup_function):
         exponent_one[0] = 1
     exponent_one = tuple(exponent_one)
 
-    mtf = MultivariateTaylorFunction.from_constant(0.0)
-    mtf.set_coefficient(exponent_one, 3.0)
-    assert np.allclose(mtf.extract_coefficient(exponent_one), 3.0)
-    mtf.set_coefficient(exponent_one, 0.0)  # Setting to zero
-    assert np.allclose(mtf.extract_coefficient(exponent_one), 0.0)
+    mtf_instance = mtf.from_constant(0.0)
+    mtf_instance.set_coefficient(exponent_one, 3.0)
+    assert np.allclose(mtf_instance.extract_coefficient(exponent_one), 3.0)
+    mtf_instance.set_coefficient(exponent_one, 0.0)  # Setting to zero
+    assert np.allclose(mtf_instance.extract_coefficient(exponent_one), 0.0)
     with pytest.raises(TypeError):
-        mtf.set_coefficient(list(exponent_one), 2.0)  # Exponents must be tuple
+        mtf_instance.set_coefficient(list(exponent_one), 2.0)  # Exponents must be tuple
     with pytest.raises(ValueError):
         if global_dim > 1:
             invalid_exponent = tuple(exponent_one[:-1])  # Shorter tuple
         else:
             invalid_exponent = (1, 0)  # Mismatch if global_dim is 1
-        mtf.set_coefficient(
+        mtf_instance.set_coefficient(
             invalid_exponent, 2.0
         )  # Exponent dimension mismatch
     with pytest.raises(TypeError):
-        mtf.set_coefficient(exponent_one, "invalid")  # Value must be numeric
+        mtf_instance.set_coefficient(exponent_one, "invalid")  # Value must be numeric
 
 
 def test_mtf_get_max_coefficient(setup_function):
@@ -224,10 +211,10 @@ def test_mtf_get_max_coefficient(setup_function):
         exponent_one_zero: -2.0,
         exponent_zero_one: 3.0,
     }
-    mtf = MultivariateTaylorFunction(
+    mtf_instance = mtf(
         coefficients=coeffs, dimension=max(2, global_dim)
     )  # Dimension at least 2 for the test
-    assert pytest.approx(mtf.get_max_coefficient()) == 3.0
+    assert pytest.approx(mtf_instance.get_max_coefficient()) == 3.0
 
 
 def test_mtf_get_min_coefficient(setup_function):
@@ -241,20 +228,20 @@ def test_mtf_get_min_coefficient(setup_function):
     exponent_one_zero = tuple(exponent_one_zero)
     exponent_zero_one = tuple(exponent_zero_one)
 
-    etol = MultivariateTaylorFunction.get_etol()
+    etol = mtf.get_etol()
     coeffs = {
         exponent_zero: 0.1,
         exponent_one_zero: 2.0,
         exponent_zero_one: 3.0,
     }
-    mtf = MultivariateTaylorFunction(
+    mtf_instance = mtf(
         coefficients=coeffs, dimension=max(2, global_dim)
     )  # Dimension at least 2 for the test
     assert (
-        pytest.approx(mtf.get_min_coefficient(tolerance=0.5)) == 2.0
+        pytest.approx(mtf_instance.get_min_coefficient(tolerance=0.5)) == 2.0
     )  # Min non-negligible coefficient (above 0.5)
     coeffs_negligible = {exponent_zero: etol}
-    mtf_negligible = MultivariateTaylorFunction(
+    mtf_negligible = mtf(
         coefficients=coeffs_negligible, dimension=max(2, global_dim)
     )
     assert (
@@ -282,10 +269,10 @@ def test_mtf_addition(setup_function):
         exponent_one[0] = 1
     exponent_one = tuple(exponent_one)
 
-    mtf1 = MultivariateTaylorFunction(
+    mtf1 = mtf(
         {exponent_zero: 1.0, exponent_one: 2.0}, dimension=global_dim
     )  # 1 + 2x
-    mtf2 = MultivariateTaylorFunction(
+    mtf2 = mtf(
         {exponent_zero: 3.0, exponent_one: -1.0}, dimension=global_dim
     )  # 3 - x
     mtf_sum = mtf1 + mtf2  # (1+2x) + (3-x) = 4 + x
@@ -306,10 +293,10 @@ def test_mtf_subtraction(setup_function):
         exponent_one[0] = 1
     exponent_one = tuple(exponent_one)
 
-    mtf1 = MultivariateTaylorFunction(
+    mtf1 = mtf(
         {exponent_zero: 5.0, exponent_one: 3.0}, dimension=global_dim
     )  # 5 + 3x
-    mtf2 = MultivariateTaylorFunction(
+    mtf2 = mtf(
         {exponent_zero: 2.0, exponent_one: 1.0}, dimension=global_dim
     )  # 2 + x
     mtf_diff = mtf1 - mtf2  # (5+3x) - (2+x) = 3 + 2x
@@ -335,10 +322,10 @@ def test_mtf_multiplication(setup_function):
     exponent_one = tuple(exponent_one)
     exponent_two = tuple(exponent_two)
 
-    mtf1 = MultivariateTaylorFunction(
+    mtf1 = mtf(
         {exponent_zero: 2.0, exponent_one: 1.0}, dimension=global_dim
     )  # 2 + x
-    mtf2 = MultivariateTaylorFunction(
+    mtf2 = mtf(
         {exponent_zero: 3.0, exponent_one: -2.0}, dimension=global_dim
     )  # 3 - 2x
     mtf_prod = (
@@ -368,14 +355,14 @@ def test_mtf_power(setup_function):
     exponent_two = tuple(exponent_two)
     exponent_three = tuple(exponent_three)
 
-    mtf = MultivariateTaylorFunction(
+    mtf_instance = mtf(
         {exponent_zero: 1.0, exponent_one: 1.0}, dimension=global_dim
     )  # 1 + x
-    mtf_sq = mtf**2  # (1+x)^2 = 1 + 2x + x^2
+    mtf_sq = mtf_instance**2  # (1+x)^2 = 1 + 2x + x^2
     assert np.allclose(mtf_sq.extract_coefficient(exponent_zero), 1.0)
     assert np.allclose(mtf_sq.extract_coefficient(exponent_one), 2.0)
     assert np.allclose(mtf_sq.extract_coefficient(exponent_two), 1.0)
-    mtf_cube = mtf**3  # (1+x)^3 = 1 + 3x + 3x^2 + x^3
+    mtf_cube = mtf_instance**3  # (1+x)^3 = 1 + 3x + 3x^2 + x^3
     assert np.allclose(mtf_cube.extract_coefficient(exponent_zero), 1.0)
     assert np.allclose(mtf_cube.extract_coefficient(exponent_one), 3.0)
     assert np.allclose(mtf_cube.extract_coefficient(exponent_two), 3.0)
@@ -385,11 +372,11 @@ def test_mtf_power(setup_function):
         assert coeff_three == pytest.approx(1.0)
     else:
         # If max_order is less than 3, the coefficient might not exist
-        assert MultivariateTaylorFunction.get_max_order() < 3
+        assert mtf.get_max_order() < 3
     with pytest.raises(ValueError):
-        mtf ** (-2)  # Negative power not allowed
+        mtf_instance ** (-2)  # Negative power not allowed
     with pytest.raises(ValueError):
-        mtf**2.5  # Non-integer power not allowed
+        mtf_instance**2.5  # Non-integer power not allowed
 
 
 def test_mtf_negation(setup_function):
@@ -399,10 +386,10 @@ def test_mtf_negation(setup_function):
         exponent_one[0] = 1
     exponent_one = tuple(exponent_one)
 
-    mtf = MultivariateTaylorFunction(
+    mtf_instance = mtf(
         {exponent_zero: 2.0, exponent_one: -1.0}, dimension=global_dim
     )  # 2 - x
-    neg_mtf = -mtf  # -(2 - x) = -2 + x
+    neg_mtf = -mtf_instance  # -(2 - x) = -2 + x
     assert np.allclose(neg_mtf.extract_coefficient(exponent_zero), -2.0)
     assert np.allclose(neg_mtf.extract_coefficient(exponent_one), 1.0)
 
@@ -414,7 +401,7 @@ def test_mtf_eval_shape_consistency(setup_function):
         exponent_one[0] = 1
     exponent_one = tuple(exponent_one)
 
-    mtf = MultivariateTaylorFunction(
+    mtf_instance = mtf(
         {exponent_zero: 2.0, exponent_one: -1.0}, dimension=global_dim
     )
     eval_point = [0.5] * global_dim if global_dim > 0 else [0.5]
@@ -423,15 +410,15 @@ def test_mtf_eval_shape_consistency(setup_function):
             global_dim - 1
         )  # Evaluate with the first variable as 0.5
 
-    eval_result = mtf.eval(
+    eval_result = mtf_instance.eval(
         eval_point[:global_dim]
     )  # Ensure the evaluation point matches the dimension
     assert eval_result.shape == (1,)  # Evaluation result should be shape (1,)
 
-    mtf_sum_result = (mtf + mtf).eval(eval_point[:global_dim])
+    mtf_sum_result = (mtf_instance + mtf_instance).eval(eval_point[:global_dim])
     assert mtf_sum_result.shape == (1,)
 
-    mtf_mul_result = (mtf * 2.0).eval(eval_point[:global_dim])
+    mtf_mul_result = (mtf_instance * 2.0).eval(eval_point[:global_dim])
     assert mtf_mul_result.shape == (1,)
 
 
@@ -619,7 +606,7 @@ def test_cmtf_real_part(setup_function):
         {exponent_zero: 1 + 1j, exponent_one: 2 - 1j}, dimension=global_dim
     )
     real_mtf = cmtf.real_part()
-    assert isinstance(real_mtf, MultivariateTaylorFunction)
+    assert isinstance(real_mtf, mtf)
     assert np.allclose(real_mtf.extract_coefficient(exponent_zero), 1.0)
     assert np.allclose(real_mtf.extract_coefficient(exponent_one), 2.0)
 
@@ -635,7 +622,7 @@ def test_cmtf_imag_part(setup_function):
         {exponent_zero: 1 + 1j, exponent_one: 2 - 1j}, dimension=global_dim
     )
     imag_mtf = cmtf.imag_part()
-    assert isinstance(imag_mtf, MultivariateTaylorFunction)
+    assert isinstance(imag_mtf, mtf)
     assert np.allclose(imag_mtf.extract_coefficient(exponent_zero), 1.0)
     assert np.allclose(imag_mtf.extract_coefficient(exponent_one), -1.0)
 
@@ -825,11 +812,11 @@ def test_convert_to_mtf(setup_function):
         exponent_one[0] = 1
     exponent_one = tuple(exponent_one)
 
-    mtf = convert_to_mtf(5.0)
-    assert isinstance(mtf, MultivariateTaylorFunction)
-    assert np.allclose(mtf.eval([0] * global_dim), 5.0)
-    assert np.allclose(mtf.extract_coefficient(exponent_zero), 5.0)
-    assert np.allclose(mtf.extract_coefficient(exponent_one), 0.0)
+    mtf_instance = convert_to_mtf(5.0)
+    assert isinstance(mtf_instance, mtf)
+    assert np.allclose(mtf_instance.eval([0] * global_dim), 5.0)
+    assert np.allclose(mtf_instance.extract_coefficient(exponent_zero), 5.0)
+    assert np.allclose(mtf_instance.extract_coefficient(exponent_one), 0.0)
 
     # cmtf = convert_to_mtf(2+1j)
     # assert isinstance(cmtf, ComplexMultivariateTaylorFunction)
@@ -839,15 +826,15 @@ def test_convert_to_mtf(setup_function):
     # assert np.allclose(cmtf.extract_coefficient(exponent_one),
     # np.array([0.0j]).reshape(1))
 
-    x_var_mtf = convert_to_mtf(Var(1))
-    assert isinstance(x_var_mtf, MultivariateTaylorFunction)
+    x_var_mtf = convert_to_mtf(var(1))
+    assert isinstance(x_var_mtf, mtf)
     assert x_var_mtf.dimension == global_dim
     eval_point = [0] * global_dim
     if global_dim > 0:
         eval_point[0] = 1.0
     assert np.allclose(x_var_mtf.eval(eval_point), 1.0)
 
-    existing_mtf = MultivariateTaylorFunction.from_constant(3.0)
+    existing_mtf = mtf.from_constant(3.0)
     converted_mtf = convert_to_mtf(existing_mtf)
     assert (
         converted_mtf is existing_mtf
@@ -871,19 +858,19 @@ def test_convert_to_mtf(setup_function):
 
 # --- Elementary Functions Tests ---
 elementary_functions_list = [
-    (cos_taylor, "cos_taylor"),
-    (sin_taylor, "sin_taylor"),
-    (exp_taylor, "exp_taylor"),
-    (gaussian_taylor, "gaussian_taylor"),
-    (sqrt_taylor, "sqrt_taylor"),
-    (log_taylor, "log_taylor"),
-    (arctan_taylor, "arctan_taylor"),
-    (sinh_taylor, "sinh_taylor"),
-    (cosh_taylor, "cosh_taylor"),
-    (tanh_taylor, "tanh_taylor"),
-    (arcsin_taylor, "arcsin_taylor"),
-    (arccos_taylor, "arccos_taylor"),
-    (arctanh_taylor, "arctanh_taylor"),
+    (mtf.cos, "cos_taylor"),
+    (mtf.sin, "sin_taylor"),
+    (mtf.exp, "exp_taylor"),
+    (mtf.gaussian, "gaussian_taylor"),
+    (mtf.sqrt, "sqrt_taylor"),
+    (mtf.log, "log_taylor"),
+    (mtf.arctan, "arctan_taylor"),
+    (mtf.sinh, "sinh_taylor"),
+    (mtf.cosh, "cosh_taylor"),
+    (mtf.tanh, "tanh_taylor"),
+    (mtf.arcsin, "arcsin_taylor"),
+    (mtf.arccos, "arccos_taylor"),
+    (mtf.arctanh, "arctanh_taylor"),
 ]
 
 
@@ -893,7 +880,7 @@ def test_elementary_functions_scalar(setup_function, func, func_name):
     scalar_input = 0.5
     mtf_result = func(scalar_input)
     assert isinstance(
-        mtf_result, MultivariateTaylorFunction
+            mtf_result, mtf
     )  # Changed assertion here
     zero_point = tuple([0 for _ in range(global_dim)])
     scalar_eval_result = func(scalar_input).eval(
@@ -961,13 +948,13 @@ def test_mtf_equality(setup_function):
         exponent_one[0] = 1
     exponent_one = tuple(exponent_one)
 
-    mtf1 = MultivariateTaylorFunction(
+    mtf1 = mtf(
         {exponent_zero: 1.0, exponent_one: 2.0}, dimension=global_dim
     )
-    mtf2 = MultivariateTaylorFunction(
+    mtf2 = mtf(
         {exponent_zero: 1.0, exponent_one: 2.0}, dimension=global_dim
     )
-    mtf3 = MultivariateTaylorFunction(
+    mtf3 = mtf(
         {exponent_zero: 1.0, exponent_one: 3.0}, dimension=global_dim
     )
     assert mtf1 == mtf2
@@ -1002,7 +989,7 @@ def test_mtf_pickle_unpickle(setup_function):
     if global_dim > 0:
         exponent_one[0] = 1
     exponent_one = tuple(exponent_one)
-    mtf_obj = MultivariateTaylorFunction(
+    mtf_obj = mtf(
         {exponent_zero: 1.0, exponent_one: 2.0}, dimension=global_dim
     )
     pickled_mtf = pickle.dumps(mtf_obj)
@@ -1033,11 +1020,11 @@ def test_array_ufunc():
     """
     Test the __array_ufunc__ implementation with a numpy ufunc.
     """
-    x = Var(1)
+    x = var(1)
     y = np.sin(x)
 
-    # The result should be a MultivariateTaylorFunction object
-    assert isinstance(y, MultivariateTaylorFunction)
+    # The result should be a mtf object
+    assert isinstance(y, mtf)
 
     # Check if the result is correct by evaluating at a point
     eval_point = [0.1, 0, 0]
@@ -1049,10 +1036,10 @@ def test_array_ufunc():
 
 def test_compose_method():
     """
-    Test the new compose method on the MultivariateTaylorFunction class.
+    Test the new compose method on the mtf class.
     """
-    x = Var(1)
-    y = Var(2)
+    x = var(1)
+    y = var(2)
 
     f = x**2 + y
     g = x + 1
@@ -1082,8 +1069,8 @@ def test_mtfarray():
     """
     Test the mtfarray function.
     """
-    x = Var(1)
-    y = Var(2)
+    x = var(1)
+    y = var(2)
 
     mtf1 = x + 2 * y
     mtf2 = x**2
@@ -1121,8 +1108,8 @@ def test_cleanup_default_behavior(setup_function):
     """
     Tests that cleanup of negligible coefficients is enabled by default.
     """
-    etol = MultivariateTaylorFunction.get_etol()
-    x = Var(1)
+    etol = mtf.get_etol()
+    x = var(1)
 
     # Create a function with a negligible term
     f = x + etol / 2
@@ -1131,7 +1118,7 @@ def test_cleanup_default_behavior(setup_function):
     assert len(f.coeffs) == 1
     assert (
         f.extract_coefficient(
-            tuple([0] * MultivariateTaylorFunction.get_max_dimension())
+            tuple([0] * mtf.get_max_dimension())
         ).item()
         == 0.0
     )
@@ -1141,10 +1128,10 @@ def test_disable_cleanup(setup_function):
     """
     Tests that coefficient cleanup can be disabled.
     """
-    MultivariateTaylorFunction.set_truncate_after_operation(False)
+    mtf.set_truncate_after_operation(False)
 
-    etol = MultivariateTaylorFunction.get_etol()
-    x = Var(1)
+    etol = mtf.get_etol()
+    x = var(1)
 
     # Create a function with a negligible term
     f = x + etol / 2
@@ -1154,14 +1141,14 @@ def test_disable_cleanup(setup_function):
     assert (
         abs(
             f.extract_coefficient(
-                tuple([0] * MultivariateTaylorFunction.get_max_dimension())
+                tuple([0] * mtf.get_max_dimension())
             ).item()
         )
         > 0
     )
 
     # Reset for other tests
-    MultivariateTaylorFunction.set_truncate_after_operation(True)
+    mtf.set_truncate_after_operation(True)
 
 
 def test_set_truncate_after_operation_validation(setup_function):
@@ -1171,7 +1158,7 @@ def test_set_truncate_after_operation_validation(setup_function):
     with pytest.raises(
         ValueError, match="Input 'enable' must be a boolean value"
     ):
-        MultivariateTaylorFunction.set_truncate_after_operation(
+        mtf.set_truncate_after_operation(
             "not a boolean"
         )
 
@@ -1180,14 +1167,14 @@ def test_array_ufunc_extended():
     """
     Test the __array_ufunc__ implementation with more numpy ufuncs.
     """
-    x = Var(1)
-    y = Var(2)
+    x = var(1)
+    y = var(2)
 
     # Test a few more unary ufuncs
     for ufunc, mtf_func in [
-        (np.cos, cos_taylor),
-        (np.exp, exp_taylor),
-        (np.log, log_taylor),
+        (np.cos, mtf.cos),
+        (np.exp, mtf.exp),
+        (np.log, mtf.log),
     ]:
         mtf_from_ufunc = ufunc(
             x + 0.5

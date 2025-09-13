@@ -7,7 +7,7 @@ try:
     _TORCH_AVAILABLE = True
 except ImportError:
     _TORCH_AVAILABLE = False
-from mtflib import MultivariateTaylorFunction
+from mtflib import mtf
 
 
 # Old eval logic for comparison
@@ -22,15 +22,15 @@ def old_eval(mtf, evaluation_point):
 @pytest.fixture(autouse=True)
 def reset_mtf():
     """Resets the MTF library before each test."""
-    MultivariateTaylorFunction._INITIALIZED = False
+    mtf._INITIALIZED = False
 
 
 @pytest.fixture
 def sample_mtf():
     """A sample MTF for testing."""
-    MultivariateTaylorFunction.initialize_mtf(max_order=2, max_dimension=2)
-    x = MultivariateTaylorFunction.from_variable(1, 2)
-    y = MultivariateTaylorFunction.from_variable(2, 2)
+    mtf.initialize_mtf(max_order=2, max_dimension=2)
+    x = mtf.from_variable(1, 2)
+    y = mtf.from_variable(2, 2)
     return x**2 + 2 * x * y + y**2 + 1
 
 
