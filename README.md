@@ -7,7 +7,15 @@ A Python library for creating, manipulating, and composing Multivariate Taylor F
 
 ## Installation
 
-You can install `mtflib` directly from the source repository using pip. Ensure you have a C++17 compliant compiler (e.g., GCC, Clang, MSVC) for building the backend extensions.
+The recommended way to install `mtflib` is from PyPI:
+
+```bash
+pip install mtflib
+```
+
+### Installation from Source
+
+Alternatively, you can install `mtflib` directly from the source repository using pip. Ensure you have a C++17 compliant compiler (e.g., GCC, Clang, MSVC) for building the backend extensions.
 
 ```bash
 pip install .
