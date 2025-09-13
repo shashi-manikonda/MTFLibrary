@@ -45,7 +45,8 @@ def _apply_constant_factoring(
         result_mtf = polynomial_expansion_mtf - constant_factor_value
     else:
         raise ValueError(
-            f"Unsupported combine_operation: {combine_operation}. Must be '*', '+', or '-'."
+            f"Unsupported combine_operation: {combine_operation}. "
+            "Must be '*', '+', or '-'."
         )
 
     return result_mtf
@@ -159,7 +160,8 @@ def sin_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFun
     precomputed_coeffs = elementary_coefficients.precomputed_coefficients.get("sin")
     if precomputed_coeffs is None:
         raise ValueError(
-            "Precomputed coefficients for 'sin' function not found. Ensure coefficients are loaded."
+            "Precomputed coefficients for 'sin' function not found. "
+            "Ensure coefficients are loaded."
         )
 
     for n_order in range(1, max_precomputed_order + 1, 2):
@@ -202,7 +204,8 @@ def cos_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFun
     precomputed_coeffs = elementary_coefficients.precomputed_coefficients.get("cos")
     if precomputed_coeffs is None:
         raise ValueError(
-            "Precomputed coefficients for 'cos' function not found. Ensure coefficients are loaded."
+            "Precomputed coefficients for 'cos' function not found. "
+            "Ensure coefficients are loaded."
         )
 
     for n_order in range(0, max_precomputed_order + 1, 2):
@@ -326,7 +329,8 @@ def exp_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFun
     precomputed_coeffs = elementary_coefficients.precomputed_coefficients.get("exp")
     if precomputed_coeffs is None:
         raise ValueError(
-            "Precomputed coefficients for 'exp' function not found. Ensure coefficients are loaded."
+            "Precomputed coefficients for 'exp' function not found. "
+            "Ensure coefficients are loaded."
         )
 
     for n_order in range(0, max_precomputed_order + 1):
@@ -471,7 +475,8 @@ def log_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylorFu
     precomputed_coeffs = elementary_coefficients.precomputed_coefficients.get("log")
     if precomputed_coeffs is None:
         raise ValueError(
-            "Precomputed coefficients for 'log' function not found. Ensure coefficients are loaded."
+            "Precomputed coefficients for 'log' function not found. "
+            "Ensure coefficients are loaded."
         )
 
     for n_order in range(0, max_precomputed_order + 1):
@@ -555,7 +560,9 @@ def _arctan_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 def arctan_taylor_1D_expansion(
     variable, order: int = None
 ) -> MultivariateTaylorFunction:
-    """Helper: 1D Taylor expansion of arctan(u) around zero, precomputed coefficients."""
+    """
+    Helper: 1D Taylor expansion of arctan(u) around zero, precomputed coefficients.
+    """
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
     input_mtf = MultivariateTaylorFunction.to_mtf(variable)
@@ -567,7 +574,8 @@ def arctan_taylor_1D_expansion(
     precomputed_coeffs = elementary_coefficients.precomputed_coefficients.get("arctan")
     if precomputed_coeffs is None:
         raise ValueError(
-            "Precomputed coefficients for 'arctan' function not found. Ensure coefficients are loaded."
+            "Precomputed coefficients for 'arctan' function not found. "
+            "Ensure coefficients are loaded."
         )
 
     for n_order in range(0, max_precomputed_order + 1):
@@ -713,7 +721,8 @@ def sinh_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFu
     precomputed_coeffs = elementary_coefficients.precomputed_coefficients.get("sinh")
     if precomputed_coeffs is None:
         raise ValueError(
-            "Precomputed coefficients for 'sinh' function not found. Ensure coefficients are loaded."
+            "Precomputed coefficients for 'sinh' function not found. "
+            "Ensure coefficients are loaded."
         )
 
     for n_order in range(0, max_precomputed_order + 1):
@@ -771,7 +780,8 @@ def cosh_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFu
     precomputed_coeffs = elementary_coefficients.precomputed_coefficients.get("cosh")
     if precomputed_coeffs is None:
         raise ValueError(
-            "Precomputed coefficients for 'cosh' function not found. Ensure coefficients are loaded."
+            "Precomputed coefficients for 'cosh' function not found. "
+            "Ensure coefficients are loaded."
         )
 
     for n_order in range(0, max_precomputed_order + 1):
@@ -886,7 +896,9 @@ def _arctanh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 def arctanh_taylor_1D_expansion(
     variable, order: int = None
 ) -> MultivariateTaylorFunction:
-    """Helper: 1D Taylor expansion of arctanh(u) around zero, precomputed coefficients."""
+    """
+    Helper: 1D Taylor expansion of arctanh(u) around zero, precomputed coefficients.
+    """
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
     input_mtf = MultivariateTaylorFunction.to_mtf(variable)
@@ -898,7 +910,8 @@ def arctanh_taylor_1D_expansion(
     precomputed_coeffs = elementary_coefficients.precomputed_coefficients.get("arctanh")
     if precomputed_coeffs is None:
         raise ValueError(
-            "Precomputed coefficients for 'arctanh' function not found. Ensure coefficients are loaded."
+            "Precomputed coefficients for 'arctanh' function not found. "
+            "Ensure coefficients are loaded."
         )
 
     for n_order in range(0, max_precomputed_order + 1):
@@ -1085,7 +1098,8 @@ def _integrate(
         (MultivariateTaylorFunction, ComplexMultivariateTaylorFunction),
     ):
         raise TypeError(
-            "mtf_instance must be a MultivariateTaylorFunction or ComplexMultivariateTaylorFunction."
+            "mtf_instance must be a MultivariateTaylorFunction or "
+            "ComplexMultivariateTaylorFunction."
         )
     if not isinstance(integration_variable_index, int):
         raise ValueError(
@@ -1093,15 +1107,18 @@ def _integrate(
         )
     if not (1 <= integration_variable_index <= mtf_instance.dimension):
         raise ValueError(
-            f"integration_variable_index must be between 1 and {mtf_instance.dimension}, inclusive."
+            f"integration_variable_index must be between 1 and "
+            f"{mtf_instance.dimension}, inclusive."
         )
     if lower_limit is not None and upper_limit is None:
         raise ValueError(
-            "If lower_limit is provided, upper_limit must also be provided for definite integration."
+            "If lower_limit is provided, upper_limit must also be provided for "
+            "definite integration."
         )
     if upper_limit is not None and lower_limit is None:
         raise ValueError(
-            "If upper_limit is provided, upper_limit must also be provided for definite integration."
+            "If upper_limit is provided, upper_limit must also be provided for "
+            "definite integration."
         )
     if lower_limit is not None and not isinstance(lower_limit, (int, float)):
         raise TypeError("lower_limit must be a number (int or float).")
@@ -1213,7 +1230,8 @@ def _derivative(mtf_instance, deriv_dim):
         or deriv_dim > mtf_instance.dimension
     ):
         raise ValueError(
-            f"deriv_dim must be an integer between 1 and {mtf_instance.dimension} inclusive."
+            f"deriv_dim must be an integer between 1 and "
+            f"{mtf_instance.dimension} inclusive."
         )
 
     deriv_dim_index = deriv_dim - 1  # Convert 1-based to 0-based index

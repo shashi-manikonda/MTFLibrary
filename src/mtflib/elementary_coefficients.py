@@ -316,66 +316,80 @@ def load_precomputed_coefficients(max_order_config: int = None) -> dict:
                     loaded_coefficients = np.array(coefficient_list)
                 if loaded_coefficients.shape[0] < max_order_to_init + 1:
                     print(
-                        f"Precomputed {func_name} coefficients (order {loaded_coefficients.shape[0] - 1}) insufficient, recomputing up to order {max_order_to_init}."
+                        f"Precomputed {func_name} coefficients "
+                        f"(order {loaded_coefficients.shape[0] - 1}) insufficient, "
+                        f"recomputing up to order {max_order_to_init}."
                     )
                     coefficients = compute_func(max_order_to_init)
                     try:
                         with open(filename, "w") as f:
                             json.dump(coefficients.tolist(), f, indent=2)
                         print(
-                            f"Recomputed and saved {func_name} coefficients up to order {max_order_to_init}."
+                            f"Recomputed and saved {func_name} coefficients "
+                            f"up to order {max_order_to_init}."
                         )
                     except Exception as e:
                         print(
-                            f"Error saving recomputed coefficients for {func_name} to {filename}: {e}"
+                            f"Error saving recomputed coefficients for {func_name} "
+                            f"to {filename}: {e}"
                         )
                     precomputed_coefficients[func_name] = coefficients
                 else:
                     coefficients = loaded_coefficients[: max_order_to_init + 1]
                     precomputed_coefficients[func_name] = coefficients
-                    # print(f"Loaded precomputed {func_name} coefficients up to order {max_order_to_init} from {filename}.")
+                    # print(
+                    #     f"Loaded precomputed {func_name} coefficients up to order "
+                    #     f"{max_order_to_init} from {filename}."
+                    # )
 
             except Exception as e:
                 print(
-                    f"Warning: Error loading coefficients for {func_name} from {filename}: {e}. Recomputing..."
+                    f"Warning: Error loading coefficients for {func_name} "
+                    f"from {filename}: {e}. Recomputing..."
                 )
                 coefficients = compute_func(max_order_to_init)
                 try:
                     with open(filename, "w") as f:
                         json.dump(coefficients.tolist(), f, indent=2)
                     print(
-                        f"Computed and saved {func_name} coefficients up to order {max_order_to_init}."
+                        f"Computed and saved {func_name} coefficients "
+                        f"up to order {max_order_to_init}."
                     )
                 except Exception as save_e:
                     print(
-                        f"Error saving recomputed coefficients for {func_name} to {filename}: {save_e}"
+                        f"Error saving recomputed coefficients for {func_name} "
+                        f"to {filename}: {save_e}"
                     )
                 precomputed_coefficients[func_name] = coefficients
 
         else:  # File does not exist
             print(
-                f"Precomputing {func_name} Taylor coefficients up to order {max_order_to_init} and saving to {filename}"
+                f"Precomputing {func_name} Taylor coefficients up to order "
+                f"{max_order_to_init} and saving to {filename}"
             )
             coefficients = compute_func(max_order_to_init)
             try:
                 with open(filename, "w") as f:
                     json.dump(coefficients.tolist(), f, indent=2)
                 print(
-                    f"Computed and saved {func_name} coefficients up to order {max_order_to_init}."
+                    f"Computed and saved {func_name} coefficients up to order "
+                    f"{max_order_to_init}."
                 )
             except Exception as e:
                 print(f"Error saving coefficients for {func_name} to {filename}: {e}")
             precomputed_coefficients[func_name] = coefficients
 
-    # for func_name in coefficient_functions.keys():  # Verification print outside the loop
-    #     print(f"First 5 {func_name} coefficients: {precomputed_coefficients[func_name][:5]}")
+    # for func_name in coefficient_functions.keys():  # Verification print
+    #     print(f"First 5 {func_name} coefficients: "
+    #           f"{precomputed_coefficients[func_name][:5]}")
 
     print("Global precomputed coefficients loading/generation complete.")
     size_in_bytes = sys.getsizeof(precomputed_coefficients)
     size_in_kb = size_in_bytes / 1024
     size_in_mb = size_in_kb / 1024
     print(
-        f"Size of precomputed_coefficients dictionary in memory: {size_in_bytes} bytes, {size_in_kb:.2f} KB, {size_in_mb:.2f} MB"
+        f"Size of precomputed_coefficients dictionary in memory: {size_in_bytes} "
+        f"bytes, {size_in_kb:.2f} KB, {size_in_mb:.2f} MB"
     )
 
     return precomputed_coefficients

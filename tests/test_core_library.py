@@ -695,8 +695,9 @@ def test_cmtf_power(setup_function):
     assert np.allclose(cmtf_cube.extract_coefficient(exponent_zero), 1 + 0j)
     assert np.allclose(cmtf_cube.extract_coefficient(exponent_one), 3j)
     assert np.allclose(cmtf_cube.extract_coefficient(exponent_two), -3 + 0j)
-    # The MAX_ORDER check might be too specific, consider checking against a reasonable order
-    # assert cmtf_cube.extract_coefficient((MAX_ORDER+1,)) == pytest.approx(0.0j) # Truncated
+    # The MAX_ORDER check might be too specific, consider checking against a
+    # reasonable order assert cmtf_cube.extract_coefficient((MAX_ORDER+1,))
+    # == pytest.approx(0.0j) # Truncated
 
 
 def test_cmtf_negation(setup_function):

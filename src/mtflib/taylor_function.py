@@ -162,11 +162,13 @@ class MultivariateTaylorFunction:
         Max coefficient count (order=10, nvars=5): 3003
         Precomputed coefficients loaded and ready for use.
 
-        >>> # This will raise an error because initialization with new settings is not allowed
+        >>> # This will raise an error because initialization with new settings is
+        >>> # not allowed
         >>> mtf.initialize_mtf(max_order=12, max_dimension=5)
         Traceback (most recent call last):
         ...
-        RuntimeError: MTF Globals are already initialized with different settings. Re-initialization with different max_order or max_dimension is not allowed.
+        RuntimeError: MTF Globals are already initialized with different settings.
+        Re-initialization with different max_order or max_dimension is not allowed.
         """
         if (not cls._INITIALIZED) or (
             cls._INITIALIZED
@@ -188,7 +190,8 @@ class MultivariateTaylorFunction:
                 cls._IMPLEMENTATION = implementation
 
             print(
-                f"Initializing MTF globals with: _MAX_ORDER={cls._MAX_ORDER}, _MAX_DIMENSION={cls._MAX_DIMENSION}"
+                f"Initializing MTF globals with: _MAX_ORDER={cls._MAX_ORDER}, "
+                f"_MAX_DIMENSION={cls._MAX_DIMENSION}"
             )
             cls._PRECOMPUTED_COEFFICIENTS = (
                 elementary_coefficients.load_precomputed_coefficients(
@@ -197,15 +200,18 @@ class MultivariateTaylorFunction:
             )
             cls._INITIALIZED = True
             print(
-                f"MTF globals initialized: _MAX_ORDER={cls._MAX_ORDER}, _MAX_DIMENSION={cls._MAX_DIMENSION}, _INITIALIZED={cls._INITIALIZED}"
+                f"MTF globals initialized: _MAX_ORDER={cls._MAX_ORDER}, "
+                f"_MAX_DIMENSION={cls._MAX_DIMENSION}, _INITIALIZED={cls._INITIALIZED}"
             )
             print(
-                f"Max coefficient count (order={cls._MAX_ORDER}, nvars={cls._MAX_DIMENSION}): {cls.get_max_coefficient_count()}"
+                f"Max coefficient count (order={cls._MAX_ORDER}, "
+                f"nvars={cls._MAX_DIMENSION}): {cls.get_max_coefficient_count()}"
             )
             print("Precomputed coefficients loaded and ready for use.")
         else:
             raise RuntimeError(
-                "Re-initialization with different max_order or max_dimension is not allowed."
+                "Re-initialization with different max_order or max_dimension is "
+                "not allowed."
             )
 
     @classmethod
@@ -217,7 +223,8 @@ class MultivariateTaylorFunction:
         )
         if effective_max_order is None or effective_max_dimension is None:
             raise ValueError(
-                "Global max_order or max_dimension not initialized and no defaults provided."
+                "Global max_order or max_dimension not initialized and no defaults "
+                "provided."
             )
         return math.comb(
             effective_max_order + effective_max_dimension,
@@ -348,7 +355,8 @@ class MultivariateTaylorFunction:
 
             if self.exponents.size > 0 and self.exponents.shape[1] != self.dimension:
                 raise ValueError(
-                    f"Provided dimension {self.dimension} does not match exponent dimension {self.exponents.shape[1]}."
+                    f"Provided dimension {self.dimension} does not match exponent "
+                    f"dimension {self.exponents.shape[1]}."
                 )
             if self.coeffs.ndim != 1 or self.coeffs.shape[0] != self.exponents.shape[0]:
                 raise ValueError("Coefficients array has incorrect shape.")
@@ -368,7 +376,8 @@ class MultivariateTaylorFunction:
                     self.dimension = inferred_dim
                 elif dimension != inferred_dim:
                     raise ValueError(
-                        f"Provided dimension {dimension} does not match inferred dimension {inferred_dim} from coefficients."
+                        f"Provided dimension {dimension} does not match inferred "
+                        f"dimension {inferred_dim} from coefficients."
                     )
                 else:
                     self.dimension = dimension
@@ -393,7 +402,8 @@ class MultivariateTaylorFunction:
                 self.coeffs = self.coeffs[sorted_indices]
         else:
             raise TypeError(
-                "Unsupported type for 'coefficients'. Must be a dict or a tuple of (exponents, coeffs) arrays."
+                "Unsupported type for 'coefficients'. Must be a dict or a tuple of "
+                "(exponents, coeffs) arrays."
             )
 
         if _CPP_BACKEND_AVAILABLE and self._IMPLEMENTATION == "cpp":
@@ -489,7 +499,8 @@ class MultivariateTaylorFunction:
     @staticmethod
     def to_mtf(input_val, dimension=None):
         """
-        Converts input to MultivariateTaylorFunction or ComplexMultivariateTaylorFunction.
+        Converts input to MultivariateTaylorFunction or
+        ComplexMultivariateTaylorFunction.
         """
         return _to_mtf_helper(input_val, dimension)
 
@@ -538,7 +549,8 @@ class MultivariateTaylorFunction:
         if evaluation_point.ndim == 1:
             if evaluation_point.shape[0] != self.dimension:
                 raise ValueError(
-                    f"Evaluation point dimension must match MTF dimension ({self.dimension})."
+                    f"Evaluation point dimension must match MTF dimension "
+                    f"({self.dimension})."
                 )
             evaluation_points = evaluation_point.reshape(1, -1)
             return self.neval(evaluation_points)
@@ -550,7 +562,8 @@ class MultivariateTaylorFunction:
                 return self.neval(evaluation_point)
             else:
                 raise ValueError(
-                    "For 2D input, eval() supports only a single evaluation point with shape (1, dimension)."
+                    "For 2D input, eval() supports only a single evaluation point with "
+                    "shape (1, dimension)."
                 )
         else:
             raise ValueError("Evaluation point must be a 1D or 2D array.")
@@ -1213,11 +1226,13 @@ class MultivariateTaylorFunction:
                 )
             if not isinstance(g, MultivariateTaylorFunction):
                 raise TypeError(
-                    f"Value for key {var_index} must be a MultivariateTaylorFunction object."
+                    f"Value for key {var_index} must be a "
+                    "MultivariateTaylorFunction object."
                 )
             if not (1 <= var_index <= self.dimension):
                 raise ValueError(
-                    f"Variable index {var_index} is out of bounds for the outer function's dimension {self.dimension}."
+                    f"Variable index {var_index} is out of bounds for the outer "
+                    f"function's dimension {self.dimension}."
                 )
 
             if result_dim is None:
@@ -1235,7 +1250,8 @@ class MultivariateTaylorFunction:
                 # in the new space.
                 if i > result_dim:
                     raise ValueError(
-                        f"Outer function variable {i} is not being substituted, but the result dimension is only {result_dim}."
+                        f"Outer function variable {i} is not being substituted, but "
+                        f"the result dimension is only {result_dim}."
                     )
                 substitutions[i] = type(self).var(i, dimension=result_dim)
 
@@ -1456,7 +1472,8 @@ class MultivariateTaylorFunction:
             import sympy as sp
         except ImportError:
             raise ImportError(
-                "SymPy is required for the symprint method. Please install it using 'pip install sympy'."
+                "SymPy is required for the symprint method. Please install it using "
+                "'pip install sympy'."
             )
 
         if symbols is None:
@@ -1464,7 +1481,8 @@ class MultivariateTaylorFunction:
 
         if self.dimension > len(symbols):
             raise ValueError(
-                f"Not enough symbols provided for the {self.dimension}-dimensional function."
+                f"Not enough symbols provided for the {self.dimension}-dimensional "
+                "function."
             )
 
         sympy_vars = sp.symbols(symbols[: self.dimension])
@@ -1699,8 +1717,9 @@ class MultivariateTaylorFunction:
 
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
         """
-        Implements NumPy ufunc protocol, directly calling taylor functions from elementary_functions.py.
-        Handles scalar inputs by converting them to MultivariateTaylorFunction constants.
+        Implements NumPy ufunc protocol, directly calling taylor functions from
+        elementary_functions.py. Handles scalar inputs by converting them to
+        MultivariateTaylorFunction constants.
         """
         UNARY_UFUNC_MAP = {
             np.sin: self.sin,
@@ -1855,7 +1874,8 @@ def _sqrt_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     )
     if constant_term_C_value <= 0:
         raise ValueError(
-            "Constant part of input to sqrt_taylor is non-positive. This method is for sqrt(constant*(1+x)) form, requiring positive constant."
+            "Constant part of input to sqrt_taylor is non-positive. This method is "
+            "for sqrt(constant*(1+x)) form, requiring positive constant."
         )
     constant_factor_sqrt_C = math.sqrt(constant_term_C_value)
     polynomial_part_x_mtf = polynomial_part_B_mtf / constant_term_C_value
@@ -1865,7 +1885,9 @@ def _sqrt_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 
 
 def sqrt_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylorFunction:
-    """Helper: 1D Taylor expansion of sqrt(1+u) around zero, precomputed coefficients."""
+    """
+    Helper: 1D Taylor expansion of sqrt(1+u) around zero, precomputed coefficients.
+    """
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
     input_mtf = MultivariateTaylorFunction.to_mtf(variable)
@@ -1876,7 +1898,8 @@ def sqrt_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylorF
     precomputed_coeffs = elementary_coefficients.precomputed_coefficients.get("sqrt")
     if precomputed_coeffs is None:
         raise ValueError(
-            "Precomputed coefficients for 'sqrt' function not found. Ensure coefficients are loaded."
+            "Precomputed coefficients for 'sqrt' function not found. "
+            "Ensure coefficients are loaded."
         )
     for n_order in range(0, max_precomputed_order + 1):
         coefficient_val = precomputed_coeffs[n_order]
@@ -1885,7 +1908,9 @@ def sqrt_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylorF
         ] = np.array([coefficient_val]).reshape(1)
     if order > elementary_coefficients.MAX_PRECOMPUTED_ORDER:
         print(
-            f"Warning: Requested order {order} exceeds precomputed order {elementary_coefficients.MAX_PRECOMPUTED_ORDER}. Calculations may be slower for higher orders."
+            f"Warning: Requested order {order} exceeds precomputed order "
+            f"{elementary_coefficients.MAX_PRECOMPUTED_ORDER}. Calculations may be "
+            "slower for higher orders."
         )
         for n_order in range(
             elementary_coefficients.MAX_PRECOMPUTED_ORDER + 1, order + 1
@@ -1944,7 +1969,8 @@ def _isqrt_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     )
     if abs(constant_term_C_value) < 1e-9:
         raise ValueError(
-            "Constant part of input to isqrt_taylor is too close to zero. This method requires a non-zero constant term."
+            "Constant part of input to isqrt_taylor is too close to zero. "
+            "This method requires a non-zero constant term."
         )
     constant_factor_isqrt_C = 1.0 / math.sqrt(constant_term_C_value)
     polynomial_part_x_mtf = polynomial_part_B_mtf / constant_term_C_value
@@ -1956,7 +1982,9 @@ def _isqrt_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 def isqrt_taylor_1D_expansion(
     variable, order: int = None
 ) -> MultivariateTaylorFunction:
-    """Helper: 1D Taylor expansion of isqrt(1+u) around zero, precomputed coefficients."""
+    """
+    Helper: 1D Taylor expansion of isqrt(1+u) around zero, precomputed coefficients.
+    """
     if order is None:
         order = MultivariateTaylorFunction.get_max_order()
     input_mtf = MultivariateTaylorFunction.to_mtf(variable)
@@ -1967,7 +1995,8 @@ def isqrt_taylor_1D_expansion(
     precomputed_coeffs = elementary_coefficients.precomputed_coefficients.get("isqrt")
     if precomputed_coeffs is None:
         raise ValueError(
-            "Precomputed coefficients for 'isqrt' function not found. Ensure coefficients are loaded."
+            "Precomputed coefficients for 'isqrt' function not found. "
+            "Ensure coefficients are loaded."
         )
     for n_order in range(0, max_precomputed_order + 1):
         coefficient_val = precomputed_coeffs[n_order]
@@ -1976,7 +2005,9 @@ def isqrt_taylor_1D_expansion(
         ] = np.array([coefficient_val]).reshape(1)
     if order > elementary_coefficients.MAX_PRECOMPUTED_ORDER:
         print(
-            f"Warning: Requested order {order} exceeds precomputed order {elementary_coefficients.MAX_PRECOMPUTED_ORDER}. Calculations may be slower for higher orders."
+            f"Warning: Requested order {order} exceeds precomputed order "
+            f"{elementary_coefficients.MAX_PRECOMPUTED_ORDER}. Calculations may be "
+            "slower for higher orders."
         )
         for n_order in range(
             elementary_coefficients.MAX_PRECOMPUTED_ORDER + 1, order + 1
@@ -2032,14 +2063,18 @@ def _list2pd_helper(mtfs, column_names=None):
     for mtf_instance in mtfs:
         if not isinstance(mtf_instance, valid_mtf_types):
             raise TypeError(
-                f"All elements in 'mtfs' must be instances of {MultivariateTaylorFunction.__name__}, but found {type(mtf_instance).__name__}."
+                f"All elements in 'mtfs' must be instances of "
+                f"{MultivariateTaylorFunction.__name__}, but found "
+                f"{type(mtf_instance).__name__}."
             )
 
     first_dim = mtfs[0].dimension
     for i, mtf_instance in enumerate(mtfs[1:]):
         if mtf_instance.dimension != first_dim:
             raise ValueError(
-                f"mtf at index {i + 1} has dimension {mtf_instance.dimension}, but the first mtf has dimension {first_dim}. All mtfs must have the same dimension."
+                f"mtf at index {i + 1} has dimension {mtf_instance.dimension}, "
+                f"but the first mtf has dimension {first_dim}. All mtfs must have "
+                "the same dimension."
             )
 
     dfs = []
