@@ -1,5 +1,9 @@
 # mtflib: Multivariate Taylor Function Library
 
+> [!IMPORTANT]
+> **Version 1.5.0 is a major release with significant improvements and breaking changes.**
+> It is NOT backward compatible with previous versions. Please see the [CHANGELOG.md](CHANGELOG.md) for more details.
+
 [![Documentation Status](https://readthedocs.org/projects/mtflibrary/badge/?version=latest)](https://mtflibrary.readthedocs.io/en/latest/?badge=latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
