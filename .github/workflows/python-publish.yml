@@ -43,5 +43,3 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist/
-          # This permission is mandatory for trusted publishing
-          id-token: write
