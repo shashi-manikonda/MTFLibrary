@@ -1705,9 +1705,6 @@ class MultivariateTaylorFunction:
         )
 
 
-mtf = MultivariateTaylorFunction
-
-
 def _generate_exponent_combinations(dimension, order):
     """Generates all combinations of exponents for a given dimension and order."""
     if dimension <= 0 or order < 0:
@@ -1827,13 +1824,13 @@ def _sqrt_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
         )
     constant_factor_sqrt_C = math.sqrt(constant_term_C_value)
     polynomial_part_x_mtf = polynomial_part_B_mtf / constant_term_C_value
-    sqrt_1_plus_x_mtf = sqrt_taylor_1D_expansion(
+    sqrt_1_plus_x_mtf = _sqrt_taylor_1D_expansion(
         polynomial_part_x_mtf, order=order)
     result_mtf = sqrt_1_plus_x_mtf * constant_factor_sqrt_C
     return result_mtf.truncate(order)
 
 
-def sqrt_taylor_1D_expansion(
+def _sqrt_taylor_1D_expansion(
         variable,
         order: int = None) -> MultivariateTaylorFunction:
     """Helper: 1D Taylor expansion of sqrt(1+u) around zero, precomputed coefficients."""
@@ -1921,13 +1918,13 @@ def _isqrt_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
         )
     constant_factor_isqrt_C = 1.0 / math.sqrt(constant_term_C_value)
     polynomial_part_x_mtf = polynomial_part_B_mtf / constant_term_C_value
-    isqrt_1_plus_x_mtf = isqrt_taylor_1D_expansion(
+    isqrt_1_plus_x_mtf = _isqrt_taylor_1D_expansion(
         polynomial_part_x_mtf, order=order)
     result_mtf = isqrt_1_plus_x_mtf * constant_factor_isqrt_C
     return result_mtf.truncate(order)
 
 
-def isqrt_taylor_1D_expansion(
+def _isqrt_taylor_1D_expansion(
     variable, order: int = None
 ) -> MultivariateTaylorFunction:
     """Helper: 1D Taylor expansion of isqrt(1+u) around zero, precomputed coefficients."""
@@ -1981,7 +1978,7 @@ def isqrt_taylor_1D_expansion(
     return composed_mtf.truncate(order)
 
 
-def Var(var_index):
+def var(var_index):
     """
     Creates a MultivariateTaylorFunction representing an independent variable.
 

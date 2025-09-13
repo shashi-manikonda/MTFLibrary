@@ -6,7 +6,7 @@ import pandas as pd
 import mtflib
 from mtflib import (
     mtf,
-    Var,
+    var,
     mtfarray,
     convert_to_mtf,
     ComplexMultivariateTaylorFunction,
@@ -27,7 +27,7 @@ def setup_function():
     global_dim = mtf.get_max_dimension()
     exponent_zero = tuple([0] * global_dim)
     yield global_dim, exponent_zero
-    mtflib.taylor_function.mtf._INITIALIZED = False
+    mtf._INITIALIZED = False
 
 
 # --- Global Settings Tests ---
@@ -62,10 +62,10 @@ def test_global_etol_setting(setup_function):
         mtf.set_etol(0.0)  # Invalid etol
 
 
-# --- Var Function Tests ---
+# --- var Function Tests ---
 def test_var_creation(setup_function):
     global_dim, exponent_zero = setup_function
-    x_var = Var(1)
+    x_var = var(1)
     assert isinstance(x_var, mtf)
     assert x_var.dimension == global_dim
     exponent_one = [0] * global_dim
@@ -76,9 +76,9 @@ def test_var_creation(setup_function):
     coeff_constant = x_var.extract_coefficient(exponent_zero)
     assert np.allclose(coeff_constant, 0.0)
     with pytest.raises(ValueError):
-        Var(0)
+        var(0)
     with pytest.raises(ValueError):
-        Var(global_dim + 1)
+        var(global_dim + 1)
 
 
 # --- MultivariateTaylorFunction (Real MTF) Tests ---
@@ -105,8 +105,8 @@ def test_mtf_variable_evaluation(setup_function):
     if global_dim > 1:
         evaluation_point_x2[1] = 3.0
 
-    x1_var = Var(1)
-    x2_var = Var(2)
+    x1_var = var(1)
+    x2_var = var(2)
     assert np.allclose(x1_var.eval(evaluation_point_x1), 2.0)
     assert np.allclose(x2_var.eval(evaluation_point_x2), 3.0)
 
@@ -826,7 +826,7 @@ def test_convert_to_mtf(setup_function):
     # assert np.allclose(cmtf.extract_coefficient(exponent_one),
     # np.array([0.0j]).reshape(1))
 
-    x_var_mtf = convert_to_mtf(Var(1))
+    x_var_mtf = convert_to_mtf(var(1))
     assert isinstance(x_var_mtf, mtf)
     assert x_var_mtf.dimension == global_dim
     eval_point = [0] * global_dim
@@ -1020,7 +1020,7 @@ def test_array_ufunc():
     """
     Test the __array_ufunc__ implementation with a numpy ufunc.
     """
-    x = Var(1)
+    x = var(1)
     y = np.sin(x)
 
     # The result should be a mtf object
@@ -1038,8 +1038,8 @@ def test_compose_method():
     """
     Test the new compose method on the mtf class.
     """
-    x = Var(1)
-    y = Var(2)
+    x = var(1)
+    y = var(2)
 
     f = x**2 + y
     g = x + 1
@@ -1069,8 +1069,8 @@ def test_mtfarray():
     """
     Test the mtfarray function.
     """
-    x = Var(1)
-    y = Var(2)
+    x = var(1)
+    y = var(2)
 
     mtf1 = x + 2 * y
     mtf2 = x**2
@@ -1109,7 +1109,7 @@ def test_cleanup_default_behavior(setup_function):
     Tests that cleanup of negligible coefficients is enabled by default.
     """
     etol = mtf.get_etol()
-    x = Var(1)
+    x = var(1)
 
     # Create a function with a negligible term
     f = x + etol / 2
@@ -1131,7 +1131,7 @@ def test_disable_cleanup(setup_function):
     mtf.set_truncate_after_operation(False)
 
     etol = mtf.get_etol()
-    x = Var(1)
+    x = var(1)
 
     # Create a function with a negligible term
     f = x + etol / 2
@@ -1167,8 +1167,8 @@ def test_array_ufunc_extended():
     """
     Test the __array_ufunc__ implementation with more numpy ufuncs.
     """
-    x = Var(1)
-    y = Var(2)
+    x = var(1)
+    y = var(2)
 
     # Test a few more unary ufuncs
     for ufunc, mtf_func in [

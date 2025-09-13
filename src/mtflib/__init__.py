@@ -50,9 +50,8 @@ import pandas as pd
 from .taylor_function import (
     MultivariateTaylorFunction,
     convert_to_mtf,
-    Var,
+    var,
     mtfarray,
-    mtf,
 )
 from .elementary_functions import (
     integrate,
@@ -72,8 +71,8 @@ pd.set_option("display.max_rows", None)
 pd.set_option("display.width", 1000)
 
 
-MTF = MultivariateTaylorFunction
-
+# Set Alias for convenience
+mtf = MultivariateTaylorFunction # Alias for MultivariateTaylorFunction
 
 # Defines the public API for the library.
 __all__ = [
@@ -81,9 +80,8 @@ __all__ = [
     "MultivariateTaylorFunction",
     "ComplexMultivariateTaylorFunction",
     "TaylorMap",
-    "MTF",
     "mtf",
-    "Var",
+    "var",
     # Core Operators
     "integrate",
     "derivative",
