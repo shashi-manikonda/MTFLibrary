@@ -1,5 +1,5 @@
-import pytest
 import numpy as np
+import pytest
 
 try:
     import torch
@@ -52,13 +52,11 @@ def test_neval_multiple_points(sample_mtf):
     """Tests neval with multiple points."""
     points = np.array([[1.0, 2.0], [3.0, 4.0], [0.0, 0.0]])
 
-    expected = np.array(
-        [
-            old_eval(sample_mtf, points[0]),
-            old_eval(sample_mtf, points[1]),
-            old_eval(sample_mtf, points[2]),
-        ]
-    )
+    expected = np.array([
+        old_eval(sample_mtf, points[0]),
+        old_eval(sample_mtf, points[1]),
+        old_eval(sample_mtf, points[2]),
+    ])
 
     result = sample_mtf.neval(points)
 
@@ -101,17 +99,13 @@ def test_eval_wrapper(sample_mtf):
 @pytest.mark.skipif(not _TORCH_AVAILABLE, reason="torch not installed")
 def test_neval_torch_tensor(sample_mtf):
     """Tests neval with a torch tensor."""
-    points = torch.tensor(
-        [[1.0, 2.0], [3.0, 4.0], [0.0, 0.0]], dtype=torch.float64
-    )
+    points = torch.tensor([[1.0, 2.0], [3.0, 4.0], [0.0, 0.0]], dtype=torch.float64)
 
-    expected = np.array(
-        [
-            old_eval(sample_mtf, points[0].numpy()),
-            old_eval(sample_mtf, points[1].numpy()),
-            old_eval(sample_mtf, points[2].numpy()),
-        ]
-    )
+    expected = np.array([
+        old_eval(sample_mtf, points[0].numpy()),
+        old_eval(sample_mtf, points[1].numpy()),
+        old_eval(sample_mtf, points[2].numpy()),
+    ])
 
     result = sample_mtf.neval(points)
 

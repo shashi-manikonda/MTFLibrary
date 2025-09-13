@@ -47,15 +47,14 @@ Example:
 
 import pandas as pd
 
+from .complex_taylor_function import (
+    ComplexMultivariateTaylorFunction,
+)
+from .elementary_coefficients import load_precomputed_coefficients
 from .taylor_function import (
     MultivariateTaylorFunction,
     mtf,
 )
-from .complex_taylor_function import (
-    ComplexMultivariateTaylorFunction,
-    convert_to_cmtf,
-)
-from .elementary_coefficients import load_precomputed_coefficients
 from .taylor_map import TaylorMap
 
 # Set the display format for floats
@@ -74,5 +73,4 @@ __all__ = [
     "mtf",
     # Utility Functions
     "load_precomputed_coefficients",
-    "convert_to_cmtf",
 ]

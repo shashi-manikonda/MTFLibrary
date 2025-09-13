@@ -4,9 +4,10 @@
 # https://setuptools.pypa.io/en/latest/userguide/ext_modules.html
 
 import sys
-from setuptools import setup, Extension
+
 import numpy
 import pybind11
+from setuptools import Extension, setup
 
 # Set compiler arguments based on the operating system
 if sys.platform == "win32":
