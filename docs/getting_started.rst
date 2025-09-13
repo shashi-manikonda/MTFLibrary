@@ -44,7 +44,7 @@ library, creates a two-variable function, and evaluates it at a point.
 
 .. code-block:: python
 
-    from mtflib import mtf, var
+    from mtflib import mtf
 
     # 1. Initialize the library's global settings. This is a crucial first step.
     # We'll set a maximum order of 4 and 2 variables (dimensions).
@@ -52,8 +52,8 @@ library, creates a two-variable function, and evaluates it at a point.
 
     # 2. Create variables x and y.
     # var(1) corresponds to the first variable, var(2) to the second.
-    x = var(1)
-    y = var(2)
+    x = mtf.var(1)
+    y = mtf.var(2)
 
     # 3. Define a function, for example, f(x, y) = sin(x + y**2)
     f = mtf.sin(x + y**2)

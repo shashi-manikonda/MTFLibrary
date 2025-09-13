@@ -14,14 +14,14 @@ simpler ones. We will create the function `f(x, y) = sin(x + y)`.
 
 .. code-block:: python
 
-   from mtflib import mtf, var
+   from mtflib import mtf
 
    # Initialize the library
    mtf.initialize_mtf(max_order=4, max_dimension=2)
 
    # Create variables
-   x = var(1)
-   y = var(2)
+   x = mtf.var(1)
+   y = mtf.var(2)
 
    # Define the inner function g(x, y) = x + y
    g = x + y
@@ -40,14 +40,14 @@ This example shows how to define a map and compute its inverse.
 
 .. code-block:: python
 
-   from mtflib import mtf, TaylorMap, var
+   from mtflib import mtf, TaylorMap
 
    # Initialize the library
    mtf.initialize_mtf(max_order=3, max_dimension=2)
 
    # Create variables for the original coordinate system
-   x = var(1)
-   y = var(2)
+   x = mtf.var(1)
+   y = mtf.var(2)
 
    # Define a transformation F(x, y) = [u, v] where:
    # u = x + y^2
@@ -65,8 +65,8 @@ This example shows how to define a map and compute its inverse.
 
    # Verification: F(G(u,v)) should be the identity map [u, v]
    # Let's use new variables u, v for clarity
-   u = var(1)
-   v = var(2)
+   u = mtf.var(1)
+   v = mtf.var(2)
    Identity_check = F.compose(G)
 
    print("\\nVerification F(G(u,v)):")
@@ -81,14 +81,14 @@ operators: `derivative` and `integrate`.
 
 .. code-block:: python
 
-   from mtflib import mtf, var, derivative, integrate
+   from mtflib import mtf
 
    # Initialize the library
    mtf.initialize_mtf(max_order=5, max_dimension=2)
 
    # Create variables
-   x = var(1)
-   y = var(2)
+   x = mtf.var(1)
+   y = mtf.var(2)
 
    # Define a function f(x, y) = x^3 * y^2
    f = (x**3) * (y**2)
@@ -97,13 +97,13 @@ operators: `derivative` and `integrate`.
 
    # --- Differentiation ---
    # Compute the partial derivative with respect to x
-   df_dx = derivative(f, deriv_dim=1)
+   df_dx = f.derivative(deriv_dim=1)
    print("\\nPartial derivative df/dx:")
    print(df_dx.get_tabular_dataframe()) # Expected: 3 * x^2 * y^2
 
    # --- Integration ---
    # Compute the indefinite integral of df/dx with respect to x
    # This should recover the original function (up to a constant of integration)
-   f_recovered = integrate(df_dx, integration_variable_index=1)
+   f_recovered = df_dx.integrate(integration_variable_index=1)
    print("\\nIntegral of df/dx w.r.t x:")
    print(f_recovered.get_tabular_dataframe())

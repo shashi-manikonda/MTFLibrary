@@ -73,10 +73,11 @@ def _sin_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 
     Examples
     --------
-    >>> from mtflib import MultivariateTaylorFunction, Var, sin_taylor
-    >>> MultivariateTaylorFunction.initialize_mtf(max_order=3, max_dimension=1)
-    >>> x = Var(1)
-    >>> f = sin_taylor(x)
+    >>> from mtflib import MultivariateTaylorFunction
+    >>> mtf = MultivariateTaylorFunction
+    >>> mtf.initialize_mtf(max_order=3, max_dimension=1)
+    >>> x = mtf.var(1)
+    >>> f = mtf.sin(x)
     >>> print(f.get_tabular_dataframe())
        Coefficient  Order Exponents
     0  1.000000e+00      1    (1,)
@@ -119,10 +120,11 @@ def _cos_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 
     Examples
     --------
-    >>> from mtflib import MultivariateTaylorFunction, Var, cos_taylor
-    >>> MultivariateTaylorFunction.initialize_mtf(max_order=4, max_dimension=1)
-    >>> x = Var(1)
-    >>> f = cos_taylor(x)
+    >>> from mtflib import MultivariateTaylorFunction
+    >>> mtf = MultivariateTaylorFunction
+    >>> mtf.initialize_mtf(max_order=4, max_dimension=1)
+    >>> x = mtf.var(1)
+    >>> f = mtf.cos(x)
     >>> print(f.get_tabular_dataframe())
        Coefficient  Order Exponents
     0  1.000000e+00      0    (0,)
@@ -271,10 +273,11 @@ def _tan_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 
     Examples
     --------
-    >>> from mtflib import MultivariateTaylorFunction, Var, tan_taylor
-    >>> MultivariateTaylorFunction.initialize_mtf(max_order=4, max_dimension=1)
-    >>> x = Var(1)
-    >>> f = tan_taylor(x)
+    >>> from mtflib import MultivariateTaylorFunction
+    >>> mtf = MultivariateTaylorFunction
+    >>> mtf.initialize_mtf(max_order=4, max_dimension=1)
+    >>> x = mtf.var(1)
+    >>> f = mtf.tan(x)
     >>> print(f.get_tabular_dataframe())
        Coefficient  Order Exponents
     0  1.000000e+00      1    (1,)
@@ -309,10 +312,11 @@ def _exp_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 
     Examples
     --------
-    >>> from mtflib import MultivariateTaylorFunction, Var, exp_taylor
-    >>> MultivariateTaylorFunction.initialize_mtf(max_order=3, max_dimension=1)
-    >>> x = Var(1)
-    >>> f = exp_taylor(x)
+    >>> from mtflib import MultivariateTaylorFunction
+    >>> mtf = MultivariateTaylorFunction
+    >>> mtf.initialize_mtf(max_order=3, max_dimension=1)
+    >>> x = mtf.var(1)
+    >>> f = mtf.exp(x)
     >>> print(f.get_tabular_dataframe())
        Coefficient  Order Exponents
     0  1.000000e+00      0    (0,)
@@ -399,10 +403,11 @@ def _gaussian_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 
     Examples
     --------
-    >>> from mtflib import MultivariateTaylorFunction, Var, gaussian_taylor
-    >>> MultivariateTaylorFunction.initialize_mtf(max_order=4, max_dimension=1)
-    >>> x = Var(1)
-    >>> f = gaussian_taylor(x)
+    >>> from mtflib import MultivariateTaylorFunction
+    >>> mtf = MultivariateTaylorFunction
+    >>> mtf.initialize_mtf(max_order=4, max_dimension=1)
+    >>> x = mtf.var(1)
+    >>> f = mtf.gaussian(x)
     >>> print(f.get_tabular_dataframe())
        Coefficient  Order Exponents
     0  1.000000e+00      0    (0,)
@@ -441,11 +446,12 @@ def _log_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 
     Examples
     --------
-    >>> from mtflib import MultivariateTaylorFunction, Var, log_taylor
-    >>> MultivariateTaylorFunction.initialize_mtf(max_order=3, max_dimension=1)
-    >>> x = Var(1)
+    >>> from mtflib import MultivariateTaylorFunction
+    >>> mtf = MultivariateTaylorFunction
+    >>> mtf.initialize_mtf(max_order=3, max_dimension=1)
+    >>> x = mtf.var(1)
     >>> # We compute log(1+x) since log(x) is singular at x=0
-    >>> f = log_taylor(1 + x)
+    >>> f = mtf.log(1 + x)
     >>> print(f.get_tabular_dataframe())
        Coefficient  Order Exponents
     0  1.000000e+00      1    (1,)
@@ -555,10 +561,11 @@ def _arctan_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 
     Examples
     --------
-    >>> from mtflib import MultivariateTaylorFunction, Var, arctan_taylor
-    >>> MultivariateTaylorFunction.initialize_mtf(max_order=3, max_dimension=1)
-    >>> x = Var(1)
-    >>> f = arctan_taylor(x)
+    >>> from mtflib import MultivariateTaylorFunction
+    >>> mtf = MultivariateTaylorFunction
+    >>> mtf.initialize_mtf(max_order=3, max_dimension=1)
+    >>> x = mtf.var(1)
+    >>> f = mtf.arctan(x)
     >>> print(f.get_tabular_dataframe())
        Coefficient  Order Exponents
     0  1.000000e+00      1    (1,)
@@ -662,10 +669,11 @@ def _sinh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 
     Examples
     --------
-    >>> from mtflib import MultivariateTaylorFunction, Var, sinh_taylor
-    >>> MultivariateTaylorFunction.initialize_mtf(max_order=3, max_dimension=1)
-    >>> x = Var(1)
-    >>> f = sinh_taylor(x)
+    >>> from mtflib import MultivariateTaylorFunction
+    >>> mtf = MultivariateTaylorFunction
+    >>> mtf.initialize_mtf(max_order=3, max_dimension=1)
+    >>> x = mtf.var(1)
+    >>> f = mtf.sinh(x)
     >>> print(f.get_tabular_dataframe())
        Coefficient  Order Exponents
     0  1.000000e+00      1    (1,)
@@ -708,10 +716,11 @@ def _cosh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 
     Examples
     --------
-    >>> from mtflib import MultivariateTaylorFunction, Var, cosh_taylor
-    >>> MultivariateTaylorFunction.initialize_mtf(max_order=4, max_dimension=1)
-    >>> x = Var(1)
-    >>> f = cosh_taylor(x)
+    >>> from mtflib import MultivariateTaylorFunction
+    >>> mtf = MultivariateTaylorFunction
+    >>> mtf.initialize_mtf(max_order=4, max_dimension=1)
+    >>> x = mtf.var(1)
+    >>> f = mtf.cosh(x)
     >>> print(f.get_tabular_dataframe())
        Coefficient  Order Exponents
     0  1.000000e+00      0    (0,)
@@ -874,10 +883,11 @@ def _tanh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 
     Examples
     --------
-    >>> from mtflib import MultivariateTaylorFunction, Var, tanh_taylor
-    >>> MultivariateTaylorFunction.initialize_mtf(max_order=4, max_dimension=1)
-    >>> x = Var(1)
-    >>> f = tanh_taylor(x)
+    >>> from mtflib import MultivariateTaylorFunction
+    >>> mtf = MultivariateTaylorFunction
+    >>> mtf.initialize_mtf(max_order=4, max_dimension=1)
+    >>> x = mtf.var(1)
+    >>> f = mtf.tanh(x)
     >>> print(f.get_tabular_dataframe())
        Coefficient  Order Exponents
     0  1.000000e+00      1    (1,)
@@ -910,10 +920,11 @@ def _arctanh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 
     Examples
     --------
-    >>> from mtflib import MultivariateTaylorFunction, Var, arctanh_taylor
-    >>> MultivariateTaylorFunction.initialize_mtf(max_order=3, max_dimension=1)
-    >>> x = Var(1)
-    >>> f = arctanh_taylor(x)
+    >>> from mtflib import MultivariateTaylorFunction
+    >>> mtf = MultivariateTaylorFunction
+    >>> mtf.initialize_mtf(max_order=3, max_dimension=1)
+    >>> x = mtf.var(1)
+    >>> f = mtf.arctanh(x)
     >>> print(f.get_tabular_dataframe())
        Coefficient  Order Exponents
     0  1.000000e+00      1    (1,)
@@ -1024,10 +1035,11 @@ def _arcsin_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 
     Examples
     --------
-    >>> from mtflib import MultivariateTaylorFunction, Var, arcsin_taylor
-    >>> MultivariateTaylorFunction.initialize_mtf(max_order=3, max_dimension=1)
-    >>> x = Var(1)
-    >>> f = arcsin_taylor(x)
+    >>> from mtflib import MultivariateTaylorFunction
+    >>> mtf = MultivariateTaylorFunction
+    >>> mtf.initialize_mtf(max_order=3, max_dimension=1)
+    >>> x = mtf.var(1)
+    >>> f = mtf.arcsin(x)
     >>> print(f.get_tabular_dataframe())
        Coefficient  Order Exponents
     0  1.000000e+00      1    (1,)
@@ -1065,11 +1077,12 @@ def _arccos_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 
     Examples
     --------
-    >>> from mtflib import MultivariateTaylorFunction, Var, arccos_taylor
+    >>> from mtflib import MultivariateTaylorFunction
     >>> import numpy as np
-    >>> MultivariateTaylorFunction.initialize_mtf(max_order=3, max_dimension=1)
-    >>> x = Var(1)
-    >>> f = arccos_taylor(x)
+    >>> mtf = MultivariateTaylorFunction
+    >>> mtf.initialize_mtf(max_order=3, max_dimension=1)
+    >>> x = mtf.var(1)
+    >>> f = mtf.arccos(x)
     >>> print(f.get_tabular_dataframe())
        Coefficient  Order Exponents
     0  1.570796e+00      0    (0,)
@@ -1128,20 +1141,21 @@ def _integrate(
 
     Examples
     --------
-    >>> from mtflib import MultivariateTaylorFunction, Var, integrate
-    >>> MultivariateTaylorFunction.initialize_mtf(max_order=3, max_dimension=2)
-    >>> x, y = Var(1), Var(2)
+    >>> from mtflib import MultivariateTaylorFunction
+    >>> mtf = MultivariateTaylorFunction
+    >>> mtf.initialize_mtf(max_order=3, max_dimension=2)
+    >>> x, y = mtf.var(1), mtf.var(2)
     >>> f = x*y + y**2
     >>>
     >>> # Indefinite integral with respect to x
-    >>> F_indef = integrate(f, 1)
+    >>> F_indef = f.integrate(1)
     >>> print(F_indef.get_tabular_dataframe())
        Coefficient  Order Exponents
     0  5.000000e-01      2    (2, 1)
     1  1.000000e+00      3    (1, 2)
     >>>
     >>> # Definite integral with respect to y from 0 to 2
-    >>> F_def = integrate(f, 2, lower_limit=0.0, upper_limit=2.0)
+    >>> F_def = f.integrate(2, lower_limit=0.0, upper_limit=2.0)
     >>> print(F_def.get_tabular_dataframe())
        Coefficient  Order Exponents
     0  2.666667e+00      0    (0, 0)
@@ -1256,19 +1270,20 @@ def _derivative(mtf_instance, deriv_dim):
 
     Examples
     --------
-    >>> from mtflib import MultivariateTaylorFunction, Var, derivative
-    >>> MultivariateTaylorFunction.initialize_mtf(max_order=3, max_dimension=2)
-    >>> x, y = Var(1), Var(2)
+    >>> from mtflib import MultivariateTaylorFunction
+    >>> mtf = MultivariateTaylorFunction
+    >>> mtf.initialize_mtf(max_order=3, max_dimension=2)
+    >>> x, y = mtf.var(1), mtf.var(2)
     >>> f = x**3 * y**2
     >>>
     >>> # Differentiate with respect to x
-    >>> df_dx = derivative(f, 1)
+    >>> df_dx = f.derivative(1)
     >>> print(df_dx.get_tabular_dataframe())
        Coefficient  Order Exponents
     0  3.000000e+00      4    (2, 2)
     >>>
     >>> # Differentiate with respect to y
-    >>> df_dy = derivative(f, 2)
+    >>> df_dy = f.derivative(2)
     >>> print(df_dy.get_tabular_dataframe())
        Coefficient  Order Exponents
     0  2.000000e+00      4    (3, 1)

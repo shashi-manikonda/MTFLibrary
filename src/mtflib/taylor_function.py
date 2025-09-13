@@ -95,7 +95,7 @@ class MultivariateTaylorFunction:
     Examples
     --------
     >>> import numpy as np
-    >>> from mtflib import mtf, var
+    >>> from mtflib import mtf
     >>>
     >>> # Initialize global settings for mtf
     >>> mtf.initialize_mtf(max_order=5, max_dimension=2)
@@ -104,7 +104,7 @@ class MultivariateTaylorFunction:
     >>> f = mtf.from_constant(2.0, dimension=2)
     >>>
     >>> # Create a variable x1
-    >>> x1 = var(1, 2)
+    >>> x1 = mtf.var(1, 2)
     >>>
     >>> # Create a function g(x1, x2) = 2.0 + x1
     >>> g = f + x1
@@ -590,9 +590,9 @@ class MultivariateTaylorFunction:
 
         Examples
         --------
-        >>> from mtflib import mtf, var
+        >>> from mtflib import mtf
         >>> mtf.initialize_mtf(max_order=2, max_dimension=2)
-        >>> x, y = var(1), var(2)
+        >>> x, y = mtf.var(1), mtf.var(2)
         >>> f = 1 + x*y
         >>>
         >>> # --- NumPy Backend ---

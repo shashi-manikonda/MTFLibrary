@@ -51,9 +51,8 @@ dev = [
     "sphinx-rtd-theme",
     "myst_parser",
     "sympy",
-    "black",
-    "flake8",
     "pre-commit",
+    "ruff",
 ]
 
 [project.urls]
@@ -67,6 +66,11 @@ where = ["src"]
 "mtflib.backends.cpp" = ["*.hpp"]
 "mtflib.backends.c" = ["*.h"]
 
-[tool.flake8]
-max-line-length = 79
-ignore = ["E203", "W503", "E501"]
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.ruff.format]
+preview = true
