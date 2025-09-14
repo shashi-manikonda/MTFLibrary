@@ -519,7 +519,7 @@ class MultivariateTaylorFunction:
         float or complex
             The result of the evaluation.
         """
-        return self.eval(evaluation_point)
+        return self.eval(evaluation_point).item()
 
     def eval(self, evaluation_point):
         """
@@ -1776,9 +1776,124 @@ class MultivariateTaylorFunction:
             ((self.exponents, self.coeffs), self.dimension, self.var_name),
         )
 
+    def get_constant(self) -> float:
+        """
+        Retrieves the constant (zeroth-order) term of the Taylor series.
 
-mtf = MultivariateTaylorFunction
+        This is equivalent to evaluating the function at the origin.
 
+        Returns
+        -------
+        float
+            The value of the constant term.
+        """
+        constant_exp = np.zeros(self.dimension, dtype=np.int32)
+        match = np.all(self.exponents == constant_exp, axis=1)
+        const_idx = np.where(match)[0]
+
+        if const_idx.size > 0:
+            return float(self.coeffs[const_idx[0]])
+        else:
+            return 0.0
+
+    def get_polynomial_part(self):
+        """
+        Returns a new MTF representing the polynomial part of the function.
+
+        The new function contains all terms of order > 0.
+
+        Returns
+        -------
+        MultivariateTaylorFunction
+            A new MTF object with the same dimensions but with the constant
+            term removed.
+        """
+        constant_exp = np.zeros(self.dimension, dtype=np.int32)
+        match = np.all(self.exponents == constant_exp, axis=1)
+        poly_mask = ~match
+
+        if not np.any(poly_mask):
+            return type(self)((np.empty((0, self.dimension), dtype=np.int32), np.empty((0,), dtype=self.coeffs.dtype)), self.dimension)
+
+        poly_exponents = self.exponents[poly_mask]
+        poly_coeffs = self.coeffs[poly_mask]
+        return type(self)((poly_exponents, poly_coeffs), self.dimension)
+
+
+    @classmethod
+    def from_numpy_array(cls, np_array: np.ndarray, dimension: int = None) -> np.ndarray:
+        """
+        Converts a NumPy array of numbers into a NumPy array of MultivariateTaylorFunction
+        objects. Each element of the output array is a constant MTF.
+
+        Parameters
+        ----------
+        np_array : np.ndarray
+            The NumPy array of numerical values to convert.
+        dimension : int, optional
+            The number of variables for each MultivariateTaylorFunction object.
+            If None, the globally configured _MAX_DIMENSION is used.
+
+        Returns
+        -------
+        np.ndarray
+            A NumPy array of MultivariateTaylorFunction objects with the same
+            shape as the input array.
+
+        Raises
+        ------
+        TypeError
+            If the input is not a NumPy array.
+        """
+        if not isinstance(np_array, np.ndarray):
+            raise TypeError("Input must be a NumPy array.")
+
+        if dimension is None:
+            dimension = cls.get_max_dimension()
+
+        # Vectorize the from_constant method to apply it to each element
+        # of the input NumPy array while preserving the shape.
+        vectorized_from_constant = np.vectorize(cls.from_constant, otypes=[object])
+        return vectorized_from_constant(np_array, dimension=dimension)
+
+
+    @classmethod
+    def to_numpy_array(cls, mtf_array: np.ndarray) -> np.ndarray:
+        """
+        Converts a NumPy array of MultivariateTaylorFunction objects into a
+        NumPy array of their constant values.
+
+        Parameters
+        ----------
+        mtf_array : np.ndarray
+            The NumPy array of MultivariateTaylorFunction objects to convert.
+
+        Returns
+        -------
+        np.ndarray
+            A NumPy array of the constant values (zeroth-order terms)
+            with the same shape as the input array.
+
+        Raises
+        ------
+        TypeError
+            If the input is not a NumPy array or if its elements are not
+            MultivariateTaylorFunction objects.
+        """
+        if not isinstance(mtf_array, np.ndarray):
+            raise TypeError("Input must be a NumPy array.")
+        if mtf_array.size > 0 and not isinstance(mtf_array.flat[0], cls):
+            raise TypeError("All elements of the input array must be MultivariateTaylorFunction objects.")
+
+        # Use the get_constant method, which is a more efficient way to
+        # extract the zeroth-order term than evaluating the full series.
+        flat_list = [mtf_obj.get_constant() for mtf_obj in mtf_array.flat]
+        
+        # Then, reshape the flat list to the original array's shape
+        return np.array(flat_list, dtype=np.float64).reshape(mtf_array.shape)
+
+
+mtf = MultivariateTaylorFunction # Alias to MultivariateTaylorFunction
 
 def _generate_exponent_combinations(dimension, order):
     """Generates all combinations of exponents for a given dimension and order."""
@@ -1820,21 +1935,8 @@ def _split_constant_polynomial_part(
         - The constant term value (`C`).
         - A new MTF representing the polynomial part (`p(x)`).
     """
-    dimension = input_mtf.dimension
-    const_exp = np.zeros(dimension, dtype=np.int32)
-
-    match = np.all(input_mtf.exponents == const_exp, axis=1)
-    const_idx = np.where(match)[0]
-
-    if const_idx.size > 0:
-        constant_term_C_value = input_mtf.coeffs[const_idx[0]]
-        poly_mask = ~match
-        poly_exponents = input_mtf.exponents[poly_mask]
-        poly_coeffs = input_mtf.coeffs[poly_mask]
-        polynomial_part_mtf = type(input_mtf)((poly_exponents, poly_coeffs), dimension)
-    else:
-        constant_term_C_value = 0.0
-        polynomial_part_mtf = input_mtf
+    constant_term_C_value = input_mtf.get_constant()
+    polynomial_part_mtf = input_mtf.get_polynomial_part()
 
     return constant_term_C_value, polynomial_part_mtf
 

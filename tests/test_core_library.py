@@ -1101,3 +1101,91 @@ def test_array_ufunc_extended():
     ufunc_add_scalar_result = np.add(mtf1, 5)
     direct_add_scalar_result = mtf1 + 5
     assert ufunc_add_scalar_result == direct_add_scalar_result
+
+def test_from_numpy_array(setup_function):
+    """
+    Tests the from_numpy_array class method for correct conversion and shape.
+    """
+    # 1. Prepare a sample NumPy array
+    input_array = np.array([[1.0, 2.0], [3.0, 4.0]])
+    expected_shape = input_array.shape
+
+    # 2. Convert the NumPy array to an array of MTF objects
+    mtf_array = mtf.from_numpy_array(input_array)
+
+    # 3. Assert the shape of the resulting array
+    assert mtf_array.shape == expected_shape
+
+    # 4. Assert that each element is a constant MTF with the correct value
+    #    This can be checked by evaluating the MTF at any point, e.g., origin [0, 0, 0]
+    global_dim = mtf.get_max_dimension()
+    origin = [0] * global_dim
+    for i in range(input_array.shape[0]):
+        for j in range(input_array.shape[1]):
+            expected_value = input_array[i, j]
+            # Use `.eval()` to get the constant value from the MTF
+            assert np.isclose(mtf_array[i, j].eval(origin), expected_value)
+
+    # 5. Assert that a TypeError is raised for invalid input
+    with pytest.raises(TypeError, match="Input must be a NumPy array."):
+        mtf.from_numpy_array([1, 2, 3])
+
+
+def test_to_numpy_array(setup_function):
+    """
+    Tests the to_numpy_array class method for correct conversion and shape.
+    """
+    # 1. Create a NumPy array of numbers as a reference
+    input_array = np.array([[1.0, 2.0], [3.0, 4.0]])
+    expected_shape = input_array.shape
+
+    # 2. Use a different method to create a NumPy array of MTF objects
+    #    to ensure this test is independent.
+    mtf_array = np.array([[mtf.from_constant(val) for val in row] for row in input_array])
+
+    # 3. Convert the MTF array back to a NumPy array of numbers
+    output_array = mtf.to_numpy_array(mtf_array)
+
+    # 4. Assert the shape of the resulting array
+    assert output_array.shape == expected_shape
+
+    # 5. Assert that the values are correctly converted
+    assert np.allclose(output_array, input_array)
+
+    # 6. Assert that a TypeError is raised for invalid input
+    with pytest.raises(TypeError, match="Input must be a NumPy array."):
+        mtf.to_numpy_array([1, 2, 3])
+
+def test_get_constant_and_polynomial_part(setup_function):
+    """
+    Tests the get_constant and get_polynomial_part methods.
+    """
+    global_dim, exponent_zero = setup_function
+
+    # 1. Create a sample MTF with a constant and a non-constant term
+    x = mtf.var(1)
+    constant_term = mtf.from_constant(12.34)
+    original_mtf = constant_term + x ** 2
+    
+    # 2. Test get_constant()
+    constant_value = original_mtf.get_constant()
+    assert np.isclose(constant_value, 12.34)
+    
+    # 3. Test get_polynomial_part()
+    poly_part_mtf = original_mtf.get_polynomial_part()
+    
+    # 4. Assert the polynomial part's constant is zero
+    poly_constant_value = poly_part_mtf.get_constant()
+    assert np.isclose(poly_constant_value, 0.0)
+    
+    # 5. Assert the polynomial part contains the non-constant term
+    #    The non-constant part should have one term, x^2
+    assert len(poly_part_mtf.exponents) == 1
+    poly_exp = poly_part_mtf.exponents[0]
+    expected_exp = [0] * global_dim
+    expected_exp[0] = 2
+    assert np.all(poly_exp == expected_exp)
+
+    # 6. Test the fundamental relationship: original_mtf == constant + polynomial_part
+    reconstructed_mtf = mtf.from_constant(constant_value) + poly_part_mtf
+    assert original_mtf == reconstructed_mtf
