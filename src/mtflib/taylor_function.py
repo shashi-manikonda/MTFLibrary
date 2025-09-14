@@ -1785,7 +1785,9 @@ class MultivariateTaylorFunction:
         Returns
         -------
         float
-            The value of the constant term.
+            The value of the constant term, which is the coefficient of the
+            term with all-zero exponents. Returns 0.0 if no constant term
+            is explicitly defined.
         """
         constant_exp = np.zeros(self.dimension, dtype=np.int32)
         match = np.all(self.exponents == constant_exp, axis=1)
@@ -1798,15 +1800,18 @@ class MultivariateTaylorFunction:
 
     def get_polynomial_part(self):
         """
-        Returns a new MTF representing the polynomial part of the function.
+        Returns a new MTF with the constant term removed.
 
-        The new function contains all terms of order > 0.
+        This method is useful for separating a function `f` into its
+        constant and non-constant parts, i.e., `f = c + p(x)`, where `p(x)`
+        is the polynomial part.
 
         Returns
         -------
         MultivariateTaylorFunction
-            A new MTF object with the same dimensions but with the constant
-            term removed.
+            A new MTF object that includes all terms of order > 0 from the
+            original function. If the original function has no non-constant
+            terms, an empty MTF is returned.
         """
         constant_exp = np.zeros(self.dimension, dtype=np.int32)
         match = np.all(self.exponents == constant_exp, axis=1)
