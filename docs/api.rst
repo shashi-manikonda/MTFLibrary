@@ -19,6 +19,8 @@ These are the main classes for representing and manipulating Taylor series.
    :autosummary:
    :autosummary-nosignatures:
 
+.. automethod:: mtflib.taylor_function.var
+
 .. autoclass:: mtflib.complex_taylor_function.ComplexMultivariateTaylorFunction
    :members:
    :undoc-members:
@@ -35,7 +37,7 @@ Factory and Utility Functions
 These functions are used to create or manipulate core objects.
 
 .. automodule:: mtflib.taylor_function
-   :members: var, mtfarray, mtf
+   :members: mtfarray, mtf
 
 .. automodule:: mtflib.elementary_coefficients
    :members: load_precomputed_coefficients

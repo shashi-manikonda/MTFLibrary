@@ -21,8 +21,11 @@ in a computationally efficient manner.
    :caption: User Guide
 
    getting_started
-   examples
+   user_guide/creating_mtfs
+   user_guide/differentiation_integration
+   user_guide/composition
    taylor_map
+   examples
 
 .. toctree::
    :maxdepth: 2
