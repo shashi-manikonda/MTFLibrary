@@ -2,6 +2,24 @@ import os
 import subprocess
 import sys
 
+def install_dependencies():
+    """Installs the necessary dependencies for running the notebooks."""
+    dependencies = [
+        "jupytext",
+        "matplotlib",
+        "pandas",
+        "torch",
+        "ipython",
+        "sympy"
+    ]
+    for dependency in dependencies:
+        print(f"Installing {dependency}...")
+        try:
+            subprocess.run([sys.executable, "-m", "pip", "install", dependency], check=True)
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to install {dependency}: {e}")
+            sys.exit(1)
+
 def run_notebooks_in_directory(root_directory):
     """Finds and executes all .ipynb files in a given directory and its subdirectories."""
     # Add the src directory to the python path
@@ -33,6 +51,7 @@ def run_notebooks_in_directory(root_directory):
                     sys.exit(1)
 
 if __name__ == "__main__":
+    install_dependencies()
     # Get the current working directory
     demos_directory = os.path.join(os.getcwd(), 'demos')
     try:
