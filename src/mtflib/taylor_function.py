@@ -59,6 +59,12 @@ class MultivariateTaylorFunction:
     """
     A class to represent and manipulate multivariate Taylor series expansions.
 
+    .. note::
+        This class is the core of `mtflib` for representing multivariate
+        Taylor series. For convenience, it is aliased as `mtf`, and you will
+        often see `from mtflib import mtf` in examples. Users searching for
+        "MultiVariateFunction" should note that this is the correct class.
+
     This class provides an object-oriented implementation of a Differential
     Algebra (DA) vector. It stores the Taylor coefficients of a function
     up to a specified order and provides a rich set of methods for
@@ -68,16 +74,20 @@ class MultivariateTaylorFunction:
     Attributes
     ----------
     exponents : np.ndarray
-        A 2D numpy array of shape `(n_terms, dimension)`, where each row
-        represents the multi-index exponent of a term.
+        A 2D numpy array of shape `(n_terms, dimension)`. Each row is a
+        multi-index `(e_1, e_2, ..., e_d)` that represents the exponents of
+        the variables `(x_1, x_2, ..., x_d)` for a single term in the
+        Taylor series. For example, `(2, 0, 1)` corresponds to the term
+        `x_1^2 * x_3^1`. The array is sorted lexicographically.
     coeffs : np.ndarray
-        A 1D numpy array of shape `(n_terms,)` containing the coefficient
-        for each corresponding exponent.
+        A 1D numpy array of shape `(n_terms,)` containing the numerical
+        coefficient for each corresponding term in `exponents`.
     dimension : int
-        The number of variables in the Taylor series.
+        The number of independent variables in the Taylor series. This
+        determines the length of the exponent tuples.
     var_name : str, optional
-        An optional name for the function, often used for debugging or
-        representation purposes.
+        An optional name for the function, primarily used for display and
+        debugging purposes.
 
     Class Attributes
     ----------------
@@ -89,32 +99,87 @@ class MultivariateTaylorFunction:
         `initialize_mtf`.
     _ETOL : float
         Global tolerance for floating-point comparisons. Coefficients
-        smaller than this value are considered zero.
+        with an absolute value smaller than `_ETOL` are considered zero
+        and may be pruned during operations.
     _TRUNCATE_AFTER_OPERATION : bool
-        If True, coefficients smaller than `_ETOL` are automatically
-        removed after each operation.
+        If `True`, the series is automatically truncated to `_MAX_ORDER`
+        and pruned of near-zero coefficients after each arithmetic
+        operation.
 
     Examples
     --------
-    >>> import numpy as np
+    **1. Initialization and Basic Usage**
+
+    First, initialize the `mtflib` global settings. This must be done once.
+
     >>> from mtflib import mtf
+    >>> # Set max order to 4 and number of variables (dimension) to 2
+    >>> mtf.initialize_mtf(max_order=4, max_dimension=2) # doctest: +ELLIPSIS
+    Initializing MTF globals with: _MAX_ORDER=4, _MAX_DIMENSION=2...
+
+    **2. Creating Variables and Constants**
+
+    Create Taylor series for independent variables `x` and `y`.
+
+    >>> x = mtf.var(1)  # Represents the first variable
+    >>> y = mtf.var(2)  # Represents the second variable
+    >>> c = mtf.from_constant(5.0) # Represents a constant value
     >>>
-    >>> # Initialize global settings for mtf
-    >>> mtf.initialize_mtf(max_order=5, max_dimension=2)
-    >>>
-    >>> # Create a constant function f(x1, x2) = 2.0
-    >>> f = mtf.from_constant(2.0, dimension=2)
-    >>>
-    >>> # Create a variable x1
-    >>> x1 = mtf.var(1, 2)
-    >>>
-    >>> # Create a function g(x1, x2) = 2.0 + x1
-    >>> g = f + x1
-    >>>
-    >>> # Evaluate g at (x1, x2) = (3.0, 4.0)
-    >>> result = g.eval([3.0, 4.0])
+    >>> print(x)
+           Coefficient  Order Exponents
+    0          1.0      1    (1, 0)
+    <BLANKLINE>
+    >>> print(c)
+           Coefficient  Order Exponents
+    0          5.0      0    (0, 0)
+    <BLANKLINE>
+
+    **3. Performing Arithmetic**
+
+    Standard arithmetic operators are overloaded to work with MTF objects.
+
+    >>> f = 5 + x * y**2
+    >>> print(f)
+           Coefficient  Order Exponents
+    0          5.0      0    (0, 0)
+    1          1.0      3    (1, 2)
+    <BLANKLINE>
+
+    The result `f` is a new `MultivariateTaylorFunction` object representing
+    the function `f(x, y) = 5 + x*y^2`.
+
+    **4. Using Elementary Functions**
+
+    Apply elementary functions like `sin`, `exp`, etc. The `numpy` ufuncs are
+    overloaded for `mtf` objects.
+
+    >>> import numpy as np
+    >>> g = np.sin(x)
+    >>> print(g) # doctest: +NORMALIZE_WHITESPACE
+           Coefficient  Order Exponents
+    0     1.000000e+00      1    (1, 0)
+    1    -1.666667e-01      3    (1, 0)
+    <BLANKLINE>
+
+    This computes the Taylor series for `sin(x)` up to the global max order.
+
+    **5. Evaluation**
+
+    Evaluate the Taylor series at a specific point `(x, y)`.
+
+    >>> # Evaluate f(x,y) = 5 + x*y^2 at (x=2, y=3)
+    >>> result = f.eval([2, 3])
     >>> print(result)
-    [5.]
+    [23.]
+    >>> # 5 + 2 * 3**2 = 23
+
+    For multiple points, `neval` is more efficient.
+
+    >>> import numpy as np
+    >>> points = np.array([[2, 3], [1, 1]])
+    >>> results = f.neval(points)
+    >>> print(results)
+    [23.  6.]
     """
 
     _MAX_ORDER = None
@@ -323,6 +388,24 @@ class MultivariateTaylorFunction:
         mtf_data : object, optional
             Internal data object for C++ backend acceleration. Users should
             not set this directly.
+
+        Examples
+        --------
+        Although factory methods like `from_constant` and `var` are
+        recommended, you can construct an MTF directly.
+
+        >>> from mtflib import mtf
+        >>> import numpy as np
+        >>> mtf.initialize_mtf(max_order=2, max_dimension=2) # doctest: +ELLIPSIS
+        ...
+        >>> # f(x,y) = 2.5 + x*y
+        >>> coeffs = {(0, 0): 2.5, (1, 1): 1.0}
+        >>> f = mtf(coeffs, dimension=2)
+        >>> print(f)
+               Coefficient  Order Exponents
+        0          2.5      0    (0, 0)
+        1          1.0      2    (1, 1)
+        <BLANKLINE>
         """
         self.var_name = var_name
         self.mtf_data = mtf_data
@@ -427,6 +510,17 @@ class MultivariateTaylorFunction:
         -------
         MultivariateTaylorFunction
             A new MTF instance representing the constant function.
+
+        Examples
+        --------
+        >>> from mtflib import mtf
+        >>> mtf.initialize_mtf(max_order=2, max_dimension=2) # doctest: +ELLIPSIS
+        ...
+        >>> c = mtf.from_constant(10.5)
+        >>> print(c)
+               Coefficient  Order Exponents
+        0         10.5      0    (0, 0)
+        <BLANKLINE>
         """
         if dimension is None:
             dimension = cls.get_max_dimension()
@@ -459,6 +553,18 @@ class MultivariateTaylorFunction:
         ------
         ValueError
             If `var_index` is not between 1 and `dimension`.
+
+        Examples
+        --------
+        >>> from mtflib import mtf
+        >>> mtf.initialize_mtf(max_order=2, max_dimension=3) # doctest: +ELLIPSIS
+        ...
+        >>> # Create the second variable in a 3D space
+        >>> y = mtf.var(2, dimension=3)
+        >>> print(y)
+               Coefficient  Order Exponents
+        0          1.0      1    (0, 1, 0)
+        <BLANKLINE>
         """
         if dimension is None:
             dimension = cls.get_max_dimension()
@@ -1194,20 +1300,33 @@ class MultivariateTaylorFunction:
 
         Examples
         --------
-        >>> mtf.initialize_mtf(max_order=2, max_dimension=2)
-        >>> x1 = mtf.from_variable(1, 2)
-        >>> x2 = mtf.from_variable(2, 2)
-        >>> f = x1 * x1 + x2
-        >>> g1 = x1 + 1
-        >>> g2 = x2 * 2
-        >>> # Compose f with g1 and g2, i.e., f(g1, g2)
+        Let `f(x1, x2) = x1**2 + x2`. We want to compose it with
+        `g1(y1, y2) = y1 + 1` and `g2(y1, y2) = 2*y2`.
+        The result `h` will be `h(y1, y2) = (y1+1)**2 + 2*y2`.
+
+        >>> from mtflib import mtf
+        >>> mtf.initialize_mtf(max_order=2, max_dimension=2) # doctest: +ELLIPSIS
+        ...
+        >>> x1 = mtf.var(1)
+        >>> x2 = mtf.var(2)
+        >>>
+        >>> f = x1**2 + x2
+        >>>
+        >>> # Inner functions (g1, g2)
+        >>> y1 = mtf.var(1)
+        >>> y2 = mtf.var(2)
+        >>> g1 = y1 + 1
+        >>> g2 = 2 * y2
+        >>>
+        >>> # Compose f(g1, g2)
         >>> h = f.compose({1: g1, 2: g2})
-        >>> print(h.get_tabular_dataframe())
-           Coefficient  Order Exponents
+        >>> print(h) # h(y1, y2) = (y1+1)**2 + 2*y2 = 1 + 2*y1 + y1**2 + 2*y2
+               Coefficient  Order Exponents
         0          1.0      0    (0, 0)
         1          2.0      1    (0, 1)
         2          2.0      1    (1, 0)
         3          1.0      2    (2, 0)
+        <BLANKLINE>
         """
         if not isinstance(other_function_dict, dict):
             raise TypeError("other_function_dict must be a dictionary.")
@@ -1688,6 +1807,30 @@ class MultivariateTaylorFunction:
             If an indefinite integral, a new MTF representing the integral.
             If a definite integral, a new MTF representing the result after
             integrating and substituting the bounds.
+
+        Examples
+        --------
+        **Indefinite Integral**
+        >>> from mtflib import mtf
+        >>> mtf.initialize_mtf(max_order=3, max_dimension=2) # doctest: +ELLIPSIS
+        ...
+        >>> x, y = mtf.var(1), mtf.var(2)
+        >>> f = 3 * x**2 * y
+        >>>
+        >>> # Integrate with respect to x (variable 1)
+        >>> F = f.integrate(1)
+        >>> print(F)
+               Coefficient  Order Exponents
+        0          1.0      4    (3, 1)
+        <BLANKLINE>
+
+        **Definite Integral**
+        >>> # Definite integral of f from x=0 to x=2
+        >>> F_definite = f.integrate(1, lower_limit=0, upper_limit=2)
+        >>> print(F_definite)
+               Coefficient  Order Exponents
+        0          8.0      1    (0, 1)
+        <BLANKLINE>
         """
         from .elementary_functions import _integrate
 
@@ -1710,6 +1853,21 @@ class MultivariateTaylorFunction:
         -------
         MultivariateTaylorFunction
             A new MTF representing the partial derivative.
+
+        Examples
+        --------
+        >>> from mtflib import mtf
+        >>> mtf.initialize_mtf(max_order=3, max_dimension=2) # doctest: +ELLIPSIS
+        ...
+        >>> x, y = mtf.var(1), mtf.var(2)
+        >>> f = x**3 * y**2
+        >>>
+        >>> # Differentiate with respect to x (variable 1)
+        >>> df_dx = f.derivative(1)
+        >>> print(df_dx)
+               Coefficient  Order Exponents
+        0          3.0      4    (2, 2)
+        <BLANKLINE>
         """
         from .elementary_functions import _derivative
 
