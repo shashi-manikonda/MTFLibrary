@@ -35,49 +35,6 @@ switches to the PyTorch backend. This provides two key advantages:
     optimized for deep learning, making it exceptionally fast for the types of
     vectorized operations used in `mtflib`.
 
-.. code-block:: python
-   :caption: Example of using the PyTorch backend for GPU acceleration
-
-    import numpy as np
-    import torch
-    from mtflib import mtf
-
-    # Initialize the library
-    mtf.initialize_mtf(max_order=5, max_dimension=2)
-
-    # Create a function
-    x, y = mtf.var(1), mtf.var(2)
-    f = mtf.exp(x * y)
-
-    # Create a large batch of evaluation points
-    num_points = 1_000_000
-    points_np = np.random.rand(num_points, 2)
-
-    # --- NumPy Backend (CPU) ---
-    # The backend is automatically selected based on the input type
-    result_np = f.neval(points_np)
-    print(f"NumPy backend result type: {type(result_np)}")
-
-
-    # --- PyTorch Backend (GPU) ---
-    # Check if a CUDA-enabled GPU is available
-    if torch.cuda.is_available():
-        device = torch.device("cuda")
-
-        # Convert the points to a PyTorch tensor on the GPU
-        points_torch = torch.from_numpy(points_np).to(device)
-
-        # The PyTorch backend is automatically selected
-        result_torch = f.neval(points_torch)
-
-        print(f"PyTorch backend result type: {type(result_torch)}")
-        print(f"PyTorch tensor device: {result_torch.device}")
-
-.. note::
-    To leverage the PyTorch backend, you must have a CUDA-compatible GPU
-    and the `torch` library installed. You can install it with `mtflib`
-    using `pip install mtflib[torch]`.
-
 Future Work
 -----------
 

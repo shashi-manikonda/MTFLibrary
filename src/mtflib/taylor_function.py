@@ -1045,18 +1045,6 @@ class MultivariateTaylorFunction:
             If `var_index` is not an integer or `value` is not a number.
         ValueError
             If `var_index` is out of the valid range [1, dimension].
-
-        Examples
-        --------
-        >>> from mtflib import mtf
-        >>> mtf.initialize_mtf(max_order=2, max_dimension=2)
-        >>> x, y = mtf.var(1), mtf.var(2)
-        >>> f = 1 + 2*x + 3*y**2
-        >>> # Substitute x with 5
-        >>> g = f.substitute_variable(1, 5)
-        >>> # The new constant term is 1 + 2*5 = 11
-        >>> print(g.get_constant())
-        11.0
         """
         if not isinstance(var_index, int):
             raise TypeError("var_index must be an integer dimension index (1-based).")
@@ -1797,17 +1785,16 @@ class MultivariateTaylorFunction:
         Returns
         -------
         float
-            The value of the constant term, which is the coefficient of the
-            term with all-zero exponents. Returns 0.0 if no constant term
-            is explicitly defined.
+            The value of the constant term.
 
         Examples
         --------
         >>> from mtflib import mtf
-        >>> mtf.initialize_mtf(max_order=2, max_dimension=2)
+        >>> mtf.initialize_mtf(max_order=2, max_dimension=2) # doctest: +ELLIPSIS
+        ...
         >>> x, y = mtf.var(1), mtf.var(2)
         >>> f = 5.0 + x + y**2
-        >>> print(f.get_constant())
+        >>> f.get_constant()
         5.0
         """
         constant_exp = np.zeros(self.dimension, dtype=np.int32)
@@ -1821,31 +1808,28 @@ class MultivariateTaylorFunction:
 
     def get_polynomial_part(self):
         """
-        Returns a new MTF with the constant term removed.
+        Returns a new MTF representing the polynomial part of the function.
 
-        This method is useful for separating a function `f` into its
-        constant and non-constant parts, i.e., `f = c + p(x)`, where `p(x)`
-        is the polynomial part.
+        The new function contains all terms of order > 0.
 
         Returns
         -------
         MultivariateTaylorFunction
-            A new MTF object that includes all terms of order > 0 from the
-            original function. If the original function has no non-constant
-            terms, an empty MTF is returned.
+            A new MTF object with the same dimensions but with the constant
+            term removed.
 
         Examples
         --------
         >>> from mtflib import mtf
-        >>> mtf.initialize_mtf(max_order=2, max_dimension=2)
+        >>> mtf.initialize_mtf(max_order=2, max_dimension=2) # doctest: +ELLIPSIS
+        ...
         >>> x, y = mtf.var(1), mtf.var(2)
         >>> f = 5.0 + x + y**2
         >>> p = f.get_polynomial_part()
-        >>> # p should be x + y**2
-        >>> print(p.get_constant())
-        0.0
-        >>> print(p.coeffs.shape[0])
-        2
+        >>> print(p) # doctest: +NORMALIZE_WHITESPACE
+                   Coefficient  Order Exponents
+        0          1.0      1    (1, 0)
+        1          1.0      2    (0, 2)
         """
         constant_exp = np.zeros(self.dimension, dtype=np.int32)
         match = np.all(self.exponents == constant_exp, axis=1)

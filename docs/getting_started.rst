@@ -51,9 +51,7 @@ library, creates a two-variable function, and evaluates it at a point.
     mtf.initialize_mtf(max_order=4, max_dimension=2)
 
     # 2. Create variables x and y.
-    # The `var` function creates a MultivariateTaylorFunction representing a
-    # single variable. `var(1)` corresponds to the first variable, `var(2)` to
-    # the second, and so on.
+    # var(1) corresponds to the first variable, var(2) to the second.
     x = mtf.var(1)
     y = mtf.var(2)
 
@@ -69,14 +67,5 @@ library, creates a two-variable function, and evaluates it at a point.
     result = f.eval(evaluation_point)
     print(f"\\nResult of f(2, 3): {result[0]}")
 
-    # 6. Compute the partial derivative with respect to x.
-    # The `derivative` method computes the partial derivative with respect to
-    # the variable index provided in `deriv_dim`.
-    df_dx = f.derivative(deriv_dim=1)
-    print("\\nPartial derivative df/dx:")
-    print(df_dx.get_tabular_dataframe())
-
-
 This example demonstrates the basic workflow of defining a function and
-performing core operations. For more complex examples, see the :ref:`examples`
-page.
+evaluating it. For more complex examples, see the :ref:`examples` page.

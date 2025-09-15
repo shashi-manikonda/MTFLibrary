@@ -280,9 +280,8 @@ def load_precomputed_coefficients(max_order_config: int = None) -> dict:
 
     >>> from mtflib.elementary_coefficients import load_precomputed_coefficients
     >>> # Load coefficients up to order 5
-    >>> coeffs = load_precomputed_coefficients(max_order_config=5)
-    Loading/Precomputing Taylor coefficients up to order 5
-    ...
+    >>> coeffs = load_precomputed_coefficients(max_order_config=5) # doctest: +ELLIPSIS
+    Loading/Precomputing Taylor coefficients up to order 5...
     Global precomputed coefficients loading/generation complete.
     ...
     >>> # Get the precomputed coefficients for sin

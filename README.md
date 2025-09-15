@@ -91,20 +91,6 @@ Symbolic representation of the function:
 ```
 $\displaystyle 0.00833333 x^{5} - 0.166667 x^{3} + 1.0 x + 1.0 y^{2}$
 
-## Core Concepts
-
-### `MultivariateTaylorFunction`
-
-The `MultivariateTaylorFunction` (often aliased as `mtf`) is the core data structure in `mtflib`. It represents the Taylor series of a multivariate function, storing its coefficients and the corresponding monomial exponents.
-
-Key capabilities include:
-
-- **Arithmetic Operations**: MTFs support standard arithmetic operations like addition (`+`), subtraction (`-`), multiplication (`*`), division (`/`), and exponentiation (`**`). These operations are overloaded to work seamlessly with MTF objects.
-- **Differentiation and Integration**: You can compute partial derivatives and integrals of the function with respect to any of its variables.
-- **Evaluation**: The Taylor series can be evaluated at a specific point or a set of points in the function's domain.
-- **Tabular Representation**: An MTF can be easily converted to a pandas DataFrame for a clear, human-readable view of the Taylor series terms.
-- **Composition**: Complex functions can be created by composing MTFs with one another.
-
 ## Running Tests
 
 The project uses `pytest` for testing. First, install the test dependencies:
