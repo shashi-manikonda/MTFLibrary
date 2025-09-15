@@ -34,12 +34,22 @@ test = [
     "matplotlib",
     "nbconvert",
     "ipykernel",
+    "jupytext",
+    "pandas",
+    "torch",
+    "ipython",
+    "sympy",
 ]
 docs = [
     "sphinx",
     "sphinx-rtd-theme",
     "myst_parser",
     "sympy",
+    "matplotlib",
+    "pandas",
+    "torch",
+    "ipython",
+    "nbconvert"
 ]
 dev = [
     "pytest",
@@ -53,7 +63,11 @@ dev = [
     "sympy",
     "pre-commit",
     "ruff",
+    "jupytext",
+    "pandas",
+    "ipython",
 ]
+   
 
 [project.urls]
 "Homepage" = "https://github.com/shashi-manikonda/MTFLibrary"
