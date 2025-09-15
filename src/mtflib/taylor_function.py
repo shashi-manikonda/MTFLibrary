@@ -1836,17 +1836,24 @@ class MultivariateTaylorFunction:
         poly_mask = ~match
 
         if not np.any(poly_mask):
-            return type(self)((np.empty((0, self.dimension), dtype=np.int32), np.empty((0,), dtype=self.coeffs.dtype)), self.dimension)
+            return type(self)(
+                (
+                    np.empty((0, self.dimension), dtype=np.int32),
+                    np.empty((0,), dtype=self.coeffs.dtype),
+                ),
+                self.dimension,
+            )
 
         poly_exponents = self.exponents[poly_mask]
         poly_coeffs = self.coeffs[poly_mask]
         return type(self)((poly_exponents, poly_coeffs), self.dimension)
 
-
     @classmethod
-    def from_numpy_array(cls, np_array: np.ndarray, dimension: int = None) -> np.ndarray:
+    def from_numpy_array(
+        cls, np_array: np.ndarray, dimension: int = None
+    ) -> np.ndarray:
         """
-        Converts a NumPy array of numbers into a NumPy array of MultivariateTaylorFunction
+        Converts a NumPy array of numbers into a NumPy array of mtf
         objects. Each element of the output array is a constant MTF.
 
         Parameters
@@ -1879,7 +1886,6 @@ class MultivariateTaylorFunction:
         vectorized_from_constant = np.vectorize(cls.from_constant, otypes=[object])
         return vectorized_from_constant(np_array, dimension=dimension)
 
-
     @classmethod
     def to_numpy_array(cls, mtf_array: np.ndarray) -> np.ndarray:
         """
@@ -1906,17 +1912,18 @@ class MultivariateTaylorFunction:
         if not isinstance(mtf_array, np.ndarray):
             raise TypeError("Input must be a NumPy array.")
         if mtf_array.size > 0 and not isinstance(mtf_array.flat[0], cls):
-            raise TypeError("All elements of the input array must be MultivariateTaylorFunction objects.")
+            raise TypeError("All elements of the input array must be mtf objects.")
 
         # Use the get_constant method, which is a more efficient way to
         # extract the zeroth-order term than evaluating the full series.
         flat_list = [mtf_obj.get_constant() for mtf_obj in mtf_array.flat]
-        
+
         # Then, reshape the flat list to the original array's shape
         return np.array(flat_list, dtype=np.float64).reshape(mtf_array.shape)
 
 
-mtf = MultivariateTaylorFunction # Alias to MultivariateTaylorFunction
+mtf = MultivariateTaylorFunction  # Alias to MultivariateTaylorFunction
+
 
 def _generate_exponent_combinations(dimension, order):
     """Generates all combinations of exponents for a given dimension and order."""

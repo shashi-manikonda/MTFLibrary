@@ -328,3 +328,7 @@ def convert_to_cmtf(variable):
         raise TypeError(
             "Unsupported type for conversion to ComplexMultivariateTaylorFunction."
         )
+
+
+# alias for convenience
+cmtf = ComplexMultivariateTaylorFunction
