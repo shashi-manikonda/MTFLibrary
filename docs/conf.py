@@ -26,13 +26,22 @@ release = "1.5.0"
 
 extensions = [
     "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "myst_parser",
     "sphinx.ext.mathjax",
+    "sphinx.ext.doctest",
+    "nbsphinx",
 ]
 
 source_suffix = [".rst", ".md"]
+
+# -- nbsphinx configuration --------------------------------------------------
+nbsphinx_execute = "always"
+
+# -- autosummary configuration -----------------------------------------------
+autosummary_generate = True
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 

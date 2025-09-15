@@ -1786,6 +1786,16 @@ class MultivariateTaylorFunction:
         -------
         float
             The value of the constant term.
+
+        Examples
+        --------
+        >>> from mtflib import mtf
+        >>> mtf.initialize_mtf(max_order=2, max_dimension=2) # doctest: +ELLIPSIS
+        ...
+        >>> x, y = mtf.var(1), mtf.var(2)
+        >>> f = 5.0 + x + y**2
+        >>> f.get_constant()
+        5.0
         """
         constant_exp = np.zeros(self.dimension, dtype=np.int32)
         match = np.all(self.exponents == constant_exp, axis=1)
@@ -1807,6 +1817,19 @@ class MultivariateTaylorFunction:
         MultivariateTaylorFunction
             A new MTF object with the same dimensions but with the constant
             term removed.
+
+        Examples
+        --------
+        >>> from mtflib import mtf
+        >>> mtf.initialize_mtf(max_order=2, max_dimension=2) # doctest: +ELLIPSIS
+        ...
+        >>> x, y = mtf.var(1), mtf.var(2)
+        >>> f = 5.0 + x + y**2
+        >>> p = f.get_polynomial_part()
+        >>> print(p) # doctest: +NORMALIZE_WHITESPACE
+                   Coefficient  Order Exponents
+        0          1.0      1    (1, 0)
+        1          1.0      2    (0, 2)
         """
         constant_exp = np.zeros(self.dimension, dtype=np.int32)
         match = np.all(self.exponents == constant_exp, axis=1)

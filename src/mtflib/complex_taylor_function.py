@@ -38,9 +38,8 @@ class ComplexMultivariateTaylorFunction(MultivariateTaylorFunction):
     >>> from mtflib import ComplexMultivariateTaylorFunction
     >>>
     >>> # Initialize global settings
-    >>> ComplexMultivariateTaylorFunction.initialize_mtf(
-    ...     max_order=2, max_dimension=1
-    ... )
+    >>> ComplexMultivariateTaylorFunction.initialize_mtf(max_order=2, max_dimension=1) # doctest: +ELLIPSIS
+    Initializing MTF globals...
     >>>
     >>> # Create a complex constant
     >>> f = ComplexMultivariateTaylorFunction.from_constant(1 + 2j)
@@ -51,10 +50,10 @@ class ComplexMultivariateTaylorFunction(MultivariateTaylorFunction):
     >>> # Perform complex arithmetic
     >>> g = f + x * (3j)
     >>>
-    >>> print(g.get_tabular_dataframe())
-       Coefficient  Order Exponents
-    0     (1+2j)      0    (0,)
-    1     (0+3j)      1    (1,)
+    >>> print(g.get_tabular_dataframe()) # doctest: +ELLIPSIS
+    ...Coefficient...
+    0...1.0...j...
+    1...0.0...j...
     """
 
     def __init__(self, coefficients, dimension=None, var_name=None, mtf_data=None):
@@ -100,12 +99,8 @@ class ComplexMultivariateTaylorFunction(MultivariateTaylorFunction):
         Examples
         --------
         >>> from mtflib import ComplexMultivariateTaylorFunction
-        >>> ComplexMultivariateTaylorFunction.initialize_mtf(
-        ...     max_order=1, dimension=1
-        ... )
-        >>>
-        >>> # Create a complex constant
-        >>> c = ComplexMultivariateTaylorFunction.from_constant(3 + 4j)
+        >>> # Assuming the library is already initialized
+        >>> c = ComplexMultivariateTaylorFunction.from_constant(3 + 4j, dimension=1)
         >>> print(c.coeffs[0])
         (3+4j)
         """

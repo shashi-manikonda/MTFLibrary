@@ -2,3 +2,5 @@ sphinx
 sphinx-rtd-theme
 myst_parser
 sympy
+nbsphinx
+ipykernel
