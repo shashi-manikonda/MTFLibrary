@@ -10,8 +10,6 @@ always in sync.
 
 .. toctree::
    :maxdepth: 1
+   :glob:
 
-   ../demos/quick_start_demo
-   ../demos/mtflib_beginner_demo
-   ../demos/quick_demo
-   ../demos/taylor_map_demo
+   ../demos/*
