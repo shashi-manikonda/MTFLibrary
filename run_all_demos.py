@@ -22,6 +22,7 @@ def run_demos():
         "1_beginner/1_Basic_Functionality.ipynb",
         "2_advanced_topics/2_Advanced_Functionality.ipynb",
         "2_advanced_topics/3_Taylor_Maps.ipynb",
+        "2_advanced_topics/4_Convergence_and_Accuracy.ipynb",
         "3_performance/benchmark.py",
     ]
 

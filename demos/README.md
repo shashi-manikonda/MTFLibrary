@@ -18,5 +18,6 @@ We recommend going through the notebooks in the following order:
 2.  **`1_beginner/1_Basic_Functionality.ipynb`**: A more detailed look at the core features.
 3.  **`2_advanced_topics/2_Advanced_Functionality.ipynb`**: Learn about substitution, composition, and more.
 4.  **`2_advanced_topics/3_Taylor_Maps.ipynb`**: A guide to using the `TaylorMap` object.
+5.  **`2_advanced_topics/4_Convergence_and_Accuracy.ipynb`**: A discussion on the convergence and accuracy of Taylor series.
 
 The script in `3_performance/` can be run at any time to see the performance benefits of `mtflib`.
