@@ -352,7 +352,7 @@ def test_mtf_power(setup_function):
         assert mtf.get_max_order() < 3
 
     # Test negative power
-    mtf_inv_sq = mtf_instance ** (-2) # 1/(1+x)^2 = 1 - 2x + 3x^2 - 4x^3 + ...
+    mtf_inv_sq = mtf_instance ** (-2)  # 1/(1+x)^2 = 1 - 2x + 3x^2 - 4x^3 + ...
     assert np.allclose(mtf_inv_sq.extract_coefficient(exponent_zero), 1.0)
     assert np.allclose(mtf_inv_sq.extract_coefficient(exponent_one), -2.0)
     assert np.allclose(mtf_inv_sq.extract_coefficient(exponent_two), 3.0)
@@ -1112,6 +1112,7 @@ def test_array_ufunc_extended():
     direct_add_scalar_result = mtf1 + 5
     assert ufunc_add_scalar_result == direct_add_scalar_result
 
+
 def test_from_numpy_array(setup_function):
     """
     Tests the from_numpy_array class method for correct conversion and shape.
@@ -1151,7 +1152,9 @@ def test_to_numpy_array(setup_function):
 
     # 2. Use a different method to create a NumPy array of MTF objects
     #    to ensure this test is independent.
-    mtf_array = np.array([[mtf.from_constant(val) for val in row] for row in input_array])
+    mtf_array = np.array([
+        [mtf.from_constant(val) for val in row] for row in input_array
+    ])
 
     # 3. Convert the MTF array back to a NumPy array of numbers
     output_array = mtf.to_numpy_array(mtf_array)
@@ -1166,6 +1169,7 @@ def test_to_numpy_array(setup_function):
     with pytest.raises(TypeError, match="Input must be a NumPy array."):
         mtf.to_numpy_array([1, 2, 3])
 
+
 def test_get_constant_and_polynomial_part(setup_function):
     """
     Tests the get_constant and get_polynomial_part methods.
@@ -1175,19 +1179,19 @@ def test_get_constant_and_polynomial_part(setup_function):
     # 1. Create a sample MTF with a constant and a non-constant term
     x = mtf.var(1)
     constant_term = mtf.from_constant(12.34)
-    original_mtf = constant_term + x ** 2
-    
+    original_mtf = constant_term + x**2
+
     # 2. Test get_constant()
     constant_value = original_mtf.get_constant()
     assert np.isclose(constant_value, 12.34)
-    
+
     # 3. Test get_polynomial_part()
     poly_part_mtf = original_mtf.get_polynomial_part()
-    
+
     # 4. Assert the polynomial part's constant is zero
     poly_constant_value = poly_part_mtf.get_constant()
     assert np.isclose(poly_constant_value, 0.0)
-    
+
     # 5. Assert the polynomial part contains the non-constant term
     #    The non-constant part should have one term, x^2
     assert len(poly_part_mtf.exponents) == 1
@@ -1199,6 +1203,7 @@ def test_get_constant_and_polynomial_part(setup_function):
     # 6. Test the fundamental relationship: original_mtf == constant + polynomial_part
     reconstructed_mtf = mtf.from_constant(constant_value) + poly_part_mtf
     assert original_mtf == reconstructed_mtf
+
 
 def test_numpy_scalar_arithmetic_bug(setup_function):
     """

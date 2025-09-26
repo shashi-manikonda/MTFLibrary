@@ -36,7 +36,7 @@ class TaylorMap:
     Examples
     --------
     >>> from mtflib import MultivariateTaylorFunction, TaylorMap
-    >>> MultivariateTaylorFunction.initialize_mtf(max_order=2, max_dimension=2) # doctest: +ELLIPSIS
+    >>> mtf.initialize_mtf(max_order=2, max_dimension=2) # doctest: +ELLIPSIS
     Initializing...
     >>>
     >>> # Create variables

@@ -49,6 +49,7 @@ import pandas as pd
 
 from .complex_taylor_function import (
     ComplexMultivariateTaylorFunction,
+    cmtf,
 )
 from .elementary_coefficients import load_precomputed_coefficients
 from .taylor_function import (
@@ -71,6 +72,7 @@ __all__ = [
     "ComplexMultivariateTaylorFunction",
     "TaylorMap",
     "mtf",
+    "cmtf",
     # Utility Functions
     "load_precomputed_coefficients",
 ]

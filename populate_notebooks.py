@@ -2,6 +2,7 @@ import os
 import subprocess
 import sys
 
+
 def install_dependencies():
     """Installs the necessary dependencies for running the notebooks."""
     dependencies = [
@@ -11,18 +12,23 @@ def install_dependencies():
         "torch",
         "ipython",
         "sympy",
-        "nbconvert"
+        "nbconvert",
     ]
     for dependency in dependencies:
         print(f"Installing {dependency}...")
         try:
-            subprocess.run([sys.executable, "-m", "pip", "install", dependency], check=True)
+            subprocess.run(
+                [sys.executable, "-m", "pip", "install", dependency], check=True
+            )
         except subprocess.CalledProcessError as e:
             print(f"Failed to install {dependency}: {e}")
             sys.exit(1)
 
+
 def run_notebooks_in_directory(root_directory):
-    """Finds and executes all .ipynb files in a given directory and its subdirectories."""
+    """
+    Finds and executes all .ipynb files in a given directory and its subdirectories.
+    """
     # Add the src directory to the python path
     project_root = os.getcwd()
     src_path = os.path.join(project_root, "src")
@@ -30,7 +36,7 @@ def run_notebooks_in_directory(root_directory):
     # Set up a new environment for the subprocess call
     env = os.environ.copy()
     env["PYTHONPATH"] = src_path + os.pathsep + env.get("PYTHONPATH", "")
-    
+
     # *** FIX for OMP: Error #15 ***
     # This allows the program to continue even with duplicate OpenMP library loads.
     env["KMP_DUPLICATE_LIB_OK"] = "TRUE"
@@ -43,12 +49,19 @@ def run_notebooks_in_directory(root_directory):
                 try:
                     # Construct the nbconvert command
                     command = [
-                        "jupyter", "nbconvert", "--to", "notebook",
-                        "--execute", filepath, "--inplace"
+                        "jupyter",
+                        "nbconvert",
+                        "--to",
+                        "notebook",
+                        "--execute",
+                        filepath,
+                        "--inplace",
                     ]
 
                     # Run the command with the modified environment
-                    subprocess.run(command, check=True, capture_output=True, text=True, env=env)
+                    subprocess.run(
+                        command, check=True, capture_output=True, text=True, env=env
+                    )
                     print(f"--- Successfully executed {filename} ---")
                 except subprocess.CalledProcessError as e:
                     print(f"*** Failed to execute {filename}:")
@@ -57,10 +70,11 @@ def run_notebooks_in_directory(root_directory):
                     # If one notebook fails, we should stop
                     sys.exit(1)
 
+
 if __name__ == "__main__":
     # install_dependencies()
     # Get the current working directory
-    demos_directory = os.path.join(os.getcwd(), 'demos')
+    demos_directory = os.path.join(os.getcwd(), "demos")
     if not os.path.exists(demos_directory):
         print(f"Error: The directory '{demos_directory}' does not exist.")
         sys.exit(1)

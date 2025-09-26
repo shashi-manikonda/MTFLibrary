@@ -237,29 +237,29 @@ def _cos_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 
 
 def sin_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFunction:
-    """Helper: Taylor expansion of sin(u) around zero, using precomputed coefficients."""
+    """
+    Helper: Taylor expansion of sin(u) around zero, using precomputed coefficients.
+    """
 
     def dynamic_sin(n):
         if n % 2 == 1:
             return (-1) ** ((n - 1) // 2) / math.factorial(n)
         return 0.0
 
-    return _create_composed_taylor_from_coeffs(
-        variable, "sin", order, dynamic_sin
-    )
+    return _create_composed_taylor_from_coeffs(variable, "sin", order, dynamic_sin)
 
 
 def cos_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFunction:
-    """Helper: Taylor expansion of cos(u) around zero, using precomputed coefficients."""
+    """
+    Helper: Taylor expansion of cos(u) around zero, using precomputed coefficients.
+    """
 
     def dynamic_cos(n):
         if n % 2 == 0:
             return (-1) ** (n // 2) / math.factorial(n)
         return 0.0
 
-    return _create_composed_taylor_from_coeffs(
-        variable, "cos", order, dynamic_cos
-    )
+    return _create_composed_taylor_from_coeffs(variable, "cos", order, dynamic_cos)
 
 
 def _tan_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
@@ -343,7 +343,9 @@ def _exp_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 
 
 def exp_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFunction:
-    """Helper: Taylor expansion of exp(u) around zero, using precomputed coefficients."""
+    """
+    Helper: Taylor expansion of exp(u) around zero, using precomputed coefficients.
+    """
     return _create_composed_taylor_from_coeffs(
         variable, "exp", order, lambda n: 1.0 / math.factorial(n)
     )
@@ -451,16 +453,16 @@ def _log_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 
 
 def log_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylorFunction:
-    """Helper: 1D Taylor expansion of log(1+u) around zero, using precomputed coefficients."""
+    """
+    Helper: 1D Taylor expansion of log(1+u) around zero, using precomputed coefficients.
+    """
 
     def dynamic_log(n):
         if n >= 1:
             return ((-1) ** (n - 1)) / n
         return 0.0
 
-    return _create_composed_taylor_from_coeffs(
-        variable, "log", order, dynamic_log
-    )
+    return _create_composed_taylor_from_coeffs(variable, "log", order, dynamic_log)
 
 
 def _arctan_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
@@ -513,7 +515,9 @@ def _arctan_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 def arctan_taylor_1D_expansion(
     variable, order: int = None
 ) -> MultivariateTaylorFunction:
-    """Helper: 1D Taylor expansion of arctan(u) around zero, using precomputed coefficients."""
+    """
+    Helper: 1D Taylor expansion of arctan(u) around zero, using precomputed coefficients.
+    """
 
     def dynamic_arctan(n):
         if n % 2 == 1:
@@ -622,29 +626,29 @@ def _cosh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 
 
 def sinh_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFunction:
-    """Helper: Taylor expansion of sinh(u) around zero, using precomputed coefficients."""
+    """
+    Helper: Taylor expansion of sinh(u) around zero, using precomputed coefficients.
+    """
 
     def dynamic_sinh(n):
         if n % 2 == 1:
             return 1.0 / math.factorial(n)
         return 0.0
 
-    return _create_composed_taylor_from_coeffs(
-        variable, "sinh", order, dynamic_sinh
-    )
+    return _create_composed_taylor_from_coeffs(variable, "sinh", order, dynamic_sinh)
 
 
 def cosh_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFunction:
-    """Helper: Taylor expansion of cosh(u) around zero, using precomputed coefficients."""
+    """
+    Helper: Taylor expansion of cosh(u) around zero, using precomputed coefficients.
+    """
 
     def dynamic_cosh(n):
         if n % 2 == 0:
             return 1.0 / math.factorial(n)
         return 0.0
 
-    return _create_composed_taylor_from_coeffs(
-        variable, "cosh", order, dynamic_cosh
-    )
+    return _create_composed_taylor_from_coeffs(variable, "cosh", order, dynamic_cosh)
 
 
 def _tanh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
@@ -738,7 +742,9 @@ def _arctanh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 def arctanh_taylor_1D_expansion(
     variable, order: int = None
 ) -> MultivariateTaylorFunction:
-    """Helper: 1D Taylor expansion of arctanh(u) around zero, using precomputed coefficients."""
+    """
+    Helper: 1D Taylor expansion of arctanh(u) around zero, using precomputed coefficients.
+    """
 
     def dynamic_arctanh(n):
         if n % 2 == 1:

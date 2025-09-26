@@ -38,7 +38,7 @@ class ComplexMultivariateTaylorFunction(MultivariateTaylorFunction):
     >>> from mtflib import ComplexMultivariateTaylorFunction
     >>>
     >>> # Initialize global settings
-    >>> ComplexMultivariateTaylorFunction.initialize_mtf(max_order=2, max_dimension=1) # doctest: +ELLIPSIS
+    >>> cmtf.initialize_mtf(max_order=2, max_dimension=1) # doctest: +ELLIPSIS
     Initializing MTF globals...
     >>>
     >>> # Create a complex constant
@@ -217,6 +217,9 @@ class ComplexMultivariateTaylorFunction(MultivariateTaylorFunction):
             "Phase of a ComplexMultivariateTaylorFunction is generally not a "
             "ComplexMultivariateTaylorFunction."
         )
+
+
+cmtf = ComplexMultivariateTaylorFunction  # Alias for convenience
 
 
 def _generate_exponent_combinations(dimension, order):

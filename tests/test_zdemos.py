@@ -1,6 +1,7 @@
 import subprocess
 import sys
 
+
 def test_populate_notebooks():
     """
     Tests that the populate_notebooks.py script runs without errors.

@@ -577,9 +577,14 @@ class MultivariateTaylorFunction:
         # Now check types
         if isinstance(input_val, complex) or np.iscomplexobj(input_val):
             from .complex_taylor_function import ComplexMultivariateTaylorFunction
-            return ComplexMultivariateTaylorFunction.from_constant(input_val, dimension=dimension)
+
+            return ComplexMultivariateTaylorFunction.from_constant(
+                input_val, dimension=dimension
+            )
         elif isinstance(input_val, (int, float, np.number)):
-            return MultivariateTaylorFunction.from_constant(float(input_val), dimension=dimension)
+            return MultivariateTaylorFunction.from_constant(
+                float(input_val), dimension=dimension
+            )
         else:
             raise TypeError(
                 f"Unsupported input type: {type(input_val)}. Cannot convert to MTF/CMTF."
@@ -1921,18 +1926,25 @@ class MultivariateTaylorFunction:
         poly_mask = ~match
 
         if not np.any(poly_mask):
-            return type(self)((np.empty((0, self.dimension), dtype=np.int32), np.empty((0,), dtype=self.coeffs.dtype)), self.dimension)
+            return type(self)(
+                (
+                    np.empty((0, self.dimension), dtype=np.int32),
+                    np.empty((0,), dtype=self.coeffs.dtype),
+                ),
+                self.dimension,
+            )
 
         poly_exponents = self.exponents[poly_mask]
         poly_coeffs = self.coeffs[poly_mask]
         return type(self)((poly_exponents, poly_coeffs), self.dimension)
 
-
     @classmethod
-    def from_numpy_array(cls, np_array: np.ndarray, dimension: int = None) -> np.ndarray:
+    def from_numpy_array(
+        cls, np_array: np.ndarray, dimension: int = None
+    ) -> np.ndarray:
         """
-        Converts a NumPy array of numbers into a NumPy array of MultivariateTaylorFunction
-        objects. Each element of the output array is a constant MTF.
+        Converts a NumPy array of numbers into a NumPy array of mtf
+        objects. Each element of the output array is a constant mtf.
 
         Parameters
         ----------
@@ -1964,7 +1976,6 @@ class MultivariateTaylorFunction:
         vectorized_from_constant = np.vectorize(cls.from_constant, otypes=[object])
         return vectorized_from_constant(np_array, dimension=dimension)
 
-
     @classmethod
     def to_numpy_array(cls, mtf_array: np.ndarray) -> np.ndarray:
         """
@@ -1991,17 +2002,18 @@ class MultivariateTaylorFunction:
         if not isinstance(mtf_array, np.ndarray):
             raise TypeError("Input must be a NumPy array.")
         if mtf_array.size > 0 and not isinstance(mtf_array.flat[0], cls):
-            raise TypeError("All elements of the input array must be MultivariateTaylorFunction objects.")
+            raise TypeError("All elements of the input array must be mtf objects.")
 
         # Use the get_constant method, which is a more efficient way to
         # extract the zeroth-order term than evaluating the full series.
         flat_list = [mtf_obj.get_constant() for mtf_obj in mtf_array.flat]
-        
+
         # Then, reshape the flat list to the original array's shape
         return np.array(flat_list, dtype=np.float64).reshape(mtf_array.shape)
 
 
-mtf = MultivariateTaylorFunction # Alias to MultivariateTaylorFunction
+mtf = MultivariateTaylorFunction  # Alias to MultivariateTaylorFunction
+
 
 def _generate_exponent_combinations(dimension, order):
     """Generates all combinations of exponents for a given dimension and order."""
@@ -2244,5 +2256,3 @@ def isqrt_taylor_1D_expansion(
     )
     composed_mtf = isqrt_taylor_1d_mtf.compose({1: input_mtf})
     return composed_mtf.truncate(order)
-
-

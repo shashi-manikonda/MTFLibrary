@@ -25,7 +25,7 @@ def run_demos():
             if fname.endswith(".py") or fname.endswith(".ipynb"):
                 rel_path = os.path.join(rel_root, fname) if rel_root != "." else fname
                 demo_files.append(rel_path)
-        
+
     # demo_files = [
     #     "1_beginner/0_Quick_Start.ipynb",
     #     "1_beginner/1_Basic_Functionality.ipynb",
@@ -55,7 +55,9 @@ def run_demos():
         file = os.path.basename(file_path)
 
         if not os.path.exists(file_path):
-            print(f"\n[{i+1}/{total_demos}] Skipping: {file_rel_path} (File not found)")
+            print(
+                f"\n[{i + 1}/{total_demos}] Skipping: {file_rel_path} (File not found)"
+            )
             failed_demos += 1
             continue
 
@@ -68,7 +70,7 @@ def run_demos():
         demo_output_dir = os.path.join(runoutput_dir, demo_name)
         os.makedirs(demo_output_dir, exist_ok=True)
 
-        print(f"\n[{i+1}/{total_demos}] Running: {file_rel_path}")
+        print(f"\n[{i + 1}/{total_demos}] Running: {file_rel_path}")
         print(f"    Output dir: {demo_output_dir}")
 
         try:
@@ -131,10 +133,14 @@ def run_demos():
                         print(f"      ... ({len(stdout_lines) - 3} more lines)")
             else:
                 failed_demos += 1
-                print(f"    ✗ FAILED - {demo_duration:.2f}s (code: {result.returncode})")
+                print(
+                    f"    ✗ FAILED - {demo_duration:.2f}s (code: {result.returncode})"
+                )
                 if result.stderr:
                     error_lines = result.stderr.strip().split("\n")
-                    print(f"      Error: {error_lines[-1] if error_lines else 'Unknown'}")
+                    print(
+                        f"      Error: {error_lines[-1] if error_lines else 'Unknown'}"
+                    )
 
         except subprocess.TimeoutExpired:
             demo_duration = time.time() - demo_start_time
@@ -159,7 +165,11 @@ def run_demos():
     print(f"Total Demos: {total_demos}")
     print(f"Successful: {successful_demos} ✓")
     print(f"Failed: {failed_demos} ✗")
-    print(f"Success Rate: {(successful_demos / total_demos * 100):.1f}%" if total_demos > 0 else "N/A")
+    print(
+        f"Success Rate: {(successful_demos / total_demos * 100):.1f}%"
+        if total_demos > 0
+        else "N/A"
+    )
     print(f"Total Time: {total_duration:.2f} seconds")
 
 
