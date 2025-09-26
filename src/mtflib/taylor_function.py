@@ -667,22 +667,11 @@ class MultivariateTaylorFunction:
         ValueError
             If the dimensions of two MTF objects do not match.
         """
-        if isinstance(other, (int, float, complex, np.number)):
-            if isinstance(other, complex):
-                from .complex_taylor_function import (
-                    ComplexMultivariateTaylorFunction,
-                )
-
-                const_mtf = ComplexMultivariateTaylorFunction.from_constant(
-                    other, dimension=self.dimension
-                )
-                return self + const_mtf
-            else:  # int or float
-                const_mtf = type(self).from_constant(other, dimension=self.dimension)
-                return self + const_mtf
-
         if not isinstance(other, MultivariateTaylorFunction):
-            return NotImplemented
+            try:
+                other = self.to_mtf(other, self.dimension)
+            except (TypeError, ValueError):
+                return NotImplemented
 
         if self.dimension != other.dimension:
             raise ValueError("MTF dimensions must match for addition.")
@@ -1750,21 +1739,39 @@ class MultivariateTaylorFunction:
         }
 
         if method == "__call__":
-            input_mtf = inputs[0]
-            if not isinstance(input_mtf, MultivariateTaylorFunction):
-                input_mtf = self.to_mtf(input_mtf, dimension=self.dimension)
+            # The inputs can be (scalar, mtf) or (mtf, scalar) or (mtf, mtf)
+            mtf_inputs = []
+            for i in inputs:
+                if isinstance(i, MultivariateTaylorFunction):
+                    mtf_inputs.append(i)
+                else:
+                    try:
+                        # Use self's dimension as default.
+                        mtf_inputs.append(self.to_mtf(i, dimension=self.dimension))
+                    except (TypeError, ValueError):
+                        return NotImplemented
+
+            # Now `mtf_inputs` has MTF objects for all inputs.
 
             if ufunc in UNARY_UFUNC_MAP:
-                return UNARY_UFUNC_MAP[ufunc](input_mtf)
+                if len(mtf_inputs) == 1:
+                    return UNARY_UFUNC_MAP[ufunc](mtf_inputs[0])
+                else:
+                    return NotImplemented
 
-            if len(inputs) > 1:
-                other_input = inputs[1]
-                if ufunc in BINARY_UFUNC_MAP:
-                    return BINARY_UFUNC_MAP[ufunc](other_input)
+            if ufunc in BINARY_UFUNC_MAP:
+                if len(mtf_inputs) == 2:
+                    # We need to call the method on the first object.
+                    # e.g., mtf_inputs[0].__add__(mtf_inputs[1])
+                    method_name = BINARY_UFUNC_MAP[ufunc].__name__
+                    op = getattr(mtf_inputs[0], method_name)
+                    return op(mtf_inputs[1])
+                else:
+                    return NotImplemented
 
-                if ufunc in (np.power, np.float_power):
-                    if isinstance(other_input, (int, float, np.number)):
-                        return input_mtf**other_input
+            if ufunc in (np.power, np.float_power):
+                if len(inputs) == 2 and isinstance(inputs[1], (int, float, np.number)):
+                    return mtf_inputs[0] ** inputs[1]
 
             return NotImplemented
 
@@ -2234,16 +2241,23 @@ def _list2pd_helper(mtfs, column_names=None):
 
 def _to_mtf_helper(input_val, dimension=None):
     """Helper to convert input to MultivariateTaylorFunction."""
-    if isinstance(input_val, (MultivariateTaylorFunction)):
+    if isinstance(input_val, MultivariateTaylorFunction):
         return input_val
-    elif isinstance(input_val, (int, float)):
-        if dimension is None:
-            dimension = MultivariateTaylorFunction.get_max_dimension()
-        return MultivariateTaylorFunction.from_constant(input_val, dimension=dimension)
-    elif isinstance(input_val, np.ndarray) and input_val.shape == ():
-        return _to_mtf_helper(input_val.item(), dimension)
-    elif isinstance(input_val, np.number):
-        return _to_mtf_helper(float(input_val), dimension)
+
+    # Standardize dimension
+    if dimension is None:
+        dimension = MultivariateTaylorFunction.get_max_dimension()
+
+    # Handle NumPy 0-dim array
+    if isinstance(input_val, np.ndarray) and input_val.shape == ():
+        input_val = input_val.item()
+
+    # Now check types
+    if isinstance(input_val, complex) or np.iscomplexobj(input_val):
+        from .complex_taylor_function import ComplexMultivariateTaylorFunction
+        return ComplexMultivariateTaylorFunction.from_constant(input_val, dimension=dimension)
+    elif isinstance(input_val, (int, float, np.number)):
+        return MultivariateTaylorFunction.from_constant(float(input_val), dimension=dimension)
     else:
         raise TypeError(
             f"Unsupported input type: {type(input_val)}. Cannot convert to MTF/CMTF."

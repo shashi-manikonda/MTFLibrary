@@ -1189,3 +1189,37 @@ def test_get_constant_and_polynomial_part(setup_function):
     # 6. Test the fundamental relationship: original_mtf == constant + polynomial_part
     reconstructed_mtf = mtf.from_constant(constant_value) + poly_part_mtf
     assert original_mtf == reconstructed_mtf
+
+def test_numpy_scalar_arithmetic_bug(setup_function):
+    """
+    Tests for the bug where operations with NumPy scalars were failing.
+    Specifically, `numpy.float64 + mtf_object` was not working as expected.
+    """
+    global_dim, exponent_zero = setup_function
+    u = mtf.var(1, dimension=global_dim)
+
+    # Test case 1: numpy.float64 + mtf
+    numpy_scalar = np.float64(0.5)
+    result = numpy_scalar + u
+
+    # Expected result: 0.5 + u
+    # Check constant part
+    assert np.isclose(result.get_constant(), 0.5)
+    # Check variable part
+    exponent_one = [0] * global_dim
+    exponent_one[0] = 1
+    assert np.isclose(result.extract_coefficient(tuple(exponent_one)).item(), 1.0)
+
+    # Test case 2: mtf + numpy.float64
+    result2 = u + numpy_scalar
+    assert np.isclose(result2.get_constant(), 0.5)
+    assert np.isclose(result2.extract_coefficient(tuple(exponent_one)).item(), 1.0)
+
+    # Test case 3: The original bug report
+    num_linspace_points = np.array([0.5, 1.5, 2.5])
+    segment_length = np.float64(0.04)
+    factor = (num_linspace_points[0] + 0.5 * u) * segment_length
+
+    # Expected: (0.5 + 0.5*u) * 0.04 = 0.02 + 0.02*u
+    assert np.isclose(factor.get_constant(), 0.02)
+    assert np.isclose(factor.extract_coefficient(tuple(exponent_one)).item(), 0.02)
