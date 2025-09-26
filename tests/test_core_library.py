@@ -321,13 +321,16 @@ def test_mtf_power(setup_function):
     exponent_one = [0] * global_dim
     exponent_two = [0] * global_dim
     exponent_three = [0] * global_dim
+    exponent_four = [0] * global_dim
     if global_dim > 0:
         exponent_one[0] = 1
         exponent_two[0] = 2
         exponent_three[0] = 3
+        exponent_four[0] = 4
     exponent_one = tuple(exponent_one)
     exponent_two = tuple(exponent_two)
     exponent_three = tuple(exponent_three)
+    exponent_four = tuple(exponent_four)
 
     mtf_instance = mtf(
         {exponent_zero: 1.0, exponent_one: 1.0}, dimension=global_dim
@@ -347,8 +350,15 @@ def test_mtf_power(setup_function):
     else:
         # If max_order is less than 3, the coefficient might not exist
         assert mtf.get_max_order() < 3
-    with pytest.raises(ValueError):
-        mtf_instance ** (-2)  # Negative power not allowed
+
+    # Test negative power
+    mtf_inv_sq = mtf_instance ** (-2) # 1/(1+x)^2 = 1 - 2x + 3x^2 - 4x^3 + ...
+    assert np.allclose(mtf_inv_sq.extract_coefficient(exponent_zero), 1.0)
+    assert np.allclose(mtf_inv_sq.extract_coefficient(exponent_one), -2.0)
+    assert np.allclose(mtf_inv_sq.extract_coefficient(exponent_two), 3.0)
+    assert np.allclose(mtf_inv_sq.extract_coefficient(exponent_three), -4.0)
+    assert np.allclose(mtf_inv_sq.extract_coefficient(exponent_four), 5.0)
+
     with pytest.raises(ValueError):
         mtf_instance**2.5  # Non-integer power not allowed
 

@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.1] - 2025-09-26
+
+### Changed
+- Refactored `taylor_function.py` to inline several internal helper functions, improving code clarity.
+- Generalized the `__pow__` method in `MultivariateTaylorFunction` to support all negative integer exponents.
+- Refactored `elementary_functions.py` to use a new helper function, `_create_composed_taylor_from_coeffs`, significantly reducing code duplication.
+- Made the `_integrate` function thread-safe by removing the modification of the global `_MAX_ORDER` state.
+
+### Fixed
+- Corrected a test for the `__pow__` method to align with its new, more general behavior for negative exponents.
+
 ## [1.5.0] - 2025-09-13
 
 ### BREAKING CHANGES

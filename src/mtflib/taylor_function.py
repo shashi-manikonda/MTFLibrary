@@ -463,7 +463,14 @@ class MultivariateTaylorFunction:
         if dimension is None:
             dimension = cls.get_max_dimension()
 
-        return _var_helper(cls, var_index, dimension)
+        if not (1 <= var_index <= dimension):
+            raise ValueError(
+                f"Variable index must be between 1 and {dimension}, inclusive."
+            )
+        exponent = [0] * dimension
+        exponent[var_index - 1] = 1
+        coeffs = {tuple(exponent): 1.0}
+        return cls(coefficients=coeffs, dimension=dimension, var_name=f"x_{var_index}")
 
     @staticmethod
     def list2pd(mtfs, column_names=None):
@@ -494,7 +501,61 @@ class MultivariateTaylorFunction:
         ValueError
             If the MTFs in the list have different dimensions.
         """
-        return _list2pd_helper(mtfs, column_names)
+        if isinstance(mtfs, np.ndarray):
+            mtfs = list(mtfs)
+
+        if not isinstance(mtfs, list):
+            raise TypeError("Input 'mtfs' must be a list.")
+
+        if not mtfs:
+            return pd.DataFrame(columns=["Order", "Exponents"])
+
+        valid_mtf_types = (MultivariateTaylorFunction,)
+        for mtf_instance in mtfs:
+            if not isinstance(mtf_instance, valid_mtf_types):
+                raise TypeError(
+                    f"All elements in 'mtfs' must be instances of "
+                    f"{MultivariateTaylorFunction.__name__}, but found "
+                    f"{type(mtf_instance).__name__}."
+                )
+
+        first_dim = mtfs[0].dimension
+        for i, mtf_instance in enumerate(mtfs[1:]):
+            if mtf_instance.dimension != first_dim:
+                raise ValueError(
+                    f"mtf at index {i + 1} has dimension {mtf_instance.dimension}, "
+                    f"but the first mtf has dimension {first_dim}. All mtfs must have "
+                    "the same dimension."
+                )
+
+        dfs = []
+        for i, mtf_instance in enumerate(mtfs):
+            df = mtf_instance.get_tabular_dataframe()
+            if column_names and len(column_names) == len(mtfs):
+                if "Coefficient" in df.columns:
+                    df = df.rename(columns={"Coefficient": f"Coeff_{column_names[i]}"})
+            else:
+                mtf_name = getattr(mtf_instance, "name", str(i + 1))
+                if "Coefficient" in df.columns:
+                    df = df.rename(columns={"Coefficient": f"Coefficient_{mtf_name}"})
+            dfs.append(df)
+
+        tmap = reduce(
+            lambda left, right: pd.merge(
+                left, right, on=["Order", "Exponents"], how="outer"
+            ),
+            dfs,
+        )
+
+        coef_cols_initial = [col for col in tmap.columns if col.startswith("Coeff")]
+        cols = coef_cols_initial + ["Order", "Exponents"]
+        tmap = tmap[cols]
+        tmap[coef_cols_initial] = tmap[coef_cols_initial].fillna(0)
+
+        tmap = tmap.sort_values(
+            by=["Order", "Exponents"], ascending=[True, False]
+        ).reset_index(drop=True)
+        return tmap
 
     @staticmethod
     def to_mtf(input_val, dimension=None):
@@ -502,7 +563,27 @@ class MultivariateTaylorFunction:
         Converts input to MultivariateTaylorFunction or
         ComplexMultivariateTaylorFunction.
         """
-        return _to_mtf_helper(input_val, dimension)
+        if isinstance(input_val, MultivariateTaylorFunction):
+            return input_val
+
+        # Standardize dimension
+        if dimension is None:
+            dimension = MultivariateTaylorFunction.get_max_dimension()
+
+        # Handle NumPy 0-dim array
+        if isinstance(input_val, np.ndarray) and input_val.shape == ():
+            input_val = input_val.item()
+
+        # Now check types
+        if isinstance(input_val, complex) or np.iscomplexobj(input_val):
+            from .complex_taylor_function import ComplexMultivariateTaylorFunction
+            return ComplexMultivariateTaylorFunction.from_constant(input_val, dimension=dimension)
+        elif isinstance(input_val, (int, float, np.number)):
+            return MultivariateTaylorFunction.from_constant(float(input_val), dimension=dimension)
+        else:
+            raise TypeError(
+                f"Unsupported input type: {type(input_val)}. Cannot convert to MTF/CMTF."
+            )
 
     def __call__(self, evaluation_point):
         """
@@ -881,21 +962,18 @@ class MultivariateTaylorFunction:
         """
         if isinstance(power, numbers.Integral):
             if power < 0:
-                if power == -1:
-                    return self._inv_mtf_internal(self)
-                else:
-                    raise ValueError(
-                        "Power must be a non-negative integer, 0.5, or -0.5."
-                    )
+                # Generalize for any negative integer power
+                inv_self = self._inv_mtf_internal(self)
+                return inv_self ** abs(power)
             if power == 0:
                 return type(self).from_constant(1.0, dimension=self.dimension)
             if power == 1:
-                return self
+                return self.copy()
 
             # Optimized power using binary exponentiation (exponentiation by
-            # squaring)
+            # squaring) for non-negative integers
             result = type(self).from_constant(1.0, dimension=self.dimension)
-            base = self
+            base = self.copy()
             while power > 0:
                 if power % 2 == 1:
                     result *= base
@@ -2168,97 +2246,3 @@ def isqrt_taylor_1D_expansion(
     return composed_mtf.truncate(order)
 
 
-def _var_helper(cls, var_index, dimension):
-    """Helper to create a variable MTF."""
-    if not (1 <= var_index <= dimension):
-        raise ValueError(
-            f"Variable index must be between 1 and {dimension}, inclusive."
-        )
-    exponent = [0] * dimension
-    exponent[var_index - 1] = 1
-    coeffs = {tuple(exponent): 1.0}
-    return cls(coefficients=coeffs, dimension=dimension, var_name=f"x_{var_index}")
-
-
-def _list2pd_helper(mtfs, column_names=None):
-    """Helper to merge a list of MTFs into a single pandas DataFrame."""
-    if isinstance(mtfs, np.ndarray):
-        mtfs = list(mtfs)
-
-    if not isinstance(mtfs, list):
-        raise TypeError("Input 'mtfs' must be a list.")
-
-    if not mtfs:
-        return pd.DataFrame(columns=["Order", "Exponents"])
-
-    valid_mtf_types = (MultivariateTaylorFunction,)
-    for mtf_instance in mtfs:
-        if not isinstance(mtf_instance, valid_mtf_types):
-            raise TypeError(
-                f"All elements in 'mtfs' must be instances of "
-                f"{MultivariateTaylorFunction.__name__}, but found "
-                f"{type(mtf_instance).__name__}."
-            )
-
-    first_dim = mtfs[0].dimension
-    for i, mtf_instance in enumerate(mtfs[1:]):
-        if mtf_instance.dimension != first_dim:
-            raise ValueError(
-                f"mtf at index {i + 1} has dimension {mtf_instance.dimension}, "
-                f"but the first mtf has dimension {first_dim}. All mtfs must have "
-                "the same dimension."
-            )
-
-    dfs = []
-    for i, mtf_instance in enumerate(mtfs):
-        df = mtf_instance.get_tabular_dataframe()
-        if column_names and len(column_names) == len(mtfs):
-            if "Coefficient" in df.columns:
-                df = df.rename(columns={"Coefficient": f"Coeff_{column_names[i]}"})
-        else:
-            mtf_name = getattr(mtf_instance, "name", str(i + 1))
-            if "Coefficient" in df.columns:
-                df = df.rename(columns={"Coefficient": f"Coefficient_{mtf_name}"})
-        dfs.append(df)
-
-    tmap = reduce(
-        lambda left, right: pd.merge(
-            left, right, on=["Order", "Exponents"], how="outer"
-        ),
-        dfs,
-    )
-
-    coef_cols_initial = [col for col in tmap.columns if col.startswith("Coeff")]
-    cols = coef_cols_initial + ["Order", "Exponents"]
-    tmap = tmap[cols]
-    tmap[coef_cols_initial] = tmap[coef_cols_initial].fillna(0)
-
-    tmap = tmap.sort_values(
-        by=["Order", "Exponents"], ascending=[True, False]
-    ).reset_index(drop=True)
-    return tmap
-
-
-def _to_mtf_helper(input_val, dimension=None):
-    """Helper to convert input to MultivariateTaylorFunction."""
-    if isinstance(input_val, MultivariateTaylorFunction):
-        return input_val
-
-    # Standardize dimension
-    if dimension is None:
-        dimension = MultivariateTaylorFunction.get_max_dimension()
-
-    # Handle NumPy 0-dim array
-    if isinstance(input_val, np.ndarray) and input_val.shape == ():
-        input_val = input_val.item()
-
-    # Now check types
-    if isinstance(input_val, complex) or np.iscomplexobj(input_val):
-        from .complex_taylor_function import ComplexMultivariateTaylorFunction
-        return ComplexMultivariateTaylorFunction.from_constant(input_val, dimension=dimension)
-    elif isinstance(input_val, (int, float, np.number)):
-        return MultivariateTaylorFunction.from_constant(float(input_val), dimension=dimension)
-    else:
-        raise TypeError(
-            f"Unsupported input type: {type(input_val)}. Cannot convert to MTF/CMTF."
-        )

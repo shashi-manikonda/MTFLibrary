@@ -52,6 +52,95 @@ def _apply_constant_factoring(
     return result_mtf
 
 
+def _create_composed_taylor_from_coeffs(
+    variable,
+    coeff_key: str,
+    order: int = None,
+    dynamic_coeff_func=None,
+) -> MultivariateTaylorFunction:
+    """
+    Creates a 1D Taylor series from coefficients and composes it with a variable.
+
+    This helper function streamlines the creation of elementary function
+    expansions (like sin, cos, exp) by handling the boilerplate of:
+    1. Looking up precomputed coefficients.
+    2. Dynamically calculating coefficients beyond the precomputed range if a
+       function is provided.
+    3. Creating a 1D Taylor series from these coefficients.
+    4. Composing the 1D series with the input `variable` (an MTF).
+    5. Truncating the result to the desired order.
+
+    Parameters
+    ----------
+    variable : MultivariateTaylorFunction
+        The input MTF to be composed with the 1D Taylor series.
+    coeff_key : str
+        The key to look up the precomputed coefficients (e.g., "sin", "exp").
+    order : int, optional
+        The desired truncation order for the final result. If None, the
+        global `_MAX_ORDER` is used.
+    dynamic_coeff_func : callable, optional
+        A function to compute coefficients for orders beyond the precomputed
+        range. It should take the order `n` as input and return the
+        coefficient value.
+
+    Returns
+    -------
+    MultivariateTaylorFunction
+        The new MTF representing the composed function.
+
+    Raises
+    ------
+    ValueError
+        If precomputed coefficients for the given `coeff_key` are not found.
+    """
+    if order is None:
+        order = MultivariateTaylorFunction.get_max_order()
+
+    input_mtf = MultivariateTaylorFunction.to_mtf(variable)
+    taylor_1d_coeffs = {}
+    taylor_dim_1d = 1
+    var_index_1d = 0
+
+    max_precomputed_order = min(order, elementary_coefficients.MAX_PRECOMPUTED_ORDER)
+    precomputed_coeffs = elementary_coefficients.precomputed_coefficients.get(coeff_key)
+    if precomputed_coeffs is None:
+        raise ValueError(
+            f"Precomputed coefficients for '{coeff_key}' function not found. "
+            "Ensure coefficients are loaded."
+        )
+
+    # Use precomputed coefficients up to the available order
+    for n_order in range(max_precomputed_order + 1):
+        if n_order < len(precomputed_coeffs):
+            coeff_val = precomputed_coeffs[n_order]
+            if abs(coeff_val) > 1e-16:  # Only store non-zero coefficients
+                taylor_1d_coeffs[
+                    _generate_exponent(n_order, var_index_1d, taylor_dim_1d)
+                ] = coeff_val
+
+    # Dynamically compute coefficients for higher orders if a function is provided
+    if order > max_precomputed_order and dynamic_coeff_func:
+        print(
+            f"Warning: Requested order {order} exceeds precomputed order "
+            f"{elementary_coefficients.MAX_PRECOMPUTED_ORDER}. "
+            "Calculations may be slower for higher orders."
+        )
+        for n_order in range(max_precomputed_order + 1, order + 1):
+            coeff_val = dynamic_coeff_func(n_order)
+            if abs(coeff_val) > 1e-16:  # Only store non-zero coefficients
+                taylor_1d_coeffs[
+                    _generate_exponent(n_order, var_index_1d, taylor_dim_1d)
+                ] = coeff_val
+
+    # Create and compose the 1D Taylor series
+    taylor_1d_mtf = type(input_mtf)(
+        coefficients=taylor_1d_coeffs, dimension=taylor_dim_1d
+    )
+    composed_mtf = taylor_1d_mtf.compose({1: input_mtf})
+    return composed_mtf.truncate(order)
+
+
 def _sin_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     """
     Computes the Taylor expansion of `sin(x)`.
@@ -148,92 +237,29 @@ def _cos_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 
 
 def sin_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFunction:
-    """Helper: Taylor expansion of sin(u) around zero, precomputed coefficients."""
-    if order is None:
-        order = MultivariateTaylorFunction.get_max_order()
-    input_mtf = MultivariateTaylorFunction.to_mtf(variable)
-    sin_taylor_1d_coefficients = {}
-    taylor_dimension_1d = 1
-    variable_index_1d = 0
+    """Helper: Taylor expansion of sin(u) around zero, using precomputed coefficients."""
 
-    max_precomputed_order = min(order, elementary_coefficients.MAX_PRECOMPUTED_ORDER)
-    precomputed_coeffs = elementary_coefficients.precomputed_coefficients.get("sin")
-    if precomputed_coeffs is None:
-        raise ValueError(
-            "Precomputed coefficients for 'sin' function not found. "
-            "Ensure coefficients are loaded."
-        )
+    def dynamic_sin(n):
+        if n % 2 == 1:
+            return (-1) ** ((n - 1) // 2) / math.factorial(n)
+        return 0.0
 
-    for n_order in range(1, max_precomputed_order + 1, 2):
-        coefficient_val = precomputed_coeffs[n_order]
-        sin_taylor_1d_coefficients[
-            _generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)
-        ] = coefficient_val
-
-    if order > elementary_coefficients.MAX_PRECOMPUTED_ORDER:
-        print(
-            f"Warning: Requested order {order} exceeds precomputed order "
-            f"{elementary_coefficients.MAX_PRECOMPUTED_ORDER}."
-            " Calculations may be slower for higher orders."
-        )
-        for n_order in range(
-            elementary_coefficients.MAX_PRECOMPUTED_ORDER + 1, order + 1, 2
-        ):  # Calculate dynamically for higher orders
-            coefficient_val = (-1) ** ((n_order - 1) // 2) / math.factorial(n_order)
-            sin_taylor_1d_coefficients[
-                _generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)
-            ] = coefficient_val
-
-    sin_taylor_1d_mtf = type(input_mtf)(
-        coefficients=sin_taylor_1d_coefficients, dimension=taylor_dimension_1d
+    return _create_composed_taylor_from_coeffs(
+        variable, "sin", order, dynamic_sin
     )
-    composed_mtf = sin_taylor_1d_mtf.compose({1: input_mtf})
-    return composed_mtf.truncate(order)
 
 
 def cos_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFunction:
-    """Helper: Taylor expansion of cos(u) around zero, precomputed coefficients."""
-    if order is None:
-        order = MultivariateTaylorFunction.get_max_order()
-    input_mtf = MultivariateTaylorFunction.to_mtf(variable)
-    cos_taylor_1d_coefficients = {}
-    taylor_dimension_1d = 1
-    variable_index_1d = 0
+    """Helper: Taylor expansion of cos(u) around zero, using precomputed coefficients."""
 
-    max_precomputed_order = min(order, elementary_coefficients.MAX_PRECOMPUTED_ORDER)
-    precomputed_coeffs = elementary_coefficients.precomputed_coefficients.get("cos")
-    if precomputed_coeffs is None:
-        raise ValueError(
-            "Precomputed coefficients for 'cos' function not found. "
-            "Ensure coefficients are loaded."
-        )
+    def dynamic_cos(n):
+        if n % 2 == 0:
+            return (-1) ** (n // 2) / math.factorial(n)
+        return 0.0
 
-    for n_order in range(0, max_precomputed_order + 1, 2):
-        coefficient_val = precomputed_coeffs[n_order]
-        cos_taylor_1d_coefficients[
-            _generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)
-        ] = coefficient_val
-
-    if order > elementary_coefficients.MAX_PRECOMPUTED_ORDER:
-        warning_msg = (
-            f"Warning: Requested order {order} exceeds precomputed order "
-            f"{elementary_coefficients.MAX_PRECOMPUTED_ORDER}. "
-            "Calculations may be slower for higher orders."
-        )
-        print(warning_msg)
-        for n_order in range(
-            elementary_coefficients.MAX_PRECOMPUTED_ORDER + 1, order + 1, 2
-        ):  # Calculate dynamically for higher orders
-            coefficient_val = (-1) ** (n_order // 2) / math.factorial(n_order)
-            cos_taylor_1d_coefficients[
-                _generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)
-            ] = coefficient_val
-
-    cos_taylor_1d_mtf = type(input_mtf)(
-        coefficients=cos_taylor_1d_coefficients, dimension=taylor_dimension_1d
+    return _create_composed_taylor_from_coeffs(
+        variable, "cos", order, dynamic_cos
     )
-    composed_mtf = cos_taylor_1d_mtf.compose({1: input_mtf})
-    return composed_mtf.truncate(order)
 
 
 def _tan_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
@@ -317,48 +343,10 @@ def _exp_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 
 
 def exp_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFunction:
-    """Helper: Taylor expansion of exp(u) around zero, precomputed coefficients."""
-    if order is None:
-        order = MultivariateTaylorFunction.get_max_order()
-    input_mtf = MultivariateTaylorFunction.to_mtf(variable)
-    exp_taylor_1d_coefficients = {}
-    taylor_dimension_1d = 1
-    variable_index_1d = 0
-
-    max_precomputed_order = min(order, elementary_coefficients.MAX_PRECOMPUTED_ORDER)
-    precomputed_coeffs = elementary_coefficients.precomputed_coefficients.get("exp")
-    if precomputed_coeffs is None:
-        raise ValueError(
-            "Precomputed coefficients for 'exp' function not found. "
-            "Ensure coefficients are loaded."
-        )
-
-    for n_order in range(0, max_precomputed_order + 1):
-        coefficient_val = precomputed_coeffs[n_order]
-        exp_taylor_1d_coefficients[
-            _generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)
-        ] = coefficient_val
-
-    if order > elementary_coefficients.MAX_PRECOMPUTED_ORDER:
-        warning_msg = (
-            f"Warning: Requested order {order} exceeds precomputed order "
-            f"{elementary_coefficients.MAX_PRECOMPUTED_ORDER}. "
-            "Calculations may be slower for higher orders."
-        )
-        print(warning_msg)
-        for n_order in range(
-            elementary_coefficients.MAX_PRECOMPUTED_ORDER + 1, order + 1
-        ):  # Calculate dynamically for higher orders
-            coefficient_val = 1.0 / math.factorial(n_order)
-            exp_taylor_1d_coefficients[
-                _generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)
-            ] = coefficient_val
-
-    exp_taylor_1d_mtf = type(input_mtf)(
-        coefficients=exp_taylor_1d_coefficients, dimension=taylor_dimension_1d
+    """Helper: Taylor expansion of exp(u) around zero, using precomputed coefficients."""
+    return _create_composed_taylor_from_coeffs(
+        variable, "exp", order, lambda n: 1.0 / math.factorial(n)
     )
-    composed_mtf = exp_taylor_1d_mtf.compose({1: input_mtf})
-    return composed_mtf.truncate(order)
 
 
 def _gaussian_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
@@ -463,51 +451,16 @@ def _log_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 
 
 def log_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylorFunction:
-    """Helper: 1D Taylor expansion of log(1+u) around zero, precomputed coefficients."""
-    if order is None:
-        order = MultivariateTaylorFunction.get_max_order()
-    input_mtf = MultivariateTaylorFunction.to_mtf(variable)
-    log_taylor_1d_coefficients = {}
-    taylor_dimension_1d = 1
-    variable_index_1d = 0
+    """Helper: 1D Taylor expansion of log(1+u) around zero, using precomputed coefficients."""
 
-    max_precomputed_order = min(order, elementary_coefficients.MAX_PRECOMPUTED_ORDER)
-    precomputed_coeffs = elementary_coefficients.precomputed_coefficients.get("log")
-    if precomputed_coeffs is None:
-        raise ValueError(
-            "Precomputed coefficients for 'log' function not found. "
-            "Ensure coefficients are loaded."
-        )
+    def dynamic_log(n):
+        if n >= 1:
+            return ((-1) ** (n - 1)) / n
+        return 0.0
 
-    for n_order in range(0, max_precomputed_order + 1):
-        coefficient_val = precomputed_coeffs[n_order]
-        log_taylor_1d_coefficients[
-            _generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)
-        ] = coefficient_val
-
-    if order > elementary_coefficients.MAX_PRECOMPUTED_ORDER:
-        warning_msg = (
-            f"Warning: Requested order {order} exceeds precomputed order "
-            f"{elementary_coefficients.MAX_PRECOMPUTED_ORDER}. "
-            "Calculations may be slower for higher orders."
-        )
-        print(warning_msg)
-        for n_order in range(
-            elementary_coefficients.MAX_PRECOMPUTED_ORDER + 1, order + 1
-        ):  # Calculate dynamically for higher orders
-            if n_order == 0:
-                coefficient_val = 0.0
-            elif n_order >= 1:
-                coefficient_val = ((-1) ** (n_order - 1)) / n_order
-            log_taylor_1d_coefficients[
-                _generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)
-            ] = coefficient_val
-
-    log_taylor_1d_mtf = type(input_mtf)(
-        coefficients=log_taylor_1d_coefficients, dimension=taylor_dimension_1d
+    return _create_composed_taylor_from_coeffs(
+        variable, "log", order, dynamic_log
     )
-    composed_mtf = log_taylor_1d_mtf.compose({1: input_mtf})
-    return composed_mtf.truncate(order)
 
 
 def _arctan_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
@@ -560,57 +513,17 @@ def _arctan_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 def arctan_taylor_1D_expansion(
     variable, order: int = None
 ) -> MultivariateTaylorFunction:
-    """
-    Helper: 1D Taylor expansion of arctan(u) around zero, precomputed coefficients.
-    """
-    if order is None:
-        order = MultivariateTaylorFunction.get_max_order()
-    input_mtf = MultivariateTaylorFunction.to_mtf(variable)
-    arctan_taylor_1d_coefficients = {}
-    taylor_dimension_1d = 1
-    variable_index_1d = 0
+    """Helper: 1D Taylor expansion of arctan(u) around zero, using precomputed coefficients."""
 
-    max_precomputed_order = min(order, elementary_coefficients.MAX_PRECOMPUTED_ORDER)
-    precomputed_coeffs = elementary_coefficients.precomputed_coefficients.get("arctan")
-    if precomputed_coeffs is None:
-        raise ValueError(
-            "Precomputed coefficients for 'arctan' function not found. "
-            "Ensure coefficients are loaded."
-        )
+    def dynamic_arctan(n):
+        if n % 2 == 1:
+            term_index = (n - 1) // 2
+            return ((-1) ** term_index) / n
+        return 0.0
 
-    for n_order in range(0, max_precomputed_order + 1):
-        coefficient_val = precomputed_coeffs[n_order]
-        arctan_taylor_1d_coefficients[
-            _generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)
-        ] = coefficient_val
-
-    if order > elementary_coefficients.MAX_PRECOMPUTED_ORDER:
-        warning_msg = (
-            f"Warning: Requested order {order} exceeds precomputed order "
-            f"{elementary_coefficients.MAX_PRECOMPUTED_ORDER}. "
-            "Calculations may be slower for higher orders."
-        )
-        print(warning_msg)
-        for n_order in range(
-            elementary_coefficients.MAX_PRECOMPUTED_ORDER + 1, order + 1
-        ):  # Calculate dynamically for higher orders
-            if n_order == 0:
-                coefficient_val = 0.0
-            elif n_order % 2 != 0:  # Arctan series has only odd terms
-                term_index = (n_order - 1) // 2
-                coefficient_val = ((-1) ** term_index) / n_order
-            else:
-                coefficient_val = 0.0
-            arctan_taylor_1d_coefficients[
-                _generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)
-            ] = coefficient_val
-
-    arctan_taylor_1d_mtf = type(input_mtf)(
-        coefficients=arctan_taylor_1d_coefficients,
-        dimension=taylor_dimension_1d,
+    return _create_composed_taylor_from_coeffs(
+        variable, "arctan", order, dynamic_arctan
     )
-    composed_mtf = arctan_taylor_1d_mtf.compose({1: input_mtf})
-    return composed_mtf.truncate(order)
 
 
 def _sinh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
@@ -709,100 +622,29 @@ def _cosh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 
 
 def sinh_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFunction:
-    """Helper: Taylor expansion of sinh(u) around zero, precomputed coefficients."""
-    if order is None:
-        order = MultivariateTaylorFunction.get_max_order()
-    input_mtf = MultivariateTaylorFunction.to_mtf(variable)
-    sinh_taylor_coefficients = {}
-    taylor_dimension_1d = 1
-    variable_index_1d = 0
+    """Helper: Taylor expansion of sinh(u) around zero, using precomputed coefficients."""
 
-    max_precomputed_order = min(order, elementary_coefficients.MAX_PRECOMPUTED_ORDER)
-    precomputed_coeffs = elementary_coefficients.precomputed_coefficients.get("sinh")
-    if precomputed_coeffs is None:
-        raise ValueError(
-            "Precomputed coefficients for 'sinh' function not found. "
-            "Ensure coefficients are loaded."
-        )
+    def dynamic_sinh(n):
+        if n % 2 == 1:
+            return 1.0 / math.factorial(n)
+        return 0.0
 
-    for n_order in range(0, max_precomputed_order + 1):
-        if n_order % 2 != 0 and n_order <= max_precomputed_order:
-            coefficient_val = precomputed_coeffs[n_order]
-            sinh_taylor_coefficients[
-                _generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)
-            ] = coefficient_val
-        elif n_order % 2 == 0:
-            coefficient_val = precomputed_coeffs[
-                n_order
-            ]  # Should be 0.0, already precomputed.
-            sinh_taylor_coefficients[
-                _generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)
-            ] = coefficient_val
-
-    if order > elementary_coefficients.MAX_PRECOMPUTED_ORDER:
-        warning_msg = (
-            f"Warning: Requested order {order} exceeds precomputed order "
-            f"{elementary_coefficients.MAX_PRECOMPUTED_ORDER}. "
-            "Calculations may be slower for higher orders."
-        )
-        print(warning_msg)
-        for n_order in range(
-            elementary_coefficients.MAX_PRECOMPUTED_ORDER + 1, order + 1
-        ):  # Calculate dynamically for higher orders
-            if n_order % 2 != 0 and n_order <= order:  # Odd orders for sinh
-                coefficient_val = 1 / math.factorial(n_order)
-                sinh_taylor_coefficients[
-                    _generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)
-                ] = coefficient_val
-            elif n_order % 2 == 0:  # Even orders for sinh are 0
-                coefficient_val = 0.0
-                sinh_taylor_coefficients[
-                    _generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)
-                ] = coefficient_val
-
-    sinh_taylor_1d_mtf = type(input_mtf)(
-        coefficients=sinh_taylor_coefficients, dimension=taylor_dimension_1d
+    return _create_composed_taylor_from_coeffs(
+        variable, "sinh", order, dynamic_sinh
     )
-    composed_mtf = sinh_taylor_1d_mtf.compose({1: input_mtf})
-    return composed_mtf.truncate(order)
 
 
 def cosh_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFunction:
-    """Helper: Taylor expansion of cosh(u) around zero, precomputed coefficients."""
-    if order is None:
-        order = MultivariateTaylorFunction.get_max_order()
-    input_mtf = MultivariateTaylorFunction.to_mtf(variable)
-    cosh_taylor_coefficients = {}
-    taylor_dimension_1d = 1
-    variable_index_1d = 0
+    """Helper: Taylor expansion of cosh(u) around zero, using precomputed coefficients."""
 
-    max_precomputed_order = min(order, elementary_coefficients.MAX_PRECOMPUTED_ORDER)
-    precomputed_coeffs = elementary_coefficients.precomputed_coefficients.get("cosh")
-    if precomputed_coeffs is None:
-        raise ValueError(
-            "Precomputed coefficients for 'cosh' function not found. "
-            "Ensure coefficients are loaded."
-        )
+    def dynamic_cosh(n):
+        if n % 2 == 0:
+            return 1.0 / math.factorial(n)
+        return 0.0
 
-    for n_order in range(0, max_precomputed_order + 1):
-        if n_order % 2 == 0 and n_order <= max_precomputed_order:
-            coefficient_val = precomputed_coeffs[n_order]
-            cosh_taylor_coefficients[
-                _generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)
-            ] = coefficient_val
-        elif n_order % 2 != 0:
-            coefficient_val = precomputed_coeffs[
-                n_order
-            ]  # Should be 0.0, already precomputed.
-            cosh_taylor_coefficients[
-                _generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)
-            ] = coefficient_val
-
-    cosh_taylor_1d_mtf = type(input_mtf)(
-        coefficients=cosh_taylor_coefficients, dimension=taylor_dimension_1d
+    return _create_composed_taylor_from_coeffs(
+        variable, "cosh", order, dynamic_cosh
     )
-    composed_mtf = cosh_taylor_1d_mtf.compose({1: input_mtf})
-    return composed_mtf.truncate(order)
 
 
 def _tanh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
@@ -896,56 +738,16 @@ def _arctanh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 def arctanh_taylor_1D_expansion(
     variable, order: int = None
 ) -> MultivariateTaylorFunction:
-    """
-    Helper: 1D Taylor expansion of arctanh(u) around zero, precomputed coefficients.
-    """
-    if order is None:
-        order = MultivariateTaylorFunction.get_max_order()
-    input_mtf = MultivariateTaylorFunction.to_mtf(variable)
-    arctanh_taylor_1d_coefficients = {}
-    taylor_dimension_1d = 1
-    variable_index_1d = 0
+    """Helper: 1D Taylor expansion of arctanh(u) around zero, using precomputed coefficients."""
 
-    max_precomputed_order = min(order, elementary_coefficients.MAX_PRECOMPUTED_ORDER)
-    precomputed_coeffs = elementary_coefficients.precomputed_coefficients.get("arctanh")
-    if precomputed_coeffs is None:
-        raise ValueError(
-            "Precomputed coefficients for 'arctanh' function not found. "
-            "Ensure coefficients are loaded."
-        )
+    def dynamic_arctanh(n):
+        if n % 2 == 1:
+            return 1.0 / float(n)
+        return 0.0
 
-    for n_order in range(0, max_precomputed_order + 1):
-        coefficient_val = precomputed_coeffs[n_order]
-        arctanh_taylor_1d_coefficients[
-            _generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)
-        ] = coefficient_val
-
-    if order > elementary_coefficients.MAX_PRECOMPUTED_ORDER:
-        warning_msg = (
-            f"Warning: Requested order {order} exceeds precomputed order "
-            f"{elementary_coefficients.MAX_PRECOMPUTED_ORDER}. "
-            "Calculations may be slower for higher orders."
-        )
-        print(warning_msg)
-        for n_order in range(
-            elementary_coefficients.MAX_PRECOMPUTED_ORDER + 1, order + 1
-        ):  # Calculate dynamically for higher orders
-            if n_order == 0:
-                coefficient_val = 0.0
-            elif n_order % 2 != 0:  # Arctanh series has only odd terms
-                coefficient_val = 1.0 / float(n_order)
-            else:
-                coefficient_val = 0.0
-            arctanh_taylor_1d_coefficients[
-                _generate_exponent(n_order, variable_index_1d, taylor_dimension_1d)
-            ] = coefficient_val
-
-    arctanh_taylor_1d_mtf = type(input_mtf)(
-        coefficients=arctanh_taylor_1d_coefficients,
-        dimension=taylor_dimension_1d,
+    return _create_composed_taylor_from_coeffs(
+        variable, "arctanh", order, dynamic_arctanh
     )
-    composed_mtf = arctanh_taylor_1d_mtf.compose({1: input_mtf})
-    return composed_mtf.truncate(order)
 
 
 def _arcsin_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
@@ -1110,15 +912,11 @@ def _integrate(
             f"integration_variable_index must be between 1 and "
             f"{mtf_instance.dimension}, inclusive."
         )
-    if lower_limit is not None and upper_limit is None:
+    if (lower_limit is not None and upper_limit is None) or (
+        upper_limit is not None and lower_limit is None
+    ):
         raise ValueError(
-            "If lower_limit is provided, upper_limit must also be provided for "
-            "definite integration."
-        )
-    if upper_limit is not None and lower_limit is None:
-        raise ValueError(
-            "If upper_limit is provided, upper_limit must also be provided for "
-            "definite integration."
+            "Both lower_limit and upper_limit must be provided for definite integration."
         )
     if lower_limit is not None and not isinstance(lower_limit, (int, float)):
         raise TypeError("lower_limit must be a number (int or float).")
@@ -1127,19 +925,9 @@ def _integrate(
 
     # Handle empty mtf_instance
     if mtf_instance.exponents.size == 0:
-        return type(mtf_instance)(
-            (
-                np.empty((0, mtf_instance.dimension), dtype=np.int32),
-                np.empty((0,), dtype=mtf_instance.coeffs.dtype),
-            ),
-            mtf_instance.dimension,
-        )
+        return mtf_instance.copy()
 
-    original_max_order = MultivariateTaylorFunction.get_max_order()
-    MultivariateTaylorFunction.set_max_order(
-        original_max_order + 1
-    )  # Step 1: Increment computation order by one.
-
+    # Perform the integration. The order of terms increases by 1.
     new_exponents = mtf_instance.exponents.copy()
     new_coeffs = mtf_instance.coeffs.copy()
 
@@ -1147,31 +935,34 @@ def _integrate(
     new_coeffs /= p + 1
     new_exponents[:, integration_variable_index - 1] += 1
 
+    # The indefinite integral may have terms of order > _MAX_ORDER.
+    # This is expected, as integration increases polynomial degree.
+    # Subsequent operations will truncate it back to the global max order.
     indefinite_integral_mtf = type(mtf_instance)(
         (new_exponents, new_coeffs), dimension=mtf_instance.dimension
     )
 
     if lower_limit is not None and upper_limit is not None:
-        # Step 3: substitute variable that integration was performed on with
-        # upper and lower limit
+        # For definite integration, evaluate at the limits.
+        # The intermediate MTFs (upper_limit_mtf, lower_limit_mtf) are not
+        # truncated, preserving the full result of the integration.
         upper_limit_mtf = indefinite_integral_mtf.substitute_variable(
             integration_variable_index, upper_limit
-        )  # upper Taylor function
+        )
         lower_limit_mtf = indefinite_integral_mtf.substitute_variable(
             integration_variable_index, lower_limit
-        )  # lower taylor function
+        )
 
-        # Step 4: Take difference of the two
+        # The result of the subtraction is also not truncated.
         definite_integral_mtf_full_order = upper_limit_mtf - lower_limit_mtf
 
-        # Step 5: reduce order by one and truncate
-        MultivariateTaylorFunction.set_max_order(
-            original_max_order
-        )  # reduce order by one (restore original)
-        definite_integral_mtf = definite_integral_mtf_full_order.truncate()  # truncate
-        return definite_integral_mtf  # Definite integral as MTF
+        # Finally, truncate the result to the global max order.
+        # This is the only place where truncation is needed.
+        return definite_integral_mtf_full_order.truncate()
     else:
-        MultivariateTaylorFunction.set_max_order(original_max_order)
+        # Return the indefinite integral. It may have terms of a higher order
+        # than the original function, which is the expected behavior.
+        # Subsequent operations will truncate it as needed.
         return indefinite_integral_mtf
 
 
