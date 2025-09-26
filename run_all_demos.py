@@ -17,14 +17,23 @@ def run_demos():
     demos_dir = os.path.join(project_root, "demos")
 
     # --- Demo Files - Predefined Order ---
-    demo_files = [
-        "1_beginner/0_Quick_Start.ipynb",
-        "1_beginner/1_Basic_Functionality.ipynb",
-        "2_advanced_topics/2_Advanced_Functionality.ipynb",
-        "2_advanced_topics/3_Taylor_Maps.ipynb",
-        "2_advanced_topics/4_Convergence_and_Accuracy.ipynb",
-        "3_performance/benchmark.py",
-    ]
+    # em_demo_dir = os.path.join(demos_dir, "em")
+    demo_files = []
+    for root, _, files in os.walk(demos_dir):
+        rel_root = os.path.relpath(root, demos_dir)
+        for fname in sorted(files):
+            if fname.endswith(".py") or fname.endswith(".ipynb"):
+                rel_path = os.path.join(rel_root, fname) if rel_root != "." else fname
+                demo_files.append(rel_path)
+        
+    # demo_files = [
+    #     "1_beginner/0_Quick_Start.ipynb",
+    #     "1_beginner/1_Basic_Functionality.ipynb",
+    #     "2_advanced_topics/2_Advanced_Functionality.ipynb",
+    #     "2_advanced_topics/3_Taylor_Maps.ipynb",
+    #     "2_advanced_topics/4_Convergence_and_Accuracy.ipynb",
+    #     "3_performance/benchmark.py",
+    # ]
 
     # Create runoutput directory
     runoutput_dir = os.path.join(demos_dir, "runoutput")
