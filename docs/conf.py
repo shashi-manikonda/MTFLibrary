@@ -18,8 +18,8 @@ project = "mtflib"
 copyright = "2025, Shashikant Manikonda"
 author = "Shashikant Manikonda"
 
-version = "1.5.0"
-release = "1.5.0"
+version = "1.5.1"
+release = "1.5.1"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -43,7 +43,7 @@ nbsphinx_execute = "always"
 # -- autosummary configuration -----------------------------------------------
 autosummary_generate = True
 templates_path = ["_templates"]
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "demos/README.md"]
 
 language = "en"
 
