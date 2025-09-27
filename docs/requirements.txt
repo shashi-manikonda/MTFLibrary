@@ -4,3 +4,4 @@ myst_parser
 sympy
 nbsphinx
 ipykernel
+matplotlib
