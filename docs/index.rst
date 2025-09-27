@@ -28,7 +28,7 @@ in a computationally efficient manner.
    :maxdepth: 2
    :caption: API
 
-   api
+   api_reference
 
 .. toctree::
    :maxdepth: 2

@@ -947,8 +947,8 @@ class MultivariateTaylorFunction:
         """
         Raises the MTF to a power.
 
-        Supports non-negative integer powers and specific float powers
-        (0.5 for square root, -0.5 for inverse square root).
+        Supports integer powers (positive, negative, and zero) and specific
+        float powers (0.5 for square root, -0.5 for inverse square root).
 
         Parameters
         ----------
@@ -963,7 +963,8 @@ class MultivariateTaylorFunction:
         Raises
         ------
         ValueError
-            If the power is not a supported type or value.
+            If the power is not a supported type or value (e.g., a float
+            other than 0.5 or -0.5).
         """
         if isinstance(power, numbers.Integral):
             if power < 0:
@@ -992,9 +993,9 @@ class MultivariateTaylorFunction:
             elif power == -0.5:
                 return _isqrt_taylor(self)
             else:
-                raise ValueError("Power must be a non-negative integer, 0.5, or -0.5.")
+                raise ValueError("Power must be an integer, 0.5, or -0.5.")
         else:
-            raise ValueError("Power must be a non-negative integer, 0.5, or -0.5.")
+            raise ValueError("Power must be an integer, 0.5, or -0.5.")
 
     def __neg__(self):
         """

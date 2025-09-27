@@ -12,4 +12,5 @@ always in sync.
    :maxdepth: 1
    :glob:
 
-   ../demos/*
+   demos/1_beginner/*
+   demos/2_advanced_topics/*
