@@ -13,6 +13,7 @@ complex-valued functions, particularly in fields like physics and
 engineering where complex numbers are fundamental.
 """
 
+import json
 from collections import defaultdict
 
 import numpy as np
@@ -216,6 +217,64 @@ class ComplexMultivariateTaylorFunction(MultivariateTaylorFunction):
         raise NotImplementedError(
             "Phase of a ComplexMultivariateTaylorFunction is generally not a "
             "ComplexMultivariateTaylorFunction."
+        )
+
+    def to_json(self):
+        """
+        Serializes the ComplexMultivariateTaylorFunction object to a JSON string.
+
+        Returns
+        -------
+        str
+            A JSON string representing the CMTF object.
+        """
+        data = {
+            "exponents": self.exponents.tolist(),
+            "coeffs": [[c.real, c.imag] for c in self.coeffs],
+            "dimension": self.dimension,
+            "var_name": self.var_name,
+        }
+        return json.dumps(data)
+
+    @classmethod
+    def from_json(cls, json_str):
+        """
+        Deserializes a JSON string to a ComplexMultivariateTaylorFunction object.
+
+        Parameters
+        ----------
+        json_str : str
+            A JSON string representing the CMTF object.
+
+        Returns
+        -------
+        ComplexMultivariateTaylorFunction
+            A new CMTF instance.
+        """
+        data = json.loads(json_str)
+        if cls._INITIALIZED:
+            if data["dimension"] > cls.get_max_dimension():
+                raise ValueError(
+                    f"Dimension from JSON ({data['dimension']}) exceeds max "
+                    f"dimension ({cls.get_max_dimension()})"
+                )
+            # Check max order
+            exponents = np.array(data["exponents"], dtype=np.int32)
+            if exponents.size > 0:
+                max_order_in_json = np.sum(exponents, axis=1).max()
+                if max_order_in_json > cls.get_max_order():
+                    raise ValueError(
+                        f"Max order from JSON ({max_order_in_json}) exceeds max "
+                        f"order ({cls.get_max_order()})"
+                    )
+        exponents = np.array(data["exponents"], dtype=np.int32)
+        coeffs = np.array(
+            [complex(c[0], c[1]) for c in data["coeffs"]], dtype=np.complex128
+        )
+        return cls(
+            (exponents, coeffs),
+            dimension=data["dimension"],
+            var_name=data["var_name"],
         )
 
 
