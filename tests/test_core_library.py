@@ -948,6 +948,56 @@ def test_cmtf_pickle_unpickle(setup_function):
     assert unpickled_cmtf == cmtf
 
 
+def test_mtf_json_serialization(setup_function):
+    global_dim, exponent_zero = setup_function
+    exponent_one = list(exponent_zero)
+    if global_dim > 0:
+        exponent_one[0] = 1
+    exponent_one = tuple(exponent_one)
+    mtf_obj = mtf({exponent_zero: 1.0, exponent_one: 2.0}, dimension=global_dim)
+    json_str = mtf_obj.to_json()
+    deserialized_mtf = mtf.from_json(json_str)
+    assert deserialized_mtf == mtf_obj
+
+
+def test_cmtf_json_serialization(setup_function):
+    global_dim, exponent_zero = setup_function
+    exponent_one = list(exponent_zero)
+    if global_dim > 0:
+        exponent_one[0] = 1
+    exponent_one = tuple(exponent_one)
+    cmtf_obj = ComplexMultivariateTaylorFunction(
+        {exponent_zero: 1 + 1j, exponent_one: 2 - 1j}, dimension=global_dim
+    )
+    json_str = cmtf_obj.to_json()
+    deserialized_cmtf = ComplexMultivariateTaylorFunction.from_json(json_str)
+    assert deserialized_cmtf == cmtf_obj
+
+
+def test_mtf_json_validation(setup_function):
+    global_dim, exponent_zero = setup_function  # This fixture sets max_order=5, max_dimension=3
+    # Test dimension validation: dimension=4 > max_dimension=3
+    high_dim_json = '{"exponents": [[0, 0, 0, 1]], "coeffs": [1.0], "dimension": 4, "var_name": null}'
+    with pytest.raises(ValueError, match="exceeds max dimension"):
+        mtf.from_json(high_dim_json)
+    # Test order validation: order=6 > max_order=5
+    high_order_json = '{"exponents": [[6]], "coeffs": [1.0], "dimension": 1, "var_name": null}'
+    with pytest.raises(ValueError, match="exceeds max order"):
+        mtf.from_json(high_order_json)
+
+
+def test_cmtf_json_validation(setup_function):
+    global_dim, exponent_zero = setup_function  # This fixture sets max_order=5, max_dimension=3
+    # Test dimension validation: dimension=4 > max_dimension=3
+    high_dim_json = '{"exponents": [[0, 0, 0, 1]], "coeffs": [[1.0, 0.0]], "dimension": 4, "var_name": null}'
+    with pytest.raises(ValueError, match="exceeds max dimension"):
+        ComplexMultivariateTaylorFunction.from_json(high_dim_json)
+    # Test order validation: order=6 > max_order=5
+    high_order_json = '{"exponents": [[6]], "coeffs": [[1.0, 0.0]], "dimension": 1, "var_name": null}'
+    with pytest.raises(ValueError, match="exceeds max order"):
+        ComplexMultivariateTaylorFunction.from_json(high_order_json)
+
+
 # Tests for the MTFExtended module
 
 
