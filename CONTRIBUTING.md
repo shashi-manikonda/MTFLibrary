@@ -1,66 +1,116 @@
-# Contributing to mtflib
+# Contributing to MTFLibrary
 
-First off, thank you for considering contributing to `mtflib`! Your help is greatly appreciated. This document provides guidelines for contributing to the project.
+First off, thank you for considering contributing to `MTFLibrary`! It's people like you that make this tool better for everyone.
 
-## How to Report a Bug
+This document guides you through the contribution process, from setting up your development environment to submitting a Pull Request.
 
-If you find a bug, please open an issue on our [GitHub Issue Tracker](https://github.com/sm-physics/mtflib/issues).
+## Code of Conduct
 
-When reporting a bug, please include the following:
+Please be respectful and considerate of others when interacting with this repository.
 
-*   **A clear and descriptive title.**
-*   **A detailed description of the bug,** including the steps to reproduce it.
-*   **A code snippet** that demonstrates the bug.
-*   **The expected behavior** and what you observed instead.
-*   **Your system information,** including your Python version and the version of `mtflib` you are using.
+## Getting Started
 
-## How to Suggest a New Feature
+### 1. Fork and Clone
+Fork the repository on GitHub, then clone your fork locally:
 
-We are always open to new ideas! If you have a suggestion for a new feature or an enhancement to an existing one, please open an issue on our [GitHub Issue Tracker](https://github.com/sm-physics/mtflib/issues).
+```bash
+git clone https://github.com/YOUR_USERNAME/MTFLibrary.git
+cd MTFLibrary
+```
 
-When suggesting a feature, please include:
+### 2. Set Up Development Environment
+We recommend using a virtual environment to manage dependencies.
 
-*   **A clear and descriptive title.**
-*   **A detailed description of the proposed feature** and why it would be valuable to the project.
-*   **A code example or pseudo-code** demonstrating how the feature might be used.
+```bash
+# Create a virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-## Setting Up the Development Environment
+# Install the package in editable mode with development dependencies
+pip install -e .[dev]
+```
 
-To contribute code to `mtflib`, you will need to set up a local development environment.
+### 3. Install Pre-commit Hooks
+This project uses [pre-commit](https://pre-commit.com/) to automatically check code style and quality before every commit.
 
-1.  **Fork and Clone the Repository:**
-    First, fork the repository on GitHub. Then, clone your fork to your local machine:
+```bash
+pre-commit install
+```
+
+Now, every time you commit, `black`, `flake8`, and other checks will run automatically.
+
+## Development Workflow
+
+1.  **Create a Branch**: Always create a new branch for your work.
     ```bash
-    git clone https://github.com/YOUR_USERNAME/mtflib.git
-    cd mtflib
+    git checkout -b feat/my-new-feature
     ```
-
-2.  **Create a Virtual Environment:**
-    It is highly recommended to work within a Python virtual environment.
-    ```bash
-    python -m venv venv
-    source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
-    ```
-
-3.  **Install Dependencies:**
-    Install the library and all its development dependencies, including those for testing and building the documentation.
-    ```bash
-    pip install -e .[dev]
-    ```
-    The `-e` flag installs the package in "editable" mode, so any changes you make to the source code will be immediately effective.
-
-4.  **Run Tests:**
-    Before making any changes, run the test suite to ensure everything is working correctly.
+2.  **Make Changes**: Implement your feature or fix.
+3.  **Run Tests**: Ensure that your changes don't break existing functionality.
     ```bash
     pytest
     ```
-
-5.  **Make Your Changes:**
-    Create a new branch for your feature or bug fix:
+4.  **Linting**: You can run the pre-commit hooks manually on all files to check for style issues.
     ```bash
-    git checkout -b your-feature-name
+    pre-commit run --all-files
     ```
-    Now you can make your changes to the code.
 
-6.  **Submit a Pull Request:**
-    Once you are happy with your changes, push your branch to your fork and open a pull request against the `main` branch of the original repository.
+## Coding Standards
+
+### Code Style
+We enforce a consistent code style using automated tools:
+*   **Black**: The uncompromising code formatter (configured with line-length 79).
+*   **Flake8**: For style guide enforcement.
+*   **Ruff**: An extremely fast Python linter.
+
+Please ensure your code passes all `pre-commit` checks.
+
+### Docstrings
+We use **NumPy-style docstrings**. Every public class and function should have a docstring that describes its purpose, parameters, and return values.
+
+**Example:**
+```python
+def my_function(param1, param2):
+    """
+    Brief description of the function.
+
+    Parameters
+    ----------
+    param1 : int
+        Description of param1.
+    param2 : str
+        Description of param2.
+
+    Returns
+    -------
+    bool
+        Description of the return value.
+    """
+    return True
+```
+
+### Commit Messages
+We follow the **Conventional Commits** specification.
+*   `feat: ...` for new features
+*   `fix: ...` for bug fixes
+*   `docs: ...` for documentation updates
+*   `style: ...` for formatting changes
+*   `refactor: ...` for code refactoring
+*   `test: ...` for adding missing tests
+
+## Submitting a Pull Request
+
+1.  **Push your branch** to your fork:
+    ```bash
+    git push origin feat/my-new-feature
+    ```
+2.  **Open a Pull Request** against the `main` branch of the `MTFLibrary` repository.
+3.  **Description**: detailed description of your changes, referencing any related issues.
+4.  **Checklist**:
+    *   [ ] Tests passed locally (`pytest`).
+    *   [ ] Pre-commit hooks passed.
+    *   [ ] Documentation added/updated (if applicable).
+
+## Reporting Issues
+
+If you find a bug or have a feature request, please use the [Issue Tracker](https://github.com/shashi-manikonda/MTFLibrary/issues). Provide as much detail as possible, including steps to reproduce bugs.
