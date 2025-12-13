@@ -30,8 +30,8 @@ import numpy as np
 from mtflib import mtf
 from IPython.display import display
 
-# 1. Initialize global settings (must be done once)
-# This sets the max order of the Taylor series and the number of variables.
+# 1. Initialize global settings (optional but recommended for non-default values)
+# If skipped, defaults to max_order=4, max_dimension=3.
 mtf.initialize_mtf(max_order=5, max_dimension=2)
 
 # 2. Define symbolic variables
