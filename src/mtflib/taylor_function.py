@@ -918,9 +918,7 @@ class MultivariateTaylorFunction:
         ).reshape(-1, self.dimension)
 
         # 2. Compute all coefficient products: (N, 1) * (1, M) -> (N, M)
-        new_coeffs = (
-            self.coeffs[:, np.newaxis] * other.coeffs[np.newaxis, :]
-        ).ravel()
+        new_coeffs = (self.coeffs[:, np.newaxis] * other.coeffs[np.newaxis, :]).ravel()
 
         # 3. Aggregate common exponents
         # Using np.unique to find unique exponent rows and their inverse indices
