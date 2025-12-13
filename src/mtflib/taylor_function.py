@@ -215,8 +215,21 @@ class MultivariateTaylorFunction:
             )
 
     @classmethod
+    def _auto_initialize(cls):
+        """Auto-initializes the library with defaults if not already initialized."""
+        if not cls._INITIALIZED:
+            print(
+                "Warning: MTFLibrary not initialized. Auto-initializing with defaults "
+                "(Order=4, Dimension=3)."
+            )
+            cls.initialize_mtf(max_order=4, max_dimension=3)
+
+    @classmethod
     def get_max_coefficient_count(cls, max_order=None, max_dimension=None):
         """Calculates max coefficient count for given order/dimension."""
+        if not cls._INITIALIZED and max_order is None and max_dimension is None:
+            cls._auto_initialize()
+
         effective_max_order = max_order if max_order is not None else cls._MAX_ORDER
         effective_max_dimension = (
             max_dimension if max_dimension is not None else cls._MAX_DIMENSION
@@ -235,7 +248,7 @@ class MultivariateTaylorFunction:
     def get_precomputed_coefficients(cls):
         """Returns the precomputed Taylor coefficients for elementary functions."""
         if not cls._INITIALIZED:
-            raise RuntimeError("MTF Globals are not initialized.")
+            cls._auto_initialize()
         return cls._PRECOMPUTED_COEFFICIENTS
 
     @classmethod
@@ -247,9 +260,7 @@ class MultivariateTaylorFunction:
     def set_max_order(cls, order):
         """Sets the global maximum order for Taylor series."""
         if not cls._INITIALIZED:
-            raise RuntimeError(
-                "MTF Globals must be initialized before setting max order."
-            )
+            cls._auto_initialize()
         if not isinstance(order, int) or order < 0:
             raise ValueError("Order must be a non-negative integer.")
         cls._MAX_ORDER = order
@@ -258,23 +269,21 @@ class MultivariateTaylorFunction:
     def get_max_order(cls):
         """Returns the global maximum order for Taylor series."""
         if not cls._INITIALIZED:
-            raise RuntimeError("MTF Globals are not initialized.")
+            cls._auto_initialize()
         return cls._MAX_ORDER
 
     @classmethod
     def get_max_dimension(cls):
         """Returns the global maximum dimension (number of variables)."""
         if not cls._INITIALIZED:
-            raise RuntimeError("MTF Globals are not initialized.")
+            cls._auto_initialize()
         return cls._MAX_DIMENSION
 
     @classmethod
     def set_etol(cls, etol):
         """Sets the global error tolerance (etol) for `mtflib`."""
         if not cls._INITIALIZED:
-            raise RuntimeError(
-                "MTF Globals must be initialized before setting error tolerance."
-            )
+            cls._auto_initialize()
         if not isinstance(etol, float) or etol <= 0:
             raise ValueError("Error tolerance (etol) must be a positive float.")
         cls._ETOL = etol
@@ -283,7 +292,7 @@ class MultivariateTaylorFunction:
     def get_etol(cls):
         """Returns the global error tolerance (etol)."""
         if not cls._INITIALIZED:
-            raise RuntimeError("MTF Globals are not initialized.")
+            cls._auto_initialize()
         return cls._ETOL
 
     @classmethod
@@ -587,7 +596,8 @@ class MultivariateTaylorFunction:
             )
         else:
             raise TypeError(
-                f"Unsupported input type: {type(input_val)}. Cannot convert to MTF/CMTF."
+                f"Unsupported input type: {type(input_val)}. Cannot convert to "
+                f"MTF/CMTF."
             )
 
     def __call__(self, evaluation_point):
