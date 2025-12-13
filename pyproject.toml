@@ -39,6 +39,7 @@ test = [
     "torch",
     "ipython",
     "sympy",
+    "jupyter",
 ]
 docs = [
     "sphinx",
@@ -66,6 +67,7 @@ dev = [
     "jupytext",
     "pandas",
     "ipython",
+    "mypy",
 ]
    
 
@@ -88,3 +90,14 @@ select = ["E", "F", "I"]
 
 [tool.ruff.format]
 preview = true
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+check_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = ["numpy.*", "pandas.*", "matplotlib.*", "scipy.*", "sympy.*", "tqdm.*"]
+ignore_missing_imports = true

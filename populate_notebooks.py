@@ -49,6 +49,8 @@ def run_notebooks_in_directory(root_directory):
                 try:
                     # Construct the nbconvert command
                     command = [
+                        sys.executable,
+                        "-m",
                         "jupyter",
                         "nbconvert",
                         "--to",

@@ -516,7 +516,8 @@ def arctan_taylor_1D_expansion(
     variable, order: int = None
 ) -> MultivariateTaylorFunction:
     """
-    Helper: 1D Taylor expansion of arctan(u) around zero, using precomputed coefficients.
+    Helper: 1D Taylor expansion of arctan(u) around zero, using
+    precomputed coefficients.
     """
 
     def dynamic_arctan(n):
@@ -743,7 +744,8 @@ def arctanh_taylor_1D_expansion(
     variable, order: int = None
 ) -> MultivariateTaylorFunction:
     """
-    Helper: 1D Taylor expansion of arctanh(u) around zero, using precomputed coefficients.
+    Helper: 1D Taylor expansion of arctanh(u) around zero, using
+    precomputed coefficients.
     """
 
     def dynamic_arctanh(n):
@@ -922,7 +924,8 @@ def _integrate(
         upper_limit is not None and lower_limit is None
     ):
         raise ValueError(
-            "Both lower_limit and upper_limit must be provided for definite integration."
+            "Both lower_limit and upper_limit must be provided for definite "
+            "integration."
         )
     if lower_limit is not None and not isinstance(lower_limit, (int, float)):
         raise TypeError("lower_limit must be a number (int or float).")
