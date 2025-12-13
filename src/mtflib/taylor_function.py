@@ -901,30 +901,27 @@ class MultivariateTaylorFunction:
                 self.dimension,
             )
 
-        # Python Implementation (Optimized with dictionary)
-        is_complex = np.iscomplexobj(self.coeffs) or np.iscomplexobj(other.coeffs)
-        summed_coeffs_dict = defaultdict(complex) if is_complex else defaultdict(float)
+        # Vectorized Implementation
+        # 1. Compute all exponent combinations: (N, 1, D) + (1, M, D) -> (N, M, D)
+        new_exps = (
+            self.exponents[:, np.newaxis, :] + other.exponents[np.newaxis, :, :]
+        ).reshape(-1, self.dimension)
 
-        for i in range(self.coeffs.shape[0]):
-            exp1 = self.exponents[i]
-            coeff1 = self.coeffs[i]
-            for j in range(other.coeffs.shape[0]):
-                exp2 = other.exponents[j]
-                coeff2 = other.coeffs[j]
-                new_exp = tuple(exp1 + exp2)
-                summed_coeffs_dict[new_exp] += coeff1 * coeff2
+        # 2. Compute all coefficient products: (N, 1) * (1, M) -> (N, M)
+        new_coeffs = (
+            self.coeffs[:, np.newaxis] * other.coeffs[np.newaxis, :]
+        ).ravel()
 
-        if not summed_coeffs_dict:
-            unique_exponents = np.empty((0, self.dimension), dtype=np.int32)
-            summed_coeffs = np.empty(
-                (0,), dtype=np.complex128 if is_complex else np.float64
-            )
-        else:
-            unique_exponents = np.array(list(summed_coeffs_dict.keys()), dtype=np.int32)
-            summed_coeffs = np.array(
-                list(summed_coeffs_dict.values()),
-                dtype=np.complex128 if is_complex else np.float64,
-            )
+        # 3. Aggregate common exponents
+        # Using np.unique to find unique exponent rows and their inverse indices
+        unique_exponents, inverse_indices = np.unique(
+            new_exps, axis=0, return_inverse=True
+        )
+
+        # 4. Sum coefficients corresponding to same exponents
+        dtype = np.result_type(self.coeffs, other.coeffs)
+        summed_coeffs = np.zeros(unique_exponents.shape[0], dtype=dtype)
+        np.add.at(summed_coeffs, inverse_indices, new_coeffs)
 
         result_mtf = type(self)((unique_exponents, summed_coeffs), self.dimension)
         if self._TRUNCATE_AFTER_OPERATION:
