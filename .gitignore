@@ -185,3 +185,4 @@ src/mtflib/backends/cython/mtf_cython.cpp
 
 # PyPI configuration file
 .pypirc
+benchmark_MTF/
