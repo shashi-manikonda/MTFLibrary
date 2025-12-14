@@ -1972,7 +1972,10 @@ class MultivariateTaylorFunction:
         const_idx = np.where(match)[0]
 
         if const_idx.size > 0:
-            return float(self.coeffs[const_idx[0]])
+            val = self.coeffs[const_idx[0]]
+            if isinstance(val, complex):
+               return val.real
+            return float(val)
         else:
             return 0.0
 

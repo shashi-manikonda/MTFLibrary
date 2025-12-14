@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.2] - 2025-12-14
+
+### Added
+- Added `py.typed` marker to package distribution to support type checkers (mypy).
+
+### Changed
+- C++ Backend Optimization: Implemented memory pooling and Structure-of-Arrays (SoA) layout for Biot-Savart calculations, resulting in ~25% performance improvement.
+- Implemented `subtract_inplace` in `MtfData` C++ class.
+
 ## [1.5.1] - 2025-09-26
 
 ### Changed
