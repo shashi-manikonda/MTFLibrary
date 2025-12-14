@@ -14,6 +14,7 @@ of loading from files or recomputing if necessary.
 
 import json  # Standard library for JSON
 import math
+from typing import Optional
 import os
 import sys  # Import sys for getsizeof
 
@@ -250,7 +251,7 @@ coefficient_functions = {
 }
 
 
-def load_precomputed_coefficients(max_order_config: int = None) -> dict:
+def load_precomputed_coefficients(max_order_config: Optional[int] = None) -> dict:
     """
     Loads or precomputes Taylor coefficients for elementary functions.
 

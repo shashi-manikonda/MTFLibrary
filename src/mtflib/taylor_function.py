@@ -9,6 +9,7 @@ Algebra (DA) vector, and the operations defined on it form a Truncated
 Power Series Algebra (TPSA).
 """
 
+from typing import Optional
 import math
 import numbers
 from collections import defaultdict
@@ -22,7 +23,7 @@ from .backend import get_backend
 
 # Try to import the C++ backend
 try:
-    from .backends.cpp import mtf_cpp
+    from .backends.cpp import mtf_cpp  # type: ignore
 
     _CPP_BACKEND_AVAILABLE = True
 except ImportError:
@@ -444,7 +445,7 @@ class MultivariateTaylorFunction:
         return cls(coefficients=coeffs, dimension=dimension)
 
     @classmethod
-    def var(cls, var_index: int, dimension: int = None) -> "MultivariateTaylorFunction":
+    def var(cls, var_index: int, dimension: Optional[int] = None) -> "MultivariateTaylorFunction":
         """
         Creates a MultivariateTaylorFunction representing a single variable.
 
@@ -1946,7 +1947,7 @@ class MultivariateTaylorFunction:
 
     @classmethod
     def from_numpy_array(
-        cls, np_array: np.ndarray, dimension: int = None
+        cls, np_array: np.ndarray, dimension: Optional[int] = None
     ) -> np.ndarray:
         """
         Converts a NumPy array of numbers into a NumPy array of mtf
@@ -2067,7 +2068,7 @@ def _split_constant_polynomial_part(
     return constant_term_C_value, polynomial_part_mtf
 
 
-def _sqrt_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
+def _sqrt_taylor(variable, order: Optional[int] = None) -> MultivariateTaylorFunction:
     """
     Computes the Taylor expansion of the square root of an MTF.
 
@@ -2112,7 +2113,7 @@ def _sqrt_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     return result_mtf.truncate(order)
 
 
-def sqrt_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylorFunction:
+def sqrt_taylor_1D_expansion(variable, order: Optional[int] = None) -> MultivariateTaylorFunction:
     """
     Helper: 1D Taylor expansion of sqrt(1+u) around zero, precomputed coefficients.
     """
@@ -2164,7 +2165,7 @@ def sqrt_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylorF
     return composed_mtf.truncate(order)
 
 
-def _isqrt_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
+def _isqrt_taylor(variable, order: Optional[int] = None) -> MultivariateTaylorFunction:
     """
     Computes the Taylor expansion of the inverse square root of an MTF.
 
@@ -2208,7 +2209,7 @@ def _isqrt_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 
 
 def isqrt_taylor_1D_expansion(
-    variable, order: int = None
+    variable, order: Optional[int] = None
 ) -> MultivariateTaylorFunction:
     """
     Helper: 1D Taylor expansion of isqrt(1+u) around zero, precomputed coefficients.

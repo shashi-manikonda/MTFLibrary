@@ -8,6 +8,7 @@ arithmetic operations in `MultivariateTaylorFunction`, form a complete
 Differential Algebra (DA).
 """
 
+from typing import Optional
 import math
 
 import numpy as np
@@ -55,7 +56,7 @@ def _apply_constant_factoring(
 def _create_composed_taylor_from_coeffs(
     variable,
     coeff_key: str,
-    order: int = None,
+    order: Optional[int] = None,
     dynamic_coeff_func=None,
 ) -> MultivariateTaylorFunction:
     """
@@ -141,7 +142,7 @@ def _create_composed_taylor_from_coeffs(
     return composed_mtf.truncate(order)
 
 
-def _sin_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
+def _sin_taylor(variable, order: Optional[int] = None) -> MultivariateTaylorFunction:
     """
     Computes the Taylor expansion of `sin(x)`.
 
@@ -188,7 +189,7 @@ def _sin_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     return result_mtf.truncate(order)
 
 
-def _cos_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
+def _cos_taylor(variable, order: Optional[int] = None) -> MultivariateTaylorFunction:
     """
     Computes the Taylor expansion of `cos(x)`.
 
@@ -236,7 +237,7 @@ def _cos_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     return result_mtf.truncate(order)
 
 
-def sin_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFunction:
+def sin_taylor_around_zero(variable, order: Optional[int] = None) -> MultivariateTaylorFunction:
     """
     Helper: Taylor expansion of sin(u) around zero, using precomputed coefficients.
     """
@@ -249,7 +250,7 @@ def sin_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFun
     return _create_composed_taylor_from_coeffs(variable, "sin", order, dynamic_sin)
 
 
-def cos_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFunction:
+def cos_taylor_around_zero(variable, order: Optional[int] = None) -> MultivariateTaylorFunction:
     """
     Helper: Taylor expansion of cos(u) around zero, using precomputed coefficients.
     """
@@ -262,7 +263,7 @@ def cos_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFun
     return _create_composed_taylor_from_coeffs(variable, "cos", order, dynamic_cos)
 
 
-def _tan_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
+def _tan_taylor(variable, order: Optional[int] = None) -> MultivariateTaylorFunction:
     """
     Computes the Taylor expansion of `tan(x)`.
 
@@ -301,7 +302,7 @@ def _tan_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     return tan_mtf.truncate(order)
 
 
-def _exp_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
+def _exp_taylor(variable, order: Optional[int] = None) -> MultivariateTaylorFunction:
     """
     Computes the Taylor expansion of `exp(x)`.
 
@@ -342,7 +343,7 @@ def _exp_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     ).truncate(order)
 
 
-def exp_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFunction:
+def exp_taylor_around_zero(variable, order: Optional[int] = None) -> MultivariateTaylorFunction:
     """
     Helper: Taylor expansion of exp(u) around zero, using precomputed coefficients.
     """
@@ -351,7 +352,7 @@ def exp_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFun
     )
 
 
-def _gaussian_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
+def _gaussian_taylor(variable, order: Optional[int] = None) -> MultivariateTaylorFunction:
     """
     Computes the Taylor expansion of a Gaussian function, `exp(-x^2)`.
 
@@ -387,7 +388,7 @@ def _gaussian_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     return _exp_taylor(-(input_mtf**2), order=order)
 
 
-def _log_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
+def _log_taylor(variable, order: Optional[int] = None) -> MultivariateTaylorFunction:
     """
     Computes the Taylor expansion of `log(x)`.
 
@@ -452,7 +453,7 @@ def _log_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     return result_mtf.truncate(order)
 
 
-def log_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylorFunction:
+def log_taylor_1D_expansion(variable, order: Optional[int] = None) -> MultivariateTaylorFunction:
     """
     Helper: 1D Taylor expansion of log(1+u) around zero, using precomputed coefficients.
     """
@@ -465,7 +466,7 @@ def log_taylor_1D_expansion(variable, order: int = None) -> MultivariateTaylorFu
     return _create_composed_taylor_from_coeffs(variable, "log", order, dynamic_log)
 
 
-def _arctan_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
+def _arctan_taylor(variable, order: Optional[int] = None) -> MultivariateTaylorFunction:
     """
     Computes the Taylor expansion of `arctan(x)`.
 
@@ -513,7 +514,7 @@ def _arctan_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 
 
 def arctan_taylor_1D_expansion(
-    variable, order: int = None
+    variable, order: Optional[int] = None
 ) -> MultivariateTaylorFunction:
     """
     Helper: 1D Taylor expansion of arctan(u) around zero, using
@@ -531,7 +532,7 @@ def arctan_taylor_1D_expansion(
     )
 
 
-def _sinh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
+def _sinh_taylor(variable, order: Optional[int] = None) -> MultivariateTaylorFunction:
     """
     Computes the Taylor expansion of `sinh(x)`.
 
@@ -578,7 +579,7 @@ def _sinh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     return result_mtf.truncate(order)
 
 
-def _cosh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
+def _cosh_taylor(variable, order: Optional[int] = None) -> MultivariateTaylorFunction:
     """
     Computes the Taylor expansion of `cosh(x)`.
 
@@ -626,7 +627,7 @@ def _cosh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     return result_mtf.truncate(order)
 
 
-def sinh_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFunction:
+def sinh_taylor_around_zero(variable, order: Optional[int] = None) -> MultivariateTaylorFunction:
     """
     Helper: Taylor expansion of sinh(u) around zero, using precomputed coefficients.
     """
@@ -639,7 +640,7 @@ def sinh_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFu
     return _create_composed_taylor_from_coeffs(variable, "sinh", order, dynamic_sinh)
 
 
-def cosh_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFunction:
+def cosh_taylor_around_zero(variable, order: Optional[int] = None) -> MultivariateTaylorFunction:
     """
     Helper: Taylor expansion of cosh(u) around zero, using precomputed coefficients.
     """
@@ -652,7 +653,7 @@ def cosh_taylor_around_zero(variable, order: int = None) -> MultivariateTaylorFu
     return _create_composed_taylor_from_coeffs(variable, "cosh", order, dynamic_cosh)
 
 
-def _tanh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
+def _tanh_taylor(variable, order: Optional[int] = None) -> MultivariateTaylorFunction:
     """
     Computes the Taylor expansion of `tanh(x)`.
 
@@ -691,7 +692,7 @@ def _tanh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     return tanh_mtf.truncate(order)
 
 
-def _arctanh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
+def _arctanh_taylor(variable, order: Optional[int] = None) -> MultivariateTaylorFunction:
     """
     Computes the Taylor expansion of `arctanh(x)`.
 
@@ -741,7 +742,7 @@ def _arctanh_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
 
 
 def arctanh_taylor_1D_expansion(
-    variable, order: int = None
+    variable, order: Optional[int] = None
 ) -> MultivariateTaylorFunction:
     """
     Helper: 1D Taylor expansion of arctanh(u) around zero, using
@@ -758,7 +759,7 @@ def arctanh_taylor_1D_expansion(
     )
 
 
-def _arcsin_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
+def _arcsin_taylor(variable, order: Optional[int] = None) -> MultivariateTaylorFunction:
     """
     Computes the Taylor expansion of `arcsin(x)`.
 
@@ -800,7 +801,7 @@ def _arcsin_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
     return arcsin_mtf.truncate(order)
 
 
-def _arccos_taylor(variable, order: int = None) -> MultivariateTaylorFunction:
+def _arccos_taylor(variable, order: Optional[int] = None) -> MultivariateTaylorFunction:
     """
     Computes the Taylor expansion of `arccos(x)`.
 

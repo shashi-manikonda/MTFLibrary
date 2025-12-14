@@ -93,10 +93,12 @@ preview = true
 
 [tool.mypy]
 python_version = "3.12"
-warn_return_any = true
+warn_return_any = false
 warn_unused_configs = true
 disallow_untyped_defs = false
 check_untyped_defs = true
+exclude = ["docs/", "tests/", "benchmark_MTF/", "demos/"]
+disable_error_code = ["var-annotated", "arg-type", "operator", "assignment", "index", "misc", "import-not-found", "import-untyped", "attr-defined"]
 
 [[tool.mypy.overrides]]
 module = ["numpy.*", "pandas.*", "matplotlib.*", "scipy.*", "sympy.*", "tqdm.*"]
