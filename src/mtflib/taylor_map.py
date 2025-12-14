@@ -207,11 +207,13 @@ class TaylorMap:
                 coeff = component_mtf.coeffs[i]
 
                 # Start term with the scalar coefficient
-                # Optimization: Initialize with coeff directly if it's the first multiplication
-                # But here we handle dimensionality.
+                # Optimization: Initialize with coeff directly if it's the first
+                # multiplication. But here we handle dimensionality.
                 # Let's create a term_mtf initialized to 1.0 (identity)
-                # Optimization: if coeff is zero, skip? (Assuming sparse handling, but check for explicit zeros)
-                if abs(coeff) < 1e-16: # Simple check, though MTF handles this internally usually
+                # Optimization: if coeff is zero, skip? (Assuming sparse handling, but
+                # check for explicit zeros)
+                if abs(coeff) < 1e-16:
+                    # Simple check, though MTF handles this internally usually
                     continue
 
                 term_mtf = None 
@@ -220,7 +222,9 @@ class TaylorMap:
                     if power > 0:
                         # Retrieve or compute the power of the map component
                         if power not in component_powers_cache[var_idx]:
-                            component_powers_cache[var_idx][power] = other.components[var_idx] ** power
+                            component_powers_cache[var_idx][power] = (
+                                other.components[var_idx] ** power
+                            )
                         
                         factor = component_powers_cache[var_idx][power]
                         
@@ -231,7 +235,9 @@ class TaylorMap:
                 
                 if term_mtf is None:
                     # Constant term (all powers 0)
-                    term_mtf = MultivariateTaylorFunction.from_constant(1.0, dimension=new_dimension)
+                    term_mtf = MultivariateTaylorFunction.from_constant(
+                        1.0, dimension=new_dimension
+                    )
 
                 composed_component += term_mtf * coeff
 

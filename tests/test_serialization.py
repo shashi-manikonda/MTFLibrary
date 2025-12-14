@@ -1,13 +1,17 @@
 
 import json
+
 import numpy as np
-import pytest
-from mtflib.taylor_function import MultivariateTaylorFunction
+
 from mtflib.complex_taylor_function import ComplexMultivariateTaylorFunction
+from mtflib.taylor_function import MultivariateTaylorFunction
+
 
 def test_json_serialization_real():
     """Test serialization of a real-valued MTF."""
-    mtf = MultivariateTaylorFunction({(1, 0): 2.0, (0, 1): 3.5}, dimension=2, var_name="f")
+    mtf = MultivariateTaylorFunction(
+        {(1, 0): 2.0, (0, 1): 3.5}, dimension=2, var_name="f"
+    )
     json_str = mtf.to_json()
     
     # Deserialize
@@ -23,7 +27,9 @@ def test_json_serialization_real():
 
 def test_json_serialization_complex():
     """Test serialization of a complex-valued CMTF."""
-    cmtf = ComplexMultivariateTaylorFunction({(1,): 2.0+1.5j}, dimension=1, var_name="z")
+    cmtf = ComplexMultivariateTaylorFunction(
+        {(1,): 2.0 + 1.5j}, dimension=1, var_name="z"
+    )
     json_str = cmtf.to_json()
     
     # Deserialize using base class method

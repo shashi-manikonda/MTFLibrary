@@ -1,9 +1,11 @@
 
-import time
 import cProfile
-import pstats
 import io
-from mtflib import mtf, TaylorMap, MultivariateTaylorFunction
+import pstats
+import time
+
+from mtflib import TaylorMap, mtf
+
 
 def profile_operations():
     # Setup
@@ -20,7 +22,7 @@ def profile_operations():
 
     # 1. Arithmetic Intensive
     start = time.perf_counter()
-    f = (x + y + z + u)**3 * mtf.exp(x)
+    _ = (x + y + z + u)**3 * mtf.exp(x)
     end = time.perf_counter()
     print(f"Complex Arithmetic: {end - start:.4f}s")
     
@@ -30,7 +32,7 @@ def profile_operations():
     m2 = TaylorMap([x, y + 0.1*z*z, z + 0.1*y, u])
     
     start = time.perf_counter()
-    m3 = m1.compose(m2)
+    _ = m1.compose(m2)
     end = time.perf_counter()
     print(f"Map Composition (4D): {end - start:.4f}s")
 
