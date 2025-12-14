@@ -193,6 +193,11 @@ class TaylorMap:
         # The new dimension will be the input dimension of the 'other' map.
         new_dimension = other.components[0].dimension if other.map_dim > 0 else 0
 
+        # Cache for powers of the input map components to avoid re-computation.
+        # Structure: cache[var_idx][power] -> MultivariateTaylorFunction
+        # We initialize it as a list of dictionaries.
+        component_powers_cache = [{} for _ in range(self_input_dim)]
+
         for component_mtf in self.components:
             composed_component = MultivariateTaylorFunction.from_constant(
                 0.0, dimension=new_dimension
@@ -201,12 +206,32 @@ class TaylorMap:
                 exponent = component_mtf.exponents[i]
                 coeff = component_mtf.coeffs[i]
 
-                term_mtf = MultivariateTaylorFunction.from_constant(
-                    1.0, dimension=new_dimension
-                )
+                # Start term with the scalar coefficient
+                # Optimization: Initialize with coeff directly if it's the first multiplication
+                # But here we handle dimensionality.
+                # Let's create a term_mtf initialized to 1.0 (identity)
+                # Optimization: if coeff is zero, skip? (Assuming sparse handling, but check for explicit zeros)
+                if abs(coeff) < 1e-16: # Simple check, though MTF handles this internally usually
+                    continue
+
+                term_mtf = None 
+
                 for var_idx, power in enumerate(exponent):
                     if power > 0:
-                        term_mtf *= other.components[var_idx] ** power
+                        # Retrieve or compute the power of the map component
+                        if power not in component_powers_cache[var_idx]:
+                            component_powers_cache[var_idx][power] = other.components[var_idx] ** power
+                        
+                        factor = component_powers_cache[var_idx][power]
+                        
+                        if term_mtf is None:
+                            term_mtf = factor
+                        else:
+                            term_mtf *= factor
+                
+                if term_mtf is None:
+                    # Constant term (all powers 0)
+                    term_mtf = MultivariateTaylorFunction.from_constant(1.0, dimension=new_dimension)
 
                 composed_component += term_mtf * coeff
 
