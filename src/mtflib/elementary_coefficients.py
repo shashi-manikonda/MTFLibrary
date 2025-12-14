@@ -14,9 +14,9 @@ of loading from files or recomputing if necessary.
 
 import json  # Standard library for JSON
 import math
-from typing import Optional
 import os
 import sys  # Import sys for getsizeof
+from typing import Optional
 
 import numpy as np
 

@@ -9,11 +9,11 @@ Algebra (DA) vector, and the operations defined on it form a Truncated
 Power Series Algebra (TPSA).
 """
 
-from typing import Optional
 import math
 import numbers
 from collections import defaultdict
 from functools import reduce
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -445,7 +445,9 @@ class MultivariateTaylorFunction:
         return cls(coefficients=coeffs, dimension=dimension)
 
     @classmethod
-    def var(cls, var_index: int, dimension: Optional[int] = None) -> "MultivariateTaylorFunction":
+    def var(
+        cls, var_index: int, dimension: Optional[int] = None
+    ) -> "MultivariateTaylorFunction":
         """
         Creates a MultivariateTaylorFunction representing a single variable.
 
@@ -2113,7 +2115,9 @@ def _sqrt_taylor(variable, order: Optional[int] = None) -> MultivariateTaylorFun
     return result_mtf.truncate(order)
 
 
-def sqrt_taylor_1D_expansion(variable, order: Optional[int] = None) -> MultivariateTaylorFunction:
+def sqrt_taylor_1D_expansion(
+    variable, order: Optional[int] = None
+) -> MultivariateTaylorFunction:
     """
     Helper: 1D Taylor expansion of sqrt(1+u) around zero, precomputed coefficients.
     """
