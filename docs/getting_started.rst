@@ -9,7 +9,7 @@ first example.
 Installation
 ------------
 
-You can install `mtflib` using `pip`. There are two installation options
+You can install `mtflib` using `uv` (recommended) or `pip`. There are two installation options
 depending on your needs.
 
 Basic Installation
@@ -20,7 +20,7 @@ directly from PyPI:
 
 .. code-block:: bash
 
-   pip install mtflib
+   uv pip install mtflib
 
 Optional: PyTorch Backend for GPU Acceleration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -31,7 +31,7 @@ PyTorch dependency:
 
 .. code-block:: bash
 
-   pip install mtflib[torch]
+   uv pip install mtflib[torch]
 
 This will install the necessary PyTorch libraries alongside `mtflib`,
 enabling the GPU-accelerated backend for `neval`.

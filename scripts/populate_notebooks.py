@@ -1,6 +1,14 @@
 import os
+import shutil
 import subprocess
 import sys
+
+
+def get_installer():
+    """Returns the installer command (uv or pip)."""
+    if shutil.which("uv"):
+        return ["uv", "pip", "install"]
+    return [sys.executable, "-m", "pip", "install"]
 
 
 def install_dependencies():
@@ -17,9 +25,7 @@ def install_dependencies():
     for dependency in dependencies:
         print(f"Installing {dependency}...")
         try:
-            subprocess.run(
-                [sys.executable, "-m", "pip", "install", dependency], check=True
-            )
+            subprocess.run(get_installer() + [dependency], check=True)
         except subprocess.CalledProcessError as e:
             print(f"Failed to install {dependency}: {e}")
             sys.exit(1)

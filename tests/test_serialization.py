@@ -1,7 +1,6 @@
 import json
 
 import numpy as np
-
 from mtflib.complex_taylor_function import ComplexMultivariateTaylorFunction
 from mtflib.taylor_function import MultivariateTaylorFunction
 

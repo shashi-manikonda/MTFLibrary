@@ -45,7 +45,7 @@ To contribute code to `mtflib`, you will need to set up a local development envi
 3.  **Install Dependencies:**
     Install the library and all its development dependencies, including those for testing and building the documentation.
     ```bash
-    pip install -e .[dev]
+    uv pip install -e .[dev]
     ```
     The `-e` flag installs the package in "editable" mode, so any changes you make to the source code will be immediately effective.
 

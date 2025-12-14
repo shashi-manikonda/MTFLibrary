@@ -1,10 +1,9 @@
 # mtflib/test_taylor_functions.py
 
+import mtflib
 import numpy as np
 import pandas as pd
 import pytest
-
-import mtflib
 from mtflib import (
     ComplexMultivariateTaylorFunction,
     mtf,

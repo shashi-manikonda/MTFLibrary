@@ -10,15 +10,15 @@ A Python library for creating, manipulating, and composing Multivariate Taylor F
 The recommended way to install `mtflib` is from PyPI:
 
 ```bash
-pip install mtflib
+uv pip install mtflib
 ```
 
 ### Installation from Source
 
-Alternatively, you can install `mtflib` directly from the source repository using pip. Ensure you have a C++17 compliant compiler (e.g., GCC, Clang, MSVC) for building the backend extensions.
+Alternatively, you can install `mtflib` directly from the source repository using uv (recommended) or pip. Ensure you have a C++17 compliant compiler (e.g., GCC, Clang, MSVC) for building the backend extensions.
 
 ```bash
-pip install .
+uv pip install .
 ```
 
 ## Quick Start
@@ -105,7 +105,7 @@ f_loaded = mtf.from_json(json_str)
 The project uses `pytest` for testing. First, install the test dependencies:
 
 ```bash
-pip install -e .[test]
+uv pip install -e .[test]
 ```
 
 Then, run the test suite from the root of the repository:

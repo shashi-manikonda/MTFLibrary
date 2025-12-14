@@ -15,7 +15,9 @@ import numpy as np
 
 from . import (
     elementary_coefficients,
-)  # Import the new module with loaded coefficients
+)
+
+# Import the new module with loaded coefficients
 from .complex_taylor_function import ComplexMultivariateTaylorFunction
 from .taylor_function import (
     MultivariateTaylorFunction,
