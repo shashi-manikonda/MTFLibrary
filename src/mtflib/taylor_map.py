@@ -216,7 +216,7 @@ class TaylorMap:
                     # Simple check, though MTF handles this internally usually
                     continue
 
-                term_mtf = None 
+                term_mtf = None
 
                 for var_idx, power in enumerate(exponent):
                     if power > 0:
@@ -225,14 +225,14 @@ class TaylorMap:
                             component_powers_cache[var_idx][power] = (
                                 other.components[var_idx] ** power
                             )
-                        
+
                         factor = component_powers_cache[var_idx][power]
-                        
+
                         if term_mtf is None:
                             term_mtf = factor
                         else:
                             term_mtf *= factor
-                
+
                 if term_mtf is None:
                     # Constant term (all powers 0)
                     term_mtf = MultivariateTaylorFunction.from_constant(
