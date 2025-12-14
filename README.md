@@ -87,6 +87,19 @@ Symbolic representation of the function:
 ```
 $\displaystyle 0.00833333 x^{5} - 0.166667 x^{3} + 1.0 x + 1.0 y^{2}$
 
+
+## JSON Serialization
+
+`mtflib` supports serializing MTF objects to JSON format, preserving all coefficients and properties (including complex values).
+
+```python
+# Serialize to JSON string
+json_str = f.to_json()
+
+# Deserialize back to object
+f_loaded = mtf.from_json(json_str)
+```
+
 ## Running Tests
 
 The project uses `pytest` for testing. First, install the test dependencies:

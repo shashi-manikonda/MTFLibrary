@@ -9,6 +9,7 @@ Algebra (DA) vector, and the operations defined on it form a Truncated
 Power Series Algebra (TPSA).
 """
 
+import json
 import math
 import numbers
 from collections import defaultdict
@@ -602,6 +603,76 @@ class MultivariateTaylorFunction:
                 f"Unsupported input type: {type(input_val)}. Cannot convert to "
                 f"MTF/CMTF."
             )
+
+    def to_json(self):
+        """
+        Serializes the MTF object to a JSON string.
+
+        Returns
+        -------
+        str
+            A JSON string representation of the MTF object.
+        """
+        exponents = self.exponents.tolist()
+
+        is_complex = np.iscomplexobj(self.coeffs)
+        if is_complex:
+            # Store as [real, imag] pairs
+            coeffs = [[c.real, c.imag] for c in self.coeffs]
+        else:
+            coeffs = self.coeffs.tolist()
+
+        data = {
+            "dimension": self.dimension,
+            "exponents": exponents,
+            "coeffs": coeffs,
+            "is_complex": is_complex,
+            "var_name": self.var_name,
+        }
+        return json.dumps(data)
+
+    @classmethod
+    def from_json(cls, json_str):
+        """
+        Creates an MTF object from a JSON string.
+
+        Parameters
+        ----------
+        json_str : str
+            A JSON string representation of an MTF object.
+
+        Returns
+        -------
+        MultivariateTaylorFunction
+            The reconstructed MTF object.
+        """
+        data = json.loads(json_str)
+
+        dimension = data["dimension"]
+        exponents = data["exponents"]
+        raw_coeffs = data["coeffs"]
+        is_complex = data.get("is_complex", False)
+        var_name = data.get("var_name", None)
+
+        coeffs_dict = {}
+
+        if is_complex:
+            # Reconstruct complex numbers from [real, imag] pairs
+            for exp, c_pair in zip(exponents, raw_coeffs):
+                coeffs_dict[tuple(exp)] = complex(c_pair[0], c_pair[1])
+        else:
+            for exp, c in zip(exponents, raw_coeffs):
+                coeffs_dict[tuple(exp)] = c
+
+        # If data is complex but we are calling from base class, switch to CMTF
+        if is_complex and cls.__name__ == "MultivariateTaylorFunction":
+            from .complex_taylor_function import ComplexMultivariateTaylorFunction
+
+            return ComplexMultivariateTaylorFunction(
+                coeffs_dict, dimension=dimension, var_name=var_name
+            )
+
+        return cls(coeffs_dict, dimension=dimension, var_name=var_name)
 
     def __call__(self, evaluation_point):
         """
